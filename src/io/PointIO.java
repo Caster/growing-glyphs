@@ -9,14 +9,14 @@ import java.util.Scanner;
 
 import datastructure.QuadTree;
 import datastructure.QuadTree.InsertedWhen;
-import datastructure.Square;
+import datastructure.Glyph;
 
 public class PointIO {
 
     public static void read(File file, QuadTree tree) {
         try (Scanner reader = new Scanner(new FileInputStream(file))) {
             while (reader.hasNextDouble()) {
-                tree.insertCenterOf(new Square(reader.nextDouble(),
+                tree.insertCenterOf(new Glyph(reader.nextDouble(),
                         reader.nextDouble(), reader.nextInt(10)));
             }
         } catch (FileNotFoundException e) {
@@ -27,7 +27,7 @@ public class PointIO {
     public static void write(QuadTree tree, File file) {
         try (PrintStream writer = new PrintStream(new FileOutputStream(file))) {
             for (QuadTree leaf : tree.leaves()) {
-                for (Square s : leaf.getSquares(InsertedWhen.INITIALLY)) {
+                for (Glyph s : leaf.getGlyphs(InsertedWhen.INITIALLY)) {
                     writer.println(s.getX() + " " + s.getY() + " " + s.getN());
                 }
             }

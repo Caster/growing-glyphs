@@ -1,7 +1,7 @@
 package datastructure.events;
 
 import datastructure.QuadTree;
-import datastructure.Square;
+import datastructure.Glyph;
 import datastructure.growfunction.GrowFunction;
 
 /**
@@ -122,9 +122,9 @@ public class OutOfCell extends Event {
     private Side side;
 
 
-    public OutOfCell(Square square, GrowFunction g, QuadTree cell, Side side) {
-        super(g.exitAt(square, cell, side), 1);
-        this.squares[0] = square;
+    public OutOfCell(Glyph glyph, GrowFunction g, QuadTree cell, Side side) {
+        super(g.exitAt(glyph, cell, side), 1);
+        this.glyphs[0] = glyph;
         this.side = side;
     }
 

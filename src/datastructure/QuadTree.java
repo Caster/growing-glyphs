@@ -16,20 +16,20 @@ import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
 
 /**
- * A QuadTree implementation that can track growing squares.
+ * A QuadTree implementation that can track growing glyphs.
  *
- * @see Square
+ * @see Glyph
  */
 public class QuadTree {
 
     /**
-     * The maximum number of squares that should intersect any leaf cell.
+     * The maximum number of glyphs that should intersect any leaf cell.
      */
-    public static final int MAX_SQUARES_PER_CELL = 5;
+    public static final int MAX_GLYPHS_PER_CELL = 5;
 
 
     /**
-     * Enumeration of moments when a square may be inserted into the tree.
+     * Enumeration of moments when a glyph may be inserted into the tree.
      */
     public enum InsertedWhen { INITIALLY, BY_ALGORITHM; }
 
@@ -48,22 +48,22 @@ public class QuadTree {
      */
     private QuadTree[] children;
     /**
-     * Function that is used to determine the size of squares.
+     * Function that is used to determine the size of glyphs.
      */
     private GrowFunction g;
     /**
-     * Squares intersecting the cell. This is not just a set, but a map, because
-     * it tracks whether squares were inserted initially or while running the
+     * Glyphs intersecting the cell. This is not just a set, but a map, because
+     * it tracks whether glyphs were inserted initially or while running the
      * clustering algorithm.
      */
-    private Map<Square, InsertedWhen> squares;
+    private Map<Glyph, InsertedWhen> glyphs;
 
 
     /**
      * Construct a rectangular QuadTree cell at given coordinates.
      *
      * @param rect Rectangle describing the cell location.
-     * @param g Function that is used to determine the size of squares.
+     * @param g Function that is used to determine the size of glyphs.
      */
     public QuadTree(Rectangle2D rect, GrowFunction g) {
         this(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), g);
@@ -75,7 +75,7 @@ public class QuadTree {
      * @param x X-coordinate of top left corner of cell.
      * @param y Y-coordinate of top left corner of cell.
      * @param s Size (width = height) of cell.
-     * @param g Function that is used to determine the size of squares.
+     * @param g Function that is used to determine the size of glyphs.
      */
     public QuadTree(double x, double y, double s, GrowFunction g) {
         this(x, y, s, s, g);
@@ -88,7 +88,7 @@ public class QuadTree {
      * @param y Y-coordinate of top left corner of cell.
      * @param w Width of cell.
      * @param h Height of cell.
-     * @param g Function that is used to determine the size of squares.
+     * @param g Function that is used to determine the size of glyphs.
      */
     public QuadTree(double x, double y, double w, double h, GrowFunction g) {
         this.cell = new Rectangle2D.Double(x, y, w, h);
@@ -96,19 +96,19 @@ public class QuadTree {
         this.parent = null;
         this.children = null;
         this.g = g;
-        this.squares = new HashMap<>(MAX_SQUARES_PER_CELL);
+        this.glyphs = new HashMap<>(MAX_GLYPHS_PER_CELL);
     }
 
 
     /**
-     * Reset to being a cell without squares nor children.
+     * Reset to being a cell without glyphs nor children.
      */
     public void clear() {
         this.children = null;
-        for (Square s : this.squares.keySet()) {
+        for (Glyph s : this.glyphs.keySet()) {
             s.removeCell(this);
         }
-        this.squares.clear();
+        this.glyphs.clear();
     }
 
     public QuadTree[] getChildren() {
@@ -142,13 +142,13 @@ public class QuadTree {
             );
     }
 
-    public Set<Square> getSquares() {
-        return squares.keySet();
+    public Set<Glyph> getGlyphs() {
+        return glyphs.keySet();
     }
 
-    public Set<Square> getSquares(InsertedWhen filter) {
-        return squares.keySet().stream()
-            .filter(s -> squares.get(s) == filter)
+    public Set<Glyph> getGlyphs(InsertedWhen filter) {
+        return glyphs.keySet().stream()
+            .filter(s -> glyphs.get(s) == filter)
             .collect(Collectors.toSet());
     }
 
@@ -165,35 +165,35 @@ public class QuadTree {
     }
 
     /**
-     * Insert a given square into all cells of this QuadTree it intersects. This
-     * method does not care about {@link QuadTree#MAX_SQUARES_PER_CELL}.
+     * Insert a given glyph into all cells of this QuadTree it intersects. This
+     * method does not care about {@link QuadTree#MAX_GLYPHS_PER_CELL}.
      *
-     * @param square The square to insert.
+     * @param glyph The glyph to insert.
      * @param at Timestamp/zoom level at which insertion takes place.
-     * @param g Function to determine size of square. Together with {@code at},
-     *          this is used to decide which cells {@code square} intersects.
+     * @param g Function to determine size of glyph. Together with {@code at},
+     *          this is used to decide which cells {@code glyph} intersects.
      */
-    public void insert(Square square, double at, GrowFunction g) {
-        insert(square, g.sizeAt(square, at));
+    public void insert(Glyph glyph, double at, GrowFunction g) {
+        insert(glyph, g.sizeAt(glyph, at));
     }
 
     /**
-     * Insert a given square into this QuadTree, but treat it as only its center
+     * Insert a given glyph into this QuadTree, but treat it as only its center
      * and handle the insertion as a regular QuadTree insertion. This means that
      * a split may be triggered by this insertion, in order to maintain the
      * maximum capacity of cells.
      *
-     * @param square The square center to insert.
+     * @param glyph The glyph center to insert.
      * @return Whether center has been inserted.
      */
-    public boolean insertCenterOf(Square square) {
-        if (!cell.contains(square.getX(), square.getY())) {
+    public boolean insertCenterOf(Glyph glyph) {
+        if (!cell.contains(glyph.getX(), glyph.getY())) {
             return false;
         }
         // can we insert here?
-        if (isLeaf() && squares.size() < MAX_SQUARES_PER_CELL) {
-            squares.put(square, InsertedWhen.INITIALLY);
-            square.addCell(this);
+        if (isLeaf() && glyphs.size() < MAX_GLYPHS_PER_CELL) {
+            glyphs.put(glyph, InsertedWhen.INITIALLY);
+            glyph.addCell(this);
             return true;
         }
         // split if necessary
@@ -202,7 +202,7 @@ public class QuadTree {
         }
         // insert into one child, only one insertion will succeed
         for (QuadTree child : children) {
-            if (child.insertCenterOf(square)) {
+            if (child.insertCenterOf(glyph)) {
                 break;
             }
         }
@@ -233,23 +233,23 @@ public class QuadTree {
     }
 
     /**
-     * Reset state to what it was after all initially inserted squares were
+     * Reset state to what it was after all initially inserted glyphs were
      * there. This clears the tree and rebuilds it from scratch.
      */
     public void reset() {
-        Set<Square> toInsert = new HashSet<>();
+        Set<Glyph> toInsert = new HashSet<>();
         for (QuadTree leaf : leaves()) {
-            toInsert.addAll(leaf.getSquares(InsertedWhen.INITIALLY));
+            toInsert.addAll(leaf.getGlyphs(InsertedWhen.INITIALLY));
         }
         clear();
-        for (Square s : toInsert) {
+        for (Glyph s : toInsert) {
             insertCenterOf(s);
         }
     }
 
     /**
-     * Performs a regular QuadTree split, treating all squares associated with
-     * this cell as points, namely their centers. Distributes associated squares
+     * Performs a regular QuadTree split, treating all glyphs associated with
+     * this cell as points, namely their centers. Distributes associated glyphs
      * to the relevant child cells.
      */
     public void split() {
@@ -271,15 +271,15 @@ public class QuadTree {
                 );
             this.children[i].parent = this;
         }
-        // possibly distribute squares
-        if (!squares.isEmpty()) {
-            for (Square square : squares.keySet()) {
+        // possibly distribute glyphs
+        if (!glyphs.isEmpty()) {
+            for (Glyph glyph : glyphs.keySet()) {
                 for (QuadTree child : children) {
-                    child.insertCenterOf(square);
+                    child.insertCenterOf(glyph);
                 }
             }
-            // only maintain squares in leaves
-            squares.clear();
+            // only maintain glyphs in leaves
+            glyphs.clear();
         }
     }
 
@@ -363,22 +363,22 @@ public class QuadTree {
     }
 
     /**
-     * Insert a given square into all leaf cells of this QuadTree it intersects.
-     * This method does not care about {@link QuadTree#MAX_SQUARES_PER_CELL}.
+     * Insert a given glyph into all leaf cells of this QuadTree it intersects.
+     * This method does not care about {@link QuadTree#MAX_GLYPHS_PER_CELL}.
      *
-     * @param square The square to insert.
-     * @param rect The size of the square at this point in time/zooming.
+     * @param glyph The glyph to insert.
+     * @param rect The size of the glyph at this point in time/zooming.
      */
-    private void insert(Square square, Rectangle2D rect) {
+    private void insert(Glyph glyph, Rectangle2D rect) {
         if (cell.createIntersection(rect).isEmpty()) {
             return;
         }
         if (isLeaf()) {
-            squares.put(square, InsertedWhen.BY_ALGORITHM);
-            square.addCell(this);
+            glyphs.put(glyph, InsertedWhen.BY_ALGORITHM);
+            glyph.addCell(this);
         } else {
             for (QuadTree child : children) {
-                child.insert(square, rect);
+                child.insert(glyph, rect);
             }
         }
     }

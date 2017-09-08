@@ -11,29 +11,29 @@ import datastructure.growfunction.GrowFunction;
 
 public class HierarchicalClustering implements Comparable<HierarchicalClustering> {
 
-    private Square square;
+    private Glyph glyph;
     private final double at;
     private Set<HierarchicalClustering> createdFrom;
     private HierarchicalClustering mergedInto;
 
     /**
-     * Create a (node of a) hierarchical clustering that represents a square and
-     * the squares it was created from. The clustering records at which point in
+     * Create a (node of a) hierarchical clustering that represents a glyph and
+     * the glyphs it was created from. The clustering records at which point in
      * time/zooming the merge happened as well.
      *
-     * @param square Square that was created from a merge.
+     * @param glyph Glyph that was created from a merge.
      * @param at Time or zoom level at which the merge happened.
-     * @param createdFrom One or more squares that were merged into {@code square}.
+     * @param createdFrom One or more glyphs that were merged into {@code glyph}.
      *            It is also possible to construct a hierarchical clustering of a
-     *            single square by omitting this parameter.
+     *            single glyph by omitting this parameter.
      */
-    public HierarchicalClustering(Square square, double at,
+    public HierarchicalClustering(Glyph glyph, double at,
             HierarchicalClustering... createdFrom) {
         if (at < 0) {
             throw new IllegalArgumentException();
         }
 
-        this.square = square;
+        this.glyph = glyph;
         this.at = at;
         if (createdFrom.length == 0) {
             this.createdFrom = null;
@@ -71,16 +71,16 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
         return mergedInto;
     }
 
-    public Square getSquare() {
-        return square;
+    public Glyph getGlyph() {
+        return glyph;
     }
 
     public void mergeInto(HierarchicalClustering node) {
         this.mergedInto = node;
     }
 
-    public void setSquare(Square square) {
-        this.square = square;
+    public void setGlyph(Glyph glyph) {
+        this.glyph = glyph;
     }
 
     @Override
@@ -95,7 +95,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
         sb.append(getClass().getName());
         sb.append("[\n");
         sb.append(moreIndent);
-        sb.append(square.toString());
+        sb.append(glyph.toString());
         sb.append(" at ");
         sb.append(at);
         if (createdFrom == null) {
@@ -166,7 +166,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             return curr.size();
         }
 
-        public Rectangle2D[] getSquares(GrowFunction g) {
+        public Rectangle2D[] getGlyphs(GrowFunction g) {
             Rectangle2D[] result = new Rectangle2D[curr.size()];
             int i = 0;
             double maxAt = Double.NEGATIVE_INFINITY;
@@ -180,7 +180,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
                 }
             }
             for (HierarchicalClustering node : curr) {
-                result[i++] = g.sizeAt(node.square, maxAt);
+                result[i++] = g.sizeAt(node.glyph, maxAt);
             }
             return result;
         }

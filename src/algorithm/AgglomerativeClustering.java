@@ -9,18 +9,18 @@ import java.util.Set;
 
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
-import datastructure.Square;
+import datastructure.Glyph;
 import datastructure.Utils;
 import datastructure.events.Event;
 import datastructure.events.OutOfCell;
 import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
-import datastructure.events.SquareMerge;
+import datastructure.events.GlyphMerge;
 
 public class AgglomerativeClustering {
 
     /**
-     * Tree with {@link Square squares} that need clustering.
+     * Tree with {@link Glyph glyphs} that need clustering.
      */
     private QuadTree tree;
     private GrowFunction g;
@@ -31,10 +31,10 @@ public class AgglomerativeClustering {
 
 
     /**
-     * Initialize algorithm for clustering growing squares on the given QuadTree.
+     * Initialize algorithm for clustering growing glyphs on the given QuadTree.
      *
-     * @param tree Tree with squares to be clustered.
-     * @param g Function to use for determining the size of squares.
+     * @param tree Tree with glyphs to be clustered.
+     * @param g Function to use for determining the size of glyphs.
      */
     public AgglomerativeClustering(QuadTree tree, GrowFunction g) {
         this.tree = tree;
@@ -58,7 +58,7 @@ public class AgglomerativeClustering {
      * @param multiMerge Whether merges resulting in immediate overlap should be
      *            merged immediately, thus not showing up in the resulting
      *            {@link HierarchicalClustering}, or not.
-     * @param includeOutOfCell Whether events caused by a square growing out of
+     * @param includeOutOfCell Whether events caused by a glyph growing out of
      *            a cell should be included in the resulting clustering.
      * @return A reference to the clustering instance, for chaining.
      */
@@ -66,111 +66,111 @@ public class AgglomerativeClustering {
             boolean includeOutOfCell) {
         // construct a queue, put everything in there
         PriorityQueue<Event> q = new PriorityQueue<>();
-        // also create a result for each square, and a map to find them
-        Map<Square, HierarchicalClustering> map = new HashMap<>();
-        // finally, create an indication of which squares still participate
-        Set<Square> alive = new HashSet<>();
+        // also create a result for each glyph, and a map to find them
+        Map<Glyph, HierarchicalClustering> map = new HashMap<>();
+        // finally, create an indication of which glyphs still participate
+        Set<Glyph> alive = new HashSet<>();
         for (QuadTree leaf : tree.leaves()) {
-            Square[] squares = leaf.getSquares().toArray(new Square[0]);
-            for (int i = 0; i < squares.length; ++i) {
-                // add events for when two squares in the same cell touch
-                for (int j = i + 1; j < squares.length; ++j) {
-                    q.add(new SquareMerge(squares[i], squares[j], g));
+            Glyph[] glyphs = leaf.getGlyphs().toArray(new Glyph[0]);
+            for (int i = 0; i < glyphs.length; ++i) {
+                // add events for when two glyphs in the same cell touch
+                for (int j = i + 1; j < glyphs.length; ++j) {
+                    q.add(new GlyphMerge(glyphs[i], glyphs[j], g));
                 }
 
-                // add events for when a square grows out of its cell
+                // add events for when a glyph grows out of its cell
                 for (Side side : Side.values()) {
-                    q.add(new OutOfCell(squares[i], g, leaf, side));
+                    q.add(new OutOfCell(glyphs[i], g, leaf, side));
                 }
 
-                // create clustering leaves for all squares, mark them as alive
-                map.put(squares[i], new HierarchicalClustering(squares[i], 0));
-                alive.add(squares[i]);
+                // create clustering leaves for all glyphs, mark them as alive
+                map.put(glyphs[i], new HierarchicalClustering(glyphs[i], 0));
+                alive.add(glyphs[i]);
             }
         }
-        // merge squares until no pairs to merge remain
+        // merge glyphs until no pairs to merge remain
         queue: while (!q.isEmpty() && alive.size() > 1) {
             Event e = q.poll();
-            // we ignore this event if not all squares from it are alive anymore
-            for (Square square : e.getSquares()) {
-                if (!alive.contains(square)) {
+            // we ignore this event if not all glyphs from it are alive anymore
+            for (Glyph glyph : e.getGlyphs()) {
+                if (!alive.contains(glyph)) {
                     continue queue;
                 }
             }
             // depending on the type of event, handle it appropriately
             switch (e.getType()) {
             case MERGE:
-                SquareMerge m = (SquareMerge) e;
+                GlyphMerge m = (GlyphMerge) e;
                 double mergedAt = m.getAt();
-                // create a merged square
-                Square merged = new Square(m.getSquares());
+                // create a merged glyph
+                Glyph merged = new Glyph(m.getGlyphs());
                 HierarchicalClustering mergedHC = new HierarchicalClustering(merged,
-                        mergedAt, Utils.map(m.getSquares(), map,
+                        mergedAt, Utils.map(m.getGlyphs(), map,
                                 new HierarchicalClustering[m.getSize()]));
-                // add new square to QuadTree cell(s)
+                // add new glyph to QuadTree cell(s)
                 tree.insert(merged, mergedAt, g);
-                // mark merged squares as dead
-                for (Square square : m.getSquares()) {
-                    alive.remove(square);
+                // mark merged glyphs as dead
+                for (Glyph glyph : m.getGlyphs()) {
+                    alive.remove(glyph);
                 }
-                // create events with remaining squares
+                // create events with remaining glyphs
                 for (QuadTree cell : merged.getCells()) {
-                    for (Square square : cell.getSquares()) {
-                        if (alive.contains(square)) {
-                            q.add(new SquareMerge(merged, square, g));
+                    for (Glyph glyph : cell.getGlyphs()) {
+                        if (alive.contains(glyph)) {
+                            q.add(new GlyphMerge(merged, glyph, g));
                         }
                     }
                 }
                 // update bookkeeping
                 alive.add(merged);
                 map.put(merged, mergedHC);
-                // eventually, the last merged square is the root
+                // eventually, the last merged glyph is the root
                 result = mergedHC;
                 if (!multiMerge) {
                     continue queue;
                 }
-                // keep merging while next square overlaps before current event
+                // keep merging while next glyph overlaps before current event
                 Event next = q.peek();
-                Set<Square> inMerged = null; // keep track of squares that are merged
-                Set<Square> wasMerged = null; // keep track of intermediate merges
+                Set<Glyph> inMerged = null; // keep track of glyphs that are merged
+                Set<Glyph> wasMerged = null; // keep track of intermediate merges
                 if (next != null) {
                     inMerged = new HashSet<>(m.getSize() * 2);
-                    inMerged.addAll(Arrays.asList(m.getSquares()));
+                    inMerged.addAll(Arrays.asList(m.getGlyphs()));
                     wasMerged = new HashSet<>(m.getSize());
                 }
                 merging: while (next != null && next.getAt() < mergedAt &&
-                        Utils.indexOf(next.getSquares(), merged) >= 0) {
+                        Utils.indexOf(next.getGlyphs(), merged) >= 0) {
                     e = q.poll();
-                    // we ignore this event if not all squares from it are alive anymore
-                    for (Square square : e.getSquares()) {
-                        if (!alive.contains(square)) {
+                    // we ignore this event if not all glyphs from it are alive anymore
+                    for (Glyph glyph : e.getGlyphs()) {
+                        if (!alive.contains(glyph)) {
                             continue merging;
                         }
                     }
                     switch (e.getType()) {
                     case MERGE:
-                        m = (SquareMerge) e;
-                        // previous merged square was no good, let it die and update
+                        m = (GlyphMerge) e;
+                        // previous merged glyph was no good, let it die and update
                         wasMerged.add(merged);
                         alive.remove(merged);
-                        for (Square s : m.getSquares()) {
+                        for (Glyph s : m.getGlyphs()) {
                             if (!wasMerged.contains(s)) {
                                 inMerged.add(s);
                                 mergedHC.alsoCreatedFrom(map.get(s));
                                 alive.remove(s);
                             }
                         }
-                        map.remove(merged); // it's as if this square never existed
-                        // create updated merged square
-                        merged = new Square(inMerged);
-                        mergedHC.setSquare(merged);
-                        // add new square to QuadTree cell(s)
+                        map.remove(merged); // it's as if this glyph never existed
+                        // create updated merged glyph
+                        merged = new Glyph(inMerged);
+                        mergedHC.setGlyph(merged);
+                        // add new glyph to QuadTree cell(s)
                         tree.insert(merged, m.getAt(), g);
-                        // create events with remaining squares
+                        // create events with remaining glyphs
                         for (QuadTree cell : merged.getCells()) {
-                            for (Square square : cell.getSquares()) {
-                                if (alive.contains(square)) {
-                                    q.add(new SquareMerge(merged, square, g));
+                            for (Glyph glyph : cell.getGlyphs()) {
+                                if (alive.contains(glyph)) {
+                                    q.add(new GlyphMerge(merged, glyph, g));
                                 }
                             }
                         }
@@ -186,10 +186,10 @@ public class AgglomerativeClustering {
                 break;
             case OUT_OF_CELL:
                 if (includeOutOfCell) {
-                    Square square = e.getSquares()[0];
-                    HierarchicalClustering hc = new HierarchicalClustering(square,
-                            e.getAt(), map.get(square));
-                    map.put(square, hc);
+                    Glyph glyph = e.getGlyphs()[0];
+                    HierarchicalClustering hc = new HierarchicalClustering(glyph,
+                            e.getAt(), map.get(glyph));
+                    map.put(glyph, hc);
                 }
                 OutOfCell o = (OutOfCell) e;
                 for (Side side : o.getSide().opposite().others()) {

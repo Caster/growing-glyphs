@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -20,12 +21,12 @@ import java.util.Queue;
 
 import javax.swing.JPanel;
 
+import datastructure.Glyph;
 import datastructure.QuadTree;
 import datastructure.QuadTree.InsertedWhen;
-import datastructure.Square;
 
 /**
- * Panel that draws a {@link QuadTree} and the {@link Square squares} inside of it.
+ * Panel that draws a {@link QuadTree} and the {@link Glyph glyphs} inside of it.
  */
 public class DrawPanel extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
 
@@ -39,9 +40,9 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
      */
     private QuadTree tree;
     /**
-     * Squares that are shown on top of the QuadTree.
+     * Glyphs that are shown on top of the QuadTree.
      */
-    private Rectangle2D[] squares;
+    private Shape[] glyphs;
     /**
      * Point where mouse started dragging. {@code null} when no drag is occurring.
      */
@@ -58,7 +59,7 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
 
     public DrawPanel(QuadTree tree) {
         this.tree = tree;
-        this.squares = null;
+        this.glyphs = null;
         this.dragStart = null;
         this.translation = new Point2D.Double();
         resetView();
@@ -72,10 +73,6 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
     public Dimension getPreferredSize() {
         return new Dimension((int) tree.getWidth() + PADDING * 2,
                 (int) tree.getHeight() + PADDING * 2);
-    }
-
-    public Rectangle2D[] getSquares() {
-        return squares;
     }
 
     @Override
@@ -122,7 +119,7 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
                     ));
             }
             g.setColor(Color.BLACK);
-            for (Square s : cell.getSquares(InsertedWhen.INITIALLY)) {
+            for (Glyph s : cell.getGlyphs(InsertedWhen.INITIALLY)) {
                 g2.fill(new Rectangle2D.Double(
                         s.getX() - r,
                         s.getY() - r,
@@ -134,10 +131,10 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
             }
         }
 
-        // squares
-        if (squares != null) {
-            for (Rectangle2D rect : squares) {
-                g2.draw(rect);
+        // glyphs
+        if (glyphs != null) {
+            for (Shape glyph : glyphs) {
+                g2.draw(glyph);
             }
         }
     }
@@ -148,8 +145,8 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
         repaint();
     }
 
-    public void setSquares(Rectangle2D[] squares) {
-        this.squares = squares;
+    public void setGlyphs(Rectangle2D[] glyphs) {
+        this.glyphs = glyphs;
         repaint();
     }
 

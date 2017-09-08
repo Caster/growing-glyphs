@@ -20,16 +20,16 @@ import javax.swing.JOptionPane;
 import algorithm.AgglomerativeClustering;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
-import datastructure.Square;
+import datastructure.Glyph;
 import datastructure.growfunction.GrowFunction;
 import datastructure.growfunction.LinearlyGrowingSquares;
 import gui.Settings.Setting;
 import io.PointIO;
 
 /**
- * A debug view of {@link QuadTree QuadTrees} and growing {@link Square squares}.
+ * A debug view of {@link QuadTree QuadTrees} and growing {@link Glyph glyphs}.
  */
-public class GrowingSquares extends JFrame {
+public class GrowingGlyphs extends JFrame {
 
     public static final Settings SETTINGS = new Settings();
     public static final int NUM_POINTS_INITIALLY = 6;
@@ -46,8 +46,8 @@ public class GrowingSquares extends JFrame {
     private JLabel status;
 
 
-    public GrowingSquares(int w, int h, GrowFunction g) {
-        super("Growing Squares");
+    public GrowingGlyphs(int w, int h, GrowFunction g) {
+        super("Growing Glyphs");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         setLayout(new BorderLayout());
@@ -61,7 +61,7 @@ public class GrowingSquares extends JFrame {
         add(drawPanel, BorderLayout.CENTER);
 
         this.r = new Random();
-        randomSquares(NUM_POINTS_INITIALLY);
+        randomGlyphs(NUM_POINTS_INITIALLY);
 
         addKeyListener(new KeyListener());
         add(status = new JLabel("Ready. Press 'h' for help."), BorderLayout.SOUTH);
@@ -74,20 +74,20 @@ public class GrowingSquares extends JFrame {
         pack();
     }
 
-    public void randomSquares(int n) {
+    public void randomGlyphs(int n) {
         tree.clear();
-        Square[] squares = new Square[n];
+        Glyph[] glyphs = new Glyph[n];
         for (int i = 0; i < n; ++i) {
-            squares[i] = new Square(
+            glyphs[i] = new Glyph(
                     r.nextDouble() * tree.getWidth() + tree.getX(),
                     r.nextDouble() * tree.getHeight() + tree.getY(),
                     r.nextInt(10) + 1
                 );
-            tree.insertCenterOf(squares[i]);
+            tree.insertCenterOf(glyphs[i]);
         }
-        drawPanel.setSquares(null);
+        drawPanel.setGlyphs(null);
         if (status != null) {
-            status.setText("Loaded new random set of " + n + " squares.");
+            status.setText("Loaded new random set of " + n + " glyphs.");
         }
     }
 
@@ -105,11 +105,11 @@ public class GrowingSquares extends JFrame {
      * @param events Ignored.
      */
     private void open(ActionEvent...events) {
-        if (getFC().showOpenDialog(GrowingSquares.this) ==
+        if (getFC().showOpenDialog(GrowingGlyphs.this) ==
                 JFileChooser.APPROVE_OPTION) {
             tree.clear();
             PointIO.read(getFC().getSelectedFile(), tree);
-            drawPanel.setSquares(null);
+            drawPanel.setGlyphs(null);
             if (status != null) {
                 status.setText("Loaded '" + getFC().getSelectedFile().getName() + "'.");
             }
@@ -127,8 +127,8 @@ public class GrowingSquares extends JFrame {
         clusterer.cluster(!debug, debug);
         if (clusterer.getClustering() != null) {
             view = new HierarchicalClustering.View(clusterer.getClustering());
-            view.next(); // show first step that has actual squares
-            drawPanel.setSquares(view.getSquares(g));
+            view.next(); // show first step that has actual glyphs
+            drawPanel.setGlyphs(view.getGlyphs(g));
         }
     }
 
@@ -138,7 +138,7 @@ public class GrowingSquares extends JFrame {
      * @param events Ignored.
      */
     private void save(ActionEvent...events) {
-        if (getFC().showSaveDialog(GrowingSquares.this) ==
+        if (getFC().showSaveDialog(GrowingGlyphs.this) ==
                 JFileChooser.APPROVE_OPTION) {
             PointIO.write(tree, getFC().getSelectedFile());
         }
@@ -156,12 +156,12 @@ public class GrowingSquares extends JFrame {
                 }
             } catch (NumberFormatException nfe) {
                 // ignore, we have a default anyway
-                System.err.println("Usage: java gui.GrowingSquares [width = 600] "
+                System.err.println("Usage: java gui.GrowingGlyphs [width = 600] "
                         + "[height = width]");
             }
         }
         GrowFunction g = new LinearlyGrowingSquares();
-        (new GrowingSquares(w, h, g)).setVisible(true);
+        (new GrowingGlyphs(w, h, g)).setVisible(true);
     }
 
 
@@ -176,14 +176,14 @@ public class GrowingSquares extends JFrame {
                 run();
                 break;
             case KeyEvent.VK_H:
-                JOptionPane.showMessageDialog(GrowingSquares.this,
+                JOptionPane.showMessageDialog(GrowingGlyphs.this,
                         "<html>Press any of the following keys.<br>"
                         + "<b><code>O</code></b> - "
-                            + "Open a set of squares from a file.<br>"
+                            + "Open a set of glyphs from a file.<br>"
                         + "<b><code>S</code></b> - "
                             + "Save the current set to a file.<br>"
                         + "<b><code>R</code></b> - "
-                            + "Load a new random set of squares.<br>"
+                            + "Load a new random set of glyphs.<br>"
                         + "<b><code>A</code></b> - "
                             + "Execute clustering algorithm.<br>"
                         + "<b><code>←</code></b> - "
@@ -201,8 +201,8 @@ public class GrowingSquares extends JFrame {
                 break;
             case KeyEvent.VK_R:
                 try {
-                    randomSquares(Integer.parseInt(
-                            JOptionPane.showInputDialog(GrowingSquares.this,
+                    randomGlyphs(Integer.parseInt(
+                            JOptionPane.showInputDialog(GrowingGlyphs.this,
                                     "How many points?",
                                     NUM_POINTS_INITIALLY)));
                 } catch (NumberFormatException nfe) {
@@ -216,25 +216,25 @@ public class GrowingSquares extends JFrame {
             case KeyEvent.VK_LEFT:
                 if (view != null) {
                     view.previous();
-                    drawPanel.setSquares(view.getSquares(g));
+                    drawPanel.setGlyphs(view.getGlyphs(g));
                 }
                 break;
             case KeyEvent.VK_RIGHT:
                 if (view != null) {
                     view.next();
-                    drawPanel.setSquares(view.getSquares(g));
+                    drawPanel.setGlyphs(view.getGlyphs(g));
                 }
                 break;
             case KeyEvent.VK_HOME:
                 if (view != null) {
                     view.start();
-                    drawPanel.setSquares(view.getSquares(g));
+                    drawPanel.setGlyphs(view.getGlyphs(g));
                 }
                 break;
             case KeyEvent.VK_END:
                 if (view != null) {
                     view.end();
-                    drawPanel.setSquares(view.getSquares(g));
+                    drawPanel.setGlyphs(view.getGlyphs(g));
                 }
                 break;
             case KeyEvent.VK_SPACE:
@@ -249,7 +249,7 @@ public class GrowingSquares extends JFrame {
 
 
     private static class Menu extends JMenuBar {
-        public Menu(GrowingSquares frame) {
+        public Menu(GrowingGlyphs frame) {
             JMenu fileMenu = new JMenu("File");
             fileMenu.add(new MenuItem("Open", frame::open));
             fileMenu.add(new MenuItem("Save", frame::save));

@@ -1,10 +1,10 @@
 package datastructure.events;
 
 import datastructure.QuadTree;
-import datastructure.Square;
+import datastructure.Glyph;
 
 /**
- * An event occurs while {@link Square squares} stored in a {@link QuadTree} are
+ * An event occurs while {@link Glyph glyphs} stored in a {@link QuadTree} are
  * growing. This interface makes it easy to group all events in a single queue.
  */
 public abstract class Event implements Comparable<Event> {
@@ -14,12 +14,12 @@ public abstract class Event implements Comparable<Event> {
      */
     public enum Type {
         /**
-         * Event type to be used when a square grew to one of the borders of a
+         * Event type to be used when a glyph grew to one of the borders of a
          * cell it is associated with.
          */
         OUT_OF_CELL,
         /**
-         * Event type to be used when two or more squares grew to touch.
+         * Event type to be used when two or more glyphs grew to touch.
          */
         MERGE
     };
@@ -30,9 +30,9 @@ public abstract class Event implements Comparable<Event> {
      */
     protected final double at;
     /**
-     * Square(s) involved in the event.
+     * Glyph(s) involved in the event.
      */
-    protected final Square[] squares;
+    protected final Glyph[] glyphs;
 
 
     /**
@@ -40,9 +40,9 @@ public abstract class Event implements Comparable<Event> {
      *
      * @param at Timestamp/zoom level at which event occurs.
      */
-    public Event(double at, int squareCapacity) {
+    public Event(double at, int glyphCapacity) {
         this.at = at;
-        this.squares = new Square[squareCapacity];
+        this.glyphs = new Glyph[glyphCapacity];
     }
 
     @Override
@@ -59,17 +59,17 @@ public abstract class Event implements Comparable<Event> {
     }
 
     /**
-     * Returns the number of squares involved in this event.
+     * Returns the number of glyphs involved in this event.
      */
     public int getSize() {
-        return squares.length;
+        return glyphs.length;
     }
 
     /**
-     * Returns the square(s) involved in this event.
+     * Returns the glyph(s) involved in this event.
      */
-    public Square[] getSquares() {
-        return squares;
+    public Glyph[] getGlyphs() {
+        return glyphs;
     }
 
     /**
