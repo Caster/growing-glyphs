@@ -1,6 +1,6 @@
 package datastructure;
 
-import java.awt.geom.Rectangle2D;
+import java.awt.Shape;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.PriorityQueue;
@@ -166,8 +166,8 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             return curr.size();
         }
 
-        public Rectangle2D[] getGlyphs(GrowFunction g) {
-            Rectangle2D[] result = new Rectangle2D[curr.size()];
+        public Shape[] getGlyphs(GrowFunction g) {
+            Shape[] result = new Shape[curr.size()];
             int i = 0;
             double maxAt = Double.NEGATIVE_INFINITY;
             if (halfStep) {

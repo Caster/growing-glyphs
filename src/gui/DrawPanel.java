@@ -145,7 +145,7 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
         repaint();
     }
 
-    public void setGlyphs(Rectangle2D[] glyphs) {
+    public void setGlyphs(Shape[] glyphs) {
         this.glyphs = glyphs;
         repaint();
     }

@@ -1,5 +1,6 @@
 package datastructure;
 
+import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -367,10 +368,10 @@ public class QuadTree {
      * This method does not care about {@link QuadTree#MAX_GLYPHS_PER_CELL}.
      *
      * @param glyph The glyph to insert.
-     * @param rect The size of the glyph at this point in time/zooming.
+     * @param shape The size of the glyph at this point in time/zooming.
      */
-    private void insert(Glyph glyph, Rectangle2D rect) {
-        if (cell.createIntersection(rect).isEmpty()) {
+    private void insert(Glyph glyph, Shape shape) {
+        if (!shape.intersects(cell)) {
             return;
         }
         if (isLeaf()) {
@@ -378,7 +379,7 @@ public class QuadTree {
             glyph.addCell(this);
         } else {
             for (QuadTree child : children) {
-                child.insert(glyph, rect);
+                child.insert(glyph, shape);
             }
         }
     }

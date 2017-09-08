@@ -1,10 +1,11 @@
 package datastructure.growfunction;
 
+import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
 
-import datastructure.QuadTree;
 import datastructure.Glyph;
+import datastructure.QuadTree;
 import datastructure.events.OutOfCell.Side;
 
 /**
@@ -61,17 +62,17 @@ public abstract class GrowFunction {
      * @param at Time stamp or zoom level at which size must be computed.
      * @return A rectangle representing the glyph at time/zoom {@code at}.
      */
-    public abstract Rectangle2D sizeAt(Glyph s, double at);
+    public abstract Shape sizeAt(Glyph s, double at);
 
-    public Rectangle2D[] sizesAt(double at, Glyph... glyphs) {
-        Rectangle2D[] result = new Rectangle2D[glyphs.length];
+    public Shape[] sizesAt(double at, Glyph... glyphs) {
+        Shape[] result = new Shape[glyphs.length];
         for (int i = 0; i < glyphs.length; ++i) {
             result[i] = sizeAt(glyphs[i], at);
         }
         return result;
     }
 
-    public Rectangle2D[] sizesAt(double at, List<Glyph> glyphs) {
+    public Shape[] sizesAt(double at, List<Glyph> glyphs) {
         return this.sizesAt(at, glyphs.toArray(new Glyph[0]));
     }
 
