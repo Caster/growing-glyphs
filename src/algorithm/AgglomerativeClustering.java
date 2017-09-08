@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 
-import datastructure.GrowFunction;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
 import datastructure.Square;
@@ -15,6 +14,7 @@ import datastructure.Utils;
 import datastructure.events.Event;
 import datastructure.events.OutOfCell;
 import datastructure.events.OutOfCell.Side;
+import datastructure.growfunction.GrowFunction;
 import datastructure.events.SquareMerge;
 
 public class AgglomerativeClustering {

@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import datastructure.events.OutOfCell.Side;
+import datastructure.growfunction.GrowFunction;
 
 /**
  * A QuadTree implementation that can track growing squares.

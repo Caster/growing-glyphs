@@ -1,8 +1,8 @@
 package datastructure.events;
 
-import datastructure.GrowFunction;
 import datastructure.QuadTree;
 import datastructure.Square;
+import datastructure.growfunction.GrowFunction;
 
 /**
  * @see Type#OUT_OF_CELL

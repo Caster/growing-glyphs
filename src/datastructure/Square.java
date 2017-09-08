@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import datastructure.growfunction.GrowFunction;
+
 /**
  * A square starts as a point and then grows at a given speed.
  */

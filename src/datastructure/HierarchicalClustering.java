@@ -7,6 +7,8 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 
+import datastructure.growfunction.GrowFunction;
+
 public class HierarchicalClustering implements Comparable<HierarchicalClustering> {
 
     private Square square;

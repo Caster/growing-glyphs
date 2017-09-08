@@ -18,10 +18,11 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
 import algorithm.AgglomerativeClustering;
-import datastructure.GrowFunction;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
 import datastructure.Square;
+import datastructure.growfunction.GrowFunction;
+import datastructure.growfunction.LinearlyGrowingSquares;
 import gui.Settings.Setting;
 import io.PointIO;
 
@@ -159,7 +160,7 @@ public class GrowingSquares extends JFrame {
                         + "[height = width]");
             }
         }
-        GrowFunction g = new GrowFunction.Linear();
+        GrowFunction g = new LinearlyGrowingSquares();
         (new GrowingSquares(w, h, g)).setVisible(true);
     }
 
