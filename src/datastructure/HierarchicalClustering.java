@@ -251,10 +251,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
                     prev.add(from);
                 }
             }
-            if (prev.size() > 0 && (prev.peek().createdFrom == null ||
-                    prev.peek().createdFrom.size() > 1)) {
-                halfStep = true;
-            }
+            halfStep = true;
             step();
         }
 
@@ -266,6 +263,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             while (!prev.isEmpty()) {
                 previous();
             }
+            previous(); // undo half step, possibly
         }
 
 
