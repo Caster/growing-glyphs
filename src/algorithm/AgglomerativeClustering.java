@@ -98,6 +98,10 @@ public class AgglomerativeClustering {
                     continue queue;
                 }
             }
+            System.out.println(e.getType() + " at " + e.getAt());
+            for (Glyph glyph : e.getGlyphs()) {
+                System.out.println("  " + glyph);
+            }
             // depending on the type of event, handle it appropriately
             switch (e.getType()) {
             case MERGE:
@@ -121,12 +125,21 @@ public class AgglomerativeClustering {
                 for (QuadTree cell : merged.getCells()) {
                     for (Glyph glyph : cell.getGlyphs()) {
                         if (alive.contains(glyph)) {
-                            q.add(new GlyphMerge(merged, glyph, g));
+                            System.out.println("  CREATING MERGE");
+                            Event asdf;
+                            q.add(asdf = new GlyphMerge(merged, glyph, g));
+                            System.out.println("    " + glyph + " at " + asdf.getAt());
                         }
                     }
                     // create out of cell events
                     for (Side side : Side.values()) {
-                        q.add(new OutOfCell(merged, g, cell, side));
+                        System.out.println("  CREATING OUT_OF_CELL");
+                        System.out.println("    cell = " + cell);
+                        System.out.println("    side = " + side);
+                        System.out.println("    rect = " + cell.getSide(side));
+                        Event asdf;
+                        q.add(asdf = new OutOfCell(merged, g, cell, side));
+                        System.out.println("    at = " + asdf.getAt());
                     }
                 }
                 // update bookkeeping
@@ -134,9 +147,7 @@ public class AgglomerativeClustering {
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;
-                if (!multiMerge) {
-                    continue queue;
-                }
+                System.out.println("CHECK FOR MORE MERGES...");
                 // keep merging while next glyph overlaps before current event
                 Event next = q.peek();
                 Set<Glyph> inMerged = null; // keep track of glyphs that are merged
@@ -155,6 +166,10 @@ public class AgglomerativeClustering {
                             continue merging;
                         }
                     }
+                    System.out.println(e.getType() + " at " + e.getAt());
+                    for (Glyph glyph : e.getGlyphs()) {
+                        System.out.println("  " + glyph);
+                    }
                     switch (e.getType()) {
                     case MERGE:
                         m = (GlyphMerge) e;
@@ -164,6 +179,7 @@ public class AgglomerativeClustering {
                         for (Glyph s : m.getGlyphs()) {
                             if (!wasMerged.contains(s)) {
                                 inMerged.add(s);
+                                // TODO: use multiMerge parameter here
                                 mergedHC.alsoCreatedFrom(map.get(s));
                                 alive.remove(s);
                             }
@@ -171,7 +187,8 @@ public class AgglomerativeClustering {
                         map.remove(merged); // it's as if this glyph never existed
                         // create updated merged glyph
                         merged = new Glyph(inMerged);
-                        mergedHC.setGlyph(merged);
+                        mergedHC.setGlyph(merged); // TODO: use multiMerge parameter here
+                        // TODO: update result to new HC node
                         // add new glyph to QuadTree cell(s)
                         tree.insert(merged, m.getAt(), g);
                         // create events with remaining glyphs
@@ -190,43 +207,59 @@ public class AgglomerativeClustering {
                         map.put(merged, mergedHC);
                         break;
                     case OUT_OF_CELL:
-                        // TODO: implement
+                        handleOutOfCell((OutOfCell) e, map, alive,
+                                includeOutOfCell, q);
                         break;
                     }
                     next = q.peek();
                 }
+                System.out.println("...DONE");
                 break;
             case OUT_OF_CELL:
-                Glyph glyph = e.getGlyphs()[0];
-                if (includeOutOfCell) {
-                    HierarchicalClustering hc = new HierarchicalClustering(glyph,
-                            e.getAt(), map.get(glyph));
-                    map.put(glyph, hc);
-                }
-                OutOfCell o = (OutOfCell) e;
-                // create out of cell events for the cells the glyph grows into
-                Set<QuadTree> neighbors = o.getCell().getNeighbors(o.getSide());
-                for (Side side : o.getSide().opposite().others()) {
-                    // add OutOfCell event when it happens after this one
-                    for (QuadTree neighbor : neighbors) {
-                        double at = g.exitAt(glyph, neighbor, side);
-                        if (at >= o.getAt()) {
-                            q.add(new OutOfCell(glyph, neighbor, side, at));
-                        }
-                    }
-                }
-                // create merge events with the glyphs in the neighbors
-                for (QuadTree neighbor : neighbors) {
-                    for (Glyph otherGlyph : neighbor.getGlyphs()) {
-                        if (alive.contains(otherGlyph)) {
-                            q.add(new GlyphMerge(glyph, otherGlyph, g));
-                        }
-                    }
-                }
+                handleOutOfCell((OutOfCell) e, map, alive, includeOutOfCell, q);
                 break;
             }
         }
         return this;
+    }
+
+
+    private void handleOutOfCell(OutOfCell o, Map<Glyph, HierarchicalClustering> map,
+            Set<Glyph> alive, boolean includeOutOfCell, PriorityQueue<Event> q) {
+        Glyph glyph = o.getGlyphs()[0];
+        if (includeOutOfCell) {
+            HierarchicalClustering hc = new HierarchicalClustering(glyph,
+                    o.getAt(), map.get(glyph));
+            map.put(glyph, hc);
+        }
+        double oAt = o.getAt();
+        // create merge events with the glyphs in the neighbors
+        Set<QuadTree> neighbors = o.getCell().getNeighbors(o.getSide());
+        System.out.println("  growing into");
+        for (QuadTree neighbor : neighbors) {
+            System.out.println("  " + neighbor);
+            for (Glyph otherGlyph : neighbor.getGlyphs()) {
+                if (alive.contains(otherGlyph)) {
+                    Event asdf;
+                    q.add(asdf = new GlyphMerge(glyph, otherGlyph, g));
+                    System.out.println("    merge at " + asdf.getAt() + " with " + otherGlyph);
+                }
+            }
+        }
+        // register square in cell(s) it grows into
+        for (QuadTree neighbor : neighbors) {
+            neighbor.insert(glyph, oAt, g);
+
+            // create out of cell events for the cells the glyph grows into,
+            // but only when they happen after the current event
+            for (Side side : o.getSide().opposite().others()) {
+                double at = g.exitAt(glyph, neighbor, side);
+                if (at >= oAt) {
+                    System.out.println("    -> adding " + side + " event at " + at);
+                    q.add(new OutOfCell(glyph, neighbor, side, at));
+                }
+            }
+        }
     }
 
 }

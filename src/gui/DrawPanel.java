@@ -141,7 +141,10 @@ public class DrawPanel extends JPanel implements
 
     public void resetView() {
         this.translation.setLocation(0, 0);
-        this.zoom = 1.0;
+        this.zoom = Math.max(Math.min(
+                (getWidth() - 2 * PADDING) / tree.getWidth(),
+                (getHeight() - 2 * PADDING) / tree.getHeight()
+            ), MIN_ZOOM);
         repaint();
     }
 

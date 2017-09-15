@@ -6,6 +6,12 @@ import java.util.Map;
 public class Utils {
 
     /**
+     * Epsilon, useful for double comparison.
+     */
+    public static final double EPS = 1e-5;
+
+
+    /**
      * Returns the Chebyshev distance between two points {@code p} and {@code q}.
      */
     public static double chebyshev(double px, double py, double qx, double qy) {
@@ -13,18 +19,37 @@ public class Utils {
     }
 
     /**
-     * Returns the minimum Chebyshev distance between a point and a rectangle.
+     * Returns the minimum Chebyshev distance between a point and any point in
+     * the given rectangle. This will in particular return 0 when the given
+     * point is contained in the rectangle.
      */
     public static double chebyshev(Rectangle2D rect, double px, double py) {
         if (rect.contains(px, py)) {
             return 0;
         }
-        return minNonNeg(
-                rect.getMinX() - px,
-                rect.getMinY() - py,
-                px - rect.getMaxX(),
-                py - rect.getMaxY()
-            );
+        // determine the distance between the point and the point projected
+        // onto the rectangle, or clamped into it, so to say
+        return chebyshev(px, py, clamp(px, rect.getMinX(), rect.getMaxX()),
+                clamp(py, rect.getMinY(), rect.getMaxY()));
+    }
+
+    /**
+     * Clamp a given value to within the given range.
+     *
+     * @param value Value to clamp.
+     * @param min Minimum value to return.
+     * @param max Maximum value to return.
+     * @return The value closest to {@code value} that is within the closed
+     *         interval {@code [min, max]}.
+     */
+    public static double clamp(double value, double min, double max) {
+        if (value < min) {
+            return min;
+        }
+        if (value > max) {
+            return max;
+        }
+        return value;
     }
 
     /**
@@ -54,20 +79,6 @@ public class Utils {
             result[i] = map.get(keys[i]);
         }
         return result;
-    }
-
-    /**
-     * Returns the minimum non negative value amongst a number of double values.
-     * When no doubles are passed, {@link Double#POSITIVE_INFINITY} is returned.
-     */
-    public static double minNonNeg(double... ds) {
-        double min = Double.POSITIVE_INFINITY;
-        for (double d : ds) {
-            if (d < min && d >= 0) {
-                min = d;
-            }
-        }
-        return min;
     }
 
 }

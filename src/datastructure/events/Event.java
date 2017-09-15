@@ -6,6 +6,10 @@ import datastructure.Glyph;
 /**
  * An event occurs while {@link Glyph glyphs} stored in a {@link QuadTree} are
  * growing. This interface makes it easy to group all events in a single queue.
+ *
+ * Note: this class has a natural ordering that is inconsistent with equals.
+ * Events are compared on the time they occur, but different events may occur
+ * at the exact same time.
  */
 public abstract class Event implements Comparable<Event> {
 

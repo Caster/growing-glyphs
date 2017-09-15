@@ -1,6 +1,5 @@
 package datastructure;
 
-import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -175,7 +174,17 @@ public class QuadTree {
      *          this is used to decide which cells {@code glyph} intersects.
      */
     public void insert(Glyph glyph, double at, GrowFunction g) {
-        insert(glyph, g.sizeAt(glyph, at));
+        if (g.intersectAt(glyph, cell) > at + Utils.EPS) {
+            return;
+        }
+        if (isLeaf()) {
+            glyphs.put(glyph, InsertedWhen.BY_ALGORITHM);
+            glyph.addCell(this);
+        } else {
+            for (QuadTree child : children) {
+                child.insert(glyph, at, g);
+            }
+        }
     }
 
     /**
@@ -381,27 +390,6 @@ public class QuadTree {
                 return;
             }
             neighbor.getLeaves(side, cell, result);
-        }
-    }
-
-    /**
-     * Insert a given glyph into all leaf cells of this QuadTree it intersects.
-     * This method does not care about {@link QuadTree#MAX_GLYPHS_PER_CELL}.
-     *
-     * @param glyph The glyph to insert.
-     * @param shape The size of the glyph at this point in time/zooming.
-     */
-    private void insert(Glyph glyph, Shape shape) {
-        if (!shape.intersects(cell)) {
-            return;
-        }
-        if (isLeaf()) {
-            glyphs.put(glyph, InsertedWhen.BY_ALGORITHM);
-            glyph.addCell(this);
-        } else {
-            for (QuadTree child : children) {
-                child.insert(glyph, shape);
-            }
         }
     }
 

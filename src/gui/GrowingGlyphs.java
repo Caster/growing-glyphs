@@ -76,6 +76,7 @@ public class GrowingGlyphs extends JFrame {
         setJMenuBar(new Menu(this));
 
         pack();
+        drawPanel.resetView();
     }
 
     public void randomGlyphs(int n) {
