@@ -9,6 +9,7 @@ import java.util.Set;
 
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
+import datastructure.QuadTree.InsertedWhen;
 import datastructure.Glyph;
 import datastructure.Utils;
 import datastructure.events.Event;
@@ -112,6 +113,9 @@ public class AgglomerativeClustering {
                 // mark merged glyphs as dead
                 for (Glyph glyph : m.getGlyphs()) {
                     alive.remove(glyph);
+                    for (QuadTree cell : glyph.getCells()) {
+                        cell.removeGlyphIf(glyph, InsertedWhen.BY_ALGORITHM);
+                    }
                 }
                 // create events with remaining glyphs
                 for (QuadTree cell : merged.getCells()) {
@@ -119,6 +123,10 @@ public class AgglomerativeClustering {
                         if (alive.contains(glyph)) {
                             q.add(new GlyphMerge(merged, glyph, g));
                         }
+                    }
+                    // create out of cell events
+                    for (Side side : Side.values()) {
+                        q.add(new OutOfCell(merged, g, cell, side));
                     }
                 }
                 // update bookkeeping
@@ -173,6 +181,10 @@ public class AgglomerativeClustering {
                                     q.add(new GlyphMerge(merged, glyph, g));
                                 }
                             }
+                            // create out of cell events
+                            for (Side side : Side.values()) {
+                                q.add(new OutOfCell(merged, g, cell, side));
+                            }
                         }
                         alive.add(merged);
                         map.put(merged, mergedHC);
@@ -185,15 +197,31 @@ public class AgglomerativeClustering {
                 }
                 break;
             case OUT_OF_CELL:
+                Glyph glyph = e.getGlyphs()[0];
                 if (includeOutOfCell) {
-                    Glyph glyph = e.getGlyphs()[0];
                     HierarchicalClustering hc = new HierarchicalClustering(glyph,
                             e.getAt(), map.get(glyph));
                     map.put(glyph, hc);
                 }
                 OutOfCell o = (OutOfCell) e;
+                // create out of cell events for the cells the glyph grows into
+                Set<QuadTree> neighbors = o.getCell().getNeighbors(o.getSide());
                 for (Side side : o.getSide().opposite().others()) {
-                    // TODO add OutOfCell event when at >= o.getAt()
+                    // add OutOfCell event when it happens after this one
+                    for (QuadTree neighbor : neighbors) {
+                        double at = g.exitAt(glyph, neighbor, side);
+                        if (at >= o.getAt()) {
+                            q.add(new OutOfCell(glyph, neighbor, side, at));
+                        }
+                    }
+                }
+                // create merge events with the glyphs in the neighbors
+                for (QuadTree neighbor : neighbors) {
+                    for (Glyph otherGlyph : neighbor.getGlyphs()) {
+                        if (alive.contains(otherGlyph)) {
+                            q.add(new GlyphMerge(glyph, otherGlyph, g));
+                        }
+                    }
                 }
                 break;
             }

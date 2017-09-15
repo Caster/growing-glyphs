@@ -116,6 +116,10 @@ public class QuadTree {
         return this.children;
     }
 
+    public Set<Glyph> getGlyphs() {
+        return glyphs.keySet();
+    }
+
     public double getHeight() {
         return cell.getHeight();
     }
@@ -141,10 +145,6 @@ public class QuadTree {
                 (side == Side.TOP || side == Side.BOTTOM ? cell.getWidth() : 0),
                 (side == Side.RIGHT || side == Side.LEFT ? cell.getHeight() : 0)
             );
-    }
-
-    public Set<Glyph> getGlyphs() {
-        return glyphs.keySet();
     }
 
     public Set<Glyph> getGlyphs(InsertedWhen filter) {
@@ -231,6 +231,27 @@ public class QuadTree {
             }
         }
         return leaves;
+    }
+
+    /**
+     * Remove the given glyph from this cell, if it is associated with it.
+     * This method does <i>not</i> remove the cell from the glyph.
+     *
+     * @param glyph Glyph to be removed.
+     */
+    public void removeGlyph(Glyph glyph) {
+        glyphs.remove(glyph);
+    }
+
+    /**
+     * Like {@link #removeGlyph(Glyph)}, but only if the given glyph was inserted
+     * at the given time. Otherwise, the glyph is not removed and nothing changes.
+     *
+     * @param glyph Glyph to be removed.
+     * @param when Condition under which glyph is removed.
+     */
+    public void removeGlyphIf(Glyph glyph, InsertedWhen when) {
+        glyphs.remove(glyph, when);
     }
 
     /**

@@ -186,6 +186,8 @@ public class GrowingGlyphs extends JFrame {
                             + "Load a new random set of glyphs.<br>"
                         + "<b><code>A</code></b> - "
                             + "Execute clustering algorithm.<br>"
+                        + "<b><code>P</code></b> - "
+                            + "Print current clustering to STDOUT.<br>"
                         + "<b><code>←</code></b> - "
                             + "View previous step of clustering.<br>"
                         + "<b><code>→</code></b> - "
@@ -198,6 +200,9 @@ public class GrowingGlyphs extends JFrame {
                 break;
             case KeyEvent.VK_O:
                 open();
+                break;
+            case KeyEvent.VK_P:
+                System.out.println(clusterer.getClustering());
                 break;
             case KeyEvent.VK_R:
                 try {

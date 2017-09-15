@@ -13,10 +13,12 @@ public class OutOfCell extends Event {
         TOP(0, 1), RIGHT(1, 3), BOTTOM(2, 3), LEFT(0, 2);
 
 
+        private Side[] others;
         private int[] quadrants;
 
 
         private Side(int quadrant1, int quadrant2) {
+            this.others = null;
             this.quadrants = new int[] {quadrant1, quadrant2};
         }
 
@@ -96,14 +98,16 @@ public class OutOfCell extends Event {
         }
 
         public Side[] others() {
-            Side[] result = new Side[3];
-            int i = 0;
-            for (Side that : values()) {
-                if (that != this) {
-                    result[i++] = that;
+            if (others == null) {
+                others = new Side[3];
+                int i = 0;
+                for (Side that : values()) {
+                    if (that != this) {
+                        others[i++] = that;
+                    }
                 }
             }
-            return result;
+            return others;
         }
 
         /**
@@ -119,13 +123,23 @@ public class OutOfCell extends Event {
     }
 
 
+    private QuadTree cell;
     private Side side;
 
 
-    public OutOfCell(Glyph glyph, GrowFunction g, QuadTree cell, Side side) {
-        super(g.exitAt(glyph, cell, side), 1);
+    public OutOfCell(Glyph glyph, QuadTree cell, Side side, double at) {
+        super(at, 1);
         this.glyphs[0] = glyph;
+        this.cell = cell;
         this.side = side;
+    }
+
+    public OutOfCell(Glyph glyph, GrowFunction g, QuadTree cell, Side side) {
+        this(glyph, cell, side, g.exitAt(glyph, cell, side));
+    }
+
+    public QuadTree getCell() {
+        return cell;
     }
 
     public Side getSide() {
