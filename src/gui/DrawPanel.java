@@ -28,7 +28,8 @@ import datastructure.QuadTree.InsertedWhen;
 /**
  * Panel that draws a {@link QuadTree} and the {@link Glyph glyphs} inside of it.
  */
-public class DrawPanel extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
+public class DrawPanel extends JPanel implements
+        MouseListener, MouseMotionListener, MouseWheelListener {
 
     public static final int MARK_RADIUS = 3;
     public static final double MIN_ZOOM = 0.1;
@@ -90,9 +91,8 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
         // transform for panning and zooming
         double w = getWidth();
         double h = getHeight();
-        g2.translate(translation.x, translation.y);
+        g2.translate(translation.x + w / 2, translation.y + h / 2);
         g2.scale(zoom, zoom);
-        g2.translate((w / zoom - w) / 2.0, (h / zoom - h) / 2.0);
 
         // QuadTree
         Queue<QuadTree> toDraw = new ArrayDeque<>();

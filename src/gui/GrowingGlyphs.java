@@ -49,13 +49,17 @@ public class GrowingGlyphs extends JFrame {
     public GrowingGlyphs(int w, int h, GrowFunction g) {
         super("Growing Glyphs");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setResizable(false);
         setLayout(new BorderLayout());
 
         this.g = g;
         this.view = null;
-        this.tree = new QuadTree(DrawPanel.PADDING, DrawPanel.PADDING,
-                w - DrawPanel.PADDING * 2, h - DrawPanel.PADDING * 2, g);
+        this.tree = new QuadTree(
+                DrawPanel.PADDING - w / 2,
+                DrawPanel.PADDING - h / 2,
+                w - DrawPanel.PADDING * 2,
+                h - DrawPanel.PADDING * 2,
+                g
+            );
         this.clusterer = new AgglomerativeClustering(tree, g);
         this.drawPanel = new DrawPanel(tree);
         add(drawPanel, BorderLayout.CENTER);
