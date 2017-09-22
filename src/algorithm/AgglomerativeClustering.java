@@ -135,6 +135,20 @@ public class AgglomerativeClustering {
                     }
                     // create out of cell events
                     for (Side side : Side.values()) {
+                        // only create an event when at least one neighbor on
+                        // this side does not contain the merged glyph yet
+                        boolean create = false;
+                        Set<QuadTree> neighbors = cell.getNeighbors(side);
+                        for (QuadTree neighbor : neighbors) {
+                            if (!neighbor.getGlyphs().contains(merged)) {
+                                create = true;
+                                break;
+                            }
+                        }
+                        if (!create) {
+                            continue;
+                        }
+                        // now, actually create an OUT_OF_CELL event
                         System.out.println("  CREATING OUT_OF_CELL");
                         System.out.println("    cell = " + cell);
                         System.out.println("    side = " + side);
@@ -202,6 +216,20 @@ public class AgglomerativeClustering {
                             }
                             // create out of cell events
                             for (Side side : Side.values()) {
+                                // only create an event when at least one neighbor on
+                                // this side does not contain the merged glyph yet
+                                boolean create = false;
+                                Set<QuadTree> neighbors = cell.getNeighbors(side);
+                                for (QuadTree neighbor : neighbors) {
+                                    if (!neighbor.getGlyphs().contains(merged)) {
+                                        create = true;
+                                        break;
+                                    }
+                                }
+                                if (!create) {
+                                    continue;
+                                }
+                                // now, actually create an OUT_OF_CELL event
                                 q.add(new OutOfCell(merged, g, cell, side));
                             }
                         }
