@@ -7,18 +7,46 @@ import gui.Settings.Setting;
 public class Settings extends HashMap<Setting, Object> {
 
     public enum Setting {
-        DEBUG(Boolean.FALSE);
+        DEBUG("Debug", Boolean.FALSE),
+        STEP("Step through", Boolean.FALSE);
 
         private final Object defaultValue;
+        private final String name;
 
-        private Setting(Object defaultValue) {
+        private Setting(String name, Object defaultValue) {
             this.defaultValue = defaultValue;
+            this.name = name;
         }
+
 
         public Object getDefaultValue() {
             return defaultValue;
         }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
+
+        public static Setting[] booleanSettings() {
+            int count = 0;
+            for (Setting setting : values()) {
+                if (setting.defaultValue instanceof Boolean) {
+                    count++;
+                }
+            }
+            Setting[] result = new Setting[count];
+            count = 0;
+            for (Setting setting : values()) {
+                if (setting.defaultValue instanceof Boolean) {
+                    result[count++] = setting;
+                }
+            }
+            return result;
+        }
     }
+
 
     public Settings() {
         super();

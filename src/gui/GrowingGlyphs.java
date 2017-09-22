@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.util.Random;
 
 import javax.swing.BorderFactory;
@@ -112,12 +113,21 @@ public class GrowingGlyphs extends JFrame {
     private void open(ActionEvent...events) {
         if (getFC().showOpenDialog(GrowingGlyphs.this) ==
                 JFileChooser.APPROVE_OPTION) {
-            tree.clear();
-            PointIO.read(getFC().getSelectedFile(), tree);
-            drawPanel.setGlyphs(null);
-            if (status != null) {
-                status.setText("Loaded '" + getFC().getSelectedFile().getName() + "'.");
-            }
+            openFile(getFC().getSelectedFile());
+        }
+    }
+
+    /**
+     * Read weighted point set from given file and show it in the GUI.
+     *
+     * @param file File to open.
+     */
+    private void openFile(File file) {
+        tree.clear();
+        PointIO.read(file, tree);
+        drawPanel.setGlyphs(null);
+        if (status != null) {
+            status.setText("Loaded '" + file.getName() + "'.");
         }
     }
 
@@ -129,7 +139,7 @@ public class GrowingGlyphs extends JFrame {
     private void run(ActionEvent...events) {
         tree.reset();
         boolean debug = SETTINGS.getBoolean(Setting.DEBUG);
-        clusterer.cluster(!debug, debug);
+        clusterer.cluster(!debug, debug, SETTINGS.getBoolean(Setting.STEP));
         if (clusterer.getClustering() != null) {
             view = new HierarchicalClustering.View(clusterer.getClustering());
             view.next(); // show first step that has actual glyphs
@@ -153,20 +163,38 @@ public class GrowingGlyphs extends JFrame {
     public static void main(String[] args) {
         int w = 600;
         int h = w;
+        File toOpen = null;
         if (args.length > 0) {
             try {
-                h = w = Integer.parseInt(args[0]);
-                if (args.length > 1) {
-                    h = Integer.parseInt(args[1]);
+                int i = 0;
+                // argument for path to open
+                if (args.length > i) {
+                    toOpen = new File(args[i]);
+                    if (toOpen.isFile() && toOpen.canRead()) {
+                        i++;
+                    } else {
+                        toOpen = null;
+                    }
                 }
-            } catch (NumberFormatException nfe) {
+                // arguments for window size
+                if (args.length > i) {
+                    h = w = Integer.parseInt(args[i++]);
+                }
+                if (args.length > i) {
+                    h = Integer.parseInt(args[i++]);
+                }
+            } catch (Exception e) {
                 // ignore, we have a default anyway
-                System.err.println("Usage: java gui.GrowingGlyphs [width = 600] "
-                        + "[height = width]");
+                System.err.println("Usage: java gui.GrowingGlyphs [path to open] "
+                        + "[width = 600] [height = width]");
             }
         }
         GrowFunction g = new LinearlyGrowingSquares();
-        (new GrowingGlyphs(w, h, g)).setVisible(true);
+        GrowingGlyphs gg = new GrowingGlyphs(w, h, g);
+        if (toOpen != null) {
+            gg.openFile(toOpen);
+        }
+        gg.setVisible(true);
     }
 
 
@@ -269,9 +297,11 @@ public class GrowingGlyphs extends JFrame {
             add(fileMenu);
 
             JMenu optionsMenu = new JMenu("Options");
-            optionsMenu.add(new MenuItemCheck("Debug", (ActionEvent e) -> {
-                SETTINGS.toggle(Setting.DEBUG);
-            }));
+            for (Setting setting : Setting.booleanSettings()) {
+                optionsMenu.add(new MenuItemCheck(setting, (ActionEvent e) -> {
+                    SETTINGS.toggle(setting);
+                }));
+            }
             optionsMenu.addSeparator();
             optionsMenu.add(new MenuItem("Cluster", frame::run));
             add(optionsMenu);
@@ -288,8 +318,12 @@ public class GrowingGlyphs extends JFrame {
 
 
     private static class MenuItemCheck extends JCheckBoxMenuItem {
-        public MenuItemCheck(String name, ActionListener onClick) {
-            super(name, SETTINGS.getBoolean(Setting.DEBUG));
+        public MenuItemCheck(Setting setting, ActionListener onClick) {
+            this(setting.toString(), SETTINGS.getBoolean(setting), onClick);
+        }
+
+        public MenuItemCheck(String name, boolean initial, ActionListener onClick) {
+            super(name, initial);
             addActionListener(onClick);
         }
     }

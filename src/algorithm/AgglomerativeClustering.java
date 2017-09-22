@@ -1,5 +1,6 @@
 package algorithm;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,10 +62,11 @@ public class AgglomerativeClustering {
      *            {@link HierarchicalClustering}, or not.
      * @param includeOutOfCell Whether events caused by a glyph growing out of
      *            a cell should be included in the resulting clustering.
+     * @param step Whether processing should be paused after every event.
      * @return A reference to the clustering instance, for chaining.
      */
     public AgglomerativeClustering cluster(boolean multiMerge,
-            boolean includeOutOfCell) {
+            boolean includeOutOfCell, boolean step) {
         // construct a queue, put everything in there
         PriorityQueue<Event> q = new PriorityQueue<>();
         // also create a result for each glyph, and a map to find them
@@ -212,12 +214,26 @@ public class AgglomerativeClustering {
                         break;
                     }
                     next = q.peek();
+                    if (step) {
+                        try {
+                            System.in.read();
+                        } catch (IOException e1) {
+                            // Well, that's weird. #ShouldNeverHappen #FamousLastWords
+                        }
+                    }
                 }
                 System.out.println("...DONE");
                 break;
             case OUT_OF_CELL:
                 handleOutOfCell((OutOfCell) e, map, alive, includeOutOfCell, q);
                 break;
+            }
+            if (step) {
+                try {
+                    System.in.read();
+                } catch (IOException e1) {
+                    // Well, that's weird. #ShouldNeverHappen #FamousLastWords
+                }
             }
         }
         return this;
@@ -227,6 +243,7 @@ public class AgglomerativeClustering {
     private void handleOutOfCell(OutOfCell o, Map<Glyph, HierarchicalClustering> map,
             Set<Glyph> alive, boolean includeOutOfCell, PriorityQueue<Event> q) {
         Glyph glyph = o.getGlyphs()[0];
+        // possibly include the event
         if (includeOutOfCell) {
             HierarchicalClustering hc = new HierarchicalClustering(glyph,
                     o.getAt(), map.get(glyph));
@@ -238,6 +255,10 @@ public class AgglomerativeClustering {
         System.out.println("  growing into");
         for (QuadTree neighbor : neighbors) {
             System.out.println("  " + neighbor);
+            if (neighbor.getGlyphs().contains(glyph)) {
+                System.out.println("    but was already in there, so ignoring");
+                continue;
+            }
             for (Glyph otherGlyph : neighbor.getGlyphs()) {
                 if (alive.contains(otherGlyph)) {
                     Event asdf;
@@ -248,6 +269,10 @@ public class AgglomerativeClustering {
         }
         // register square in cell(s) it grows into
         for (QuadTree neighbor : neighbors) {
+            if (neighbor.getGlyphs().contains(glyph)) {
+                continue;
+            }
+
             neighbor.insert(glyph, oAt, g);
 
             // create out of cell events for the cells the glyph grows into,
