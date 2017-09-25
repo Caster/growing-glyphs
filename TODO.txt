@@ -1,3 +1,0 @@
-  - For glyphs in different cells, two merge events are created when the glyphs
-    grow into each other's cells before touching. Not sure how bad that is. Does
-    not occur often and does not lead to bugs, but may be performance issue...
