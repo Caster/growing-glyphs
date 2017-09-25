@@ -1,0 +1,3 @@
+  - In `input/overlap`, it can be seen that a merged glyph contains other glyphs
+    after being created. Looks like something goes wrong in the continuous
+    merging loop. Investigating...
