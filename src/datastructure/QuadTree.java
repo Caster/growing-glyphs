@@ -316,7 +316,11 @@ public class QuadTree {
 
     @Override
     public String toString() {
-        return getClass().getName() + "[" + cell + "]";
+        return String.format("%s[cell = %.2f x %.2f %s%.2f %s%.2f]",
+                getClass().getName(),
+                cell.getWidth(), cell.getHeight(),
+                (cell.getX() >= 0 ? "+" : ""), cell.getX(),
+                (cell.getY() >= 0 ? "+" : ""), cell.getY());
     }
 
 

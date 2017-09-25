@@ -6,15 +6,22 @@ import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import datastructure.growfunction.GrowFunction;
 
 public class HierarchicalClustering implements Comparable<HierarchicalClustering> {
 
+    private static final Logger LOGGER =
+            Logger.getLogger(HierarchicalClustering.class.getName());
+
+
     private Glyph glyph;
     private final double at;
     private Set<HierarchicalClustering> createdFrom;
     private HierarchicalClustering mergedInto;
+
 
     /**
      * Create a (node of a) hierarchical clustering that represents a glyph and
@@ -129,12 +136,14 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
          * A view can make half steps, wherein the situation right before a merge
          * is shown. This indicates if a half step forward is taken (true) or not.
          */
-        private boolean halfStep = false;
+        private boolean halfStep;
         private boolean countingSteps;
         private int n;
+        private boolean logging;
 
 
         public View(HierarchicalClustering clustering) {
+            this.logging = false;
             if (clustering == null) {
                 throw new NullPointerException();
             }
@@ -151,8 +160,16 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
 
             this.n = 0;
             this.countingSteps = true;
+            this.halfStep = false;
             start();
             this.countingSteps = false;
+
+            // log current state
+            this.logging = true;
+            LOGGER.log(Level.FINE, "initialized {0}", getClass().getName());
+            if (LOGGER.isLoggable(Level.FINE)) {
+                logCurrentState();
+            }
         }
 
         /**
@@ -268,11 +285,44 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
 
 
         /**
+         * Log the current state of the view.
+         */
+        private void logCurrentState() {
+            LOGGER.log(Level.FINE, "current state");
+            LOGGER.log(Level.FINER, "{0}half step", (halfStep ? "" : "no "));
+            LOGGER.log(Level.FINER, "current size: {0}", curr.size());
+            if (prev.size() == 0) {
+                LOGGER.log(Level.FINER, "no prev");
+            } else {
+                LOGGER.log(Level.FINER, "prev ({0}):\n\n{1}",
+                        new Object[] {prev.size(), prev.peek()});
+                for (HierarchicalClustering node : prev) {
+                    LOGGER.log(Level.FINER, "prev node {0} at {1}",
+                            new Object[] {node.getGlyph(), node.getAt()});
+                }
+            }
+            if (next.size() == 0) {
+                LOGGER.log(Level.FINER, "no next");
+            } else {
+                LOGGER.log(Level.FINER, "next ({0}):\n\n{1}",
+                        new Object[] {next.size(), next.peek()});
+                for (HierarchicalClustering node : next) {
+                    LOGGER.log(Level.FINER, "next node {0} at {1}",
+                            new Object[] {node.getGlyph(), node.getAt()});
+                }
+            }
+        }
+
+        /**
          * Count a step, when counting is enabled.
+         * Log the state, when logging is enabled.
          */
         private void step() {
             if (countingSteps) {
                 n++;
+            }
+            if (logging && LOGGER.isLoggable(Level.FINE)) {
+                logCurrentState();
             }
         }
 

@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
@@ -14,12 +16,17 @@ import datastructure.QuadTree.InsertedWhen;
 import datastructure.Glyph;
 import datastructure.Utils;
 import datastructure.events.Event;
+import datastructure.events.Event.Type;
 import datastructure.events.OutOfCell;
 import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
 import datastructure.events.GlyphMerge;
 
 public class AgglomerativeClustering {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(AgglomerativeClustering.class.getName());
+
 
     /**
      * Tree with {@link Glyph glyphs} that need clustering.
@@ -67,6 +74,7 @@ public class AgglomerativeClustering {
      */
     public AgglomerativeClustering cluster(boolean multiMerge,
             boolean includeOutOfCell, boolean step) {
+        LOGGER.log(Level.FINE, "ENTRY into AgglomerativeClustering#cluster()");
         // construct a queue, put everything in there
         PriorityQueue<Event> q = new PriorityQueue<>();
         // also create a result for each glyph, and a map to find them
@@ -91,6 +99,8 @@ public class AgglomerativeClustering {
                 alive.add(glyphs[i]);
             }
         }
+        LOGGER.log(Level.FINE, "created {0} events initially, for {1} glyphs",
+                new Object[] {q.size(), alive.size()});
         // merge glyphs until no pairs to merge remain
         queue: while (!q.isEmpty() && alive.size() > 1) {
             Event e = q.poll();
@@ -100,9 +110,10 @@ public class AgglomerativeClustering {
                     continue queue;
                 }
             }
-            System.out.println(e.getType() + " at " + e.getAt());
+            LOGGER.log(Level.FINE, "handling {0} at {1} involving",
+                    new Object[] {e.getType(), e.getAt()});
             for (Glyph glyph : e.getGlyphs()) {
-                System.out.println("  " + glyph);
+                LOGGER.log(Level.FINER, "{0}", glyph);
             }
             // depending on the type of event, handle it appropriately
             switch (e.getType()) {
@@ -127,10 +138,10 @@ public class AgglomerativeClustering {
                 for (QuadTree cell : merged.getCells()) {
                     for (Glyph glyph : cell.getGlyphs()) {
                         if (alive.contains(glyph)) {
-                            System.out.println("  CREATING MERGE");
-                            Event asdf;
-                            q.add(asdf = new GlyphMerge(merged, glyph, g));
-                            System.out.println("    " + glyph + " at " + asdf.getAt());
+                            LOGGER.log(Level.FINER, "CREATING MERGE");
+                            Event gme;
+                            q.add(gme = new GlyphMerge(merged, glyph, g));
+                            LOGGER.log(Level.FINEST, "{0} at {1}", new Object[] {glyph, gme.getAt()});
                         }
                     }
                     // create out of cell events
@@ -149,13 +160,13 @@ public class AgglomerativeClustering {
                             continue;
                         }
                         // now, actually create an OUT_OF_CELL event
-                        System.out.println("  CREATING OUT_OF_CELL");
-                        System.out.println("    cell = " + cell);
-                        System.out.println("    side = " + side);
-                        System.out.println("    rect = " + cell.getSide(side));
-                        Event asdf;
-                        q.add(asdf = new OutOfCell(merged, g, cell, side));
-                        System.out.println("    at = " + asdf.getAt());
+                        LOGGER.log(Level.FINER, "CREATING OUT_OF_CELL");
+                        LOGGER.log(Level.FINEST, "cell = {0}", cell);
+                        LOGGER.log(Level.FINEST, "side = {0}", side);
+                        LOGGER.log(Level.FINEST, "rect = {0}", cell.getSide(side));
+                        Event ooe;
+                        q.add(ooe = new OutOfCell(merged, g, cell, side));
+                        LOGGER.log(Level.FINEST, "at = {0}", ooe.getAt());
                     }
                 }
                 // update bookkeeping
@@ -163,7 +174,7 @@ public class AgglomerativeClustering {
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;
-                System.out.println("CHECK FOR MORE MERGES...");
+                LOGGER.log(Level.FINE, "CHECK FOR MORE MERGES...");
                 // keep merging while next glyph overlaps before current event
                 Event next = q.peek();
                 Set<Glyph> inMerged = null; // keep track of glyphs that are merged
@@ -182,9 +193,10 @@ public class AgglomerativeClustering {
                             continue merging;
                         }
                     }
-                    System.out.println(e.getType() + " at " + e.getAt());
+                    LOGGER.log(Level.FINER, "handling {0} at {1} involving",
+                            new Object[] {e.getType(), e.getAt()});
                     for (Glyph glyph : e.getGlyphs()) {
-                        System.out.println("  " + glyph);
+                        LOGGER.log(Level.FINEST, "{0}", glyph);
                     }
                     switch (e.getType()) {
                     case MERGE:
@@ -250,7 +262,7 @@ public class AgglomerativeClustering {
                         }
                     }
                 }
-                System.out.println("...DONE");
+                LOGGER.log(Level.FINE, "...DONE");
                 break;
             case OUT_OF_CELL:
                 handleOutOfCell((OutOfCell) e, map, alive, includeOutOfCell, q);
@@ -264,6 +276,7 @@ public class AgglomerativeClustering {
                 }
             }
         }
+        LOGGER.log(Level.FINE, "RETURN from AgglomerativeClustering#cluster()");
         return this;
     }
 
@@ -280,18 +293,19 @@ public class AgglomerativeClustering {
         double oAt = o.getAt();
         // create merge events with the glyphs in the neighbors
         Set<QuadTree> neighbors = o.getCell().getNeighbors(o.getSide());
-        System.out.println("  growing into");
+        LOGGER.log(Level.FINER, "growing into");
         for (QuadTree neighbor : neighbors) {
-            System.out.println("  " + neighbor);
+            LOGGER.log(Level.FINEST, "{0}", neighbor);
             if (neighbor.getGlyphs().contains(glyph)) {
-                System.out.println("    but was already in there, so ignoring");
+                LOGGER.log(Level.FINEST, "-> but was already in there, so ignoring");
                 continue;
             }
             for (Glyph otherGlyph : neighbor.getGlyphs()) {
                 if (alive.contains(otherGlyph)) {
-                    Event asdf;
-                    q.add(asdf = new GlyphMerge(glyph, otherGlyph, g));
-                    System.out.println("    merge at " + asdf.getAt() + " with " + otherGlyph);
+                    Event gme;
+                    q.add(gme = new GlyphMerge(glyph, otherGlyph, g));
+                    LOGGER.log(Level.FINEST, "merge at {0} with {1}",
+                            new Object[] {gme.getAt(), otherGlyph});
                 }
             }
         }
@@ -308,7 +322,8 @@ public class AgglomerativeClustering {
             for (Side side : o.getSide().opposite().others()) {
                 double at = g.exitAt(glyph, neighbor, side);
                 if (at >= oAt) {
-                    System.out.println("    -> adding " + side + " event at " + at);
+                    LOGGER.log(Level.FINEST, "-> adding {0} {1} event at {2}",
+                            new Object[] {side, Type.OUT_OF_CELL, at});
                     q.add(new OutOfCell(glyph, neighbor, side, at));
                 }
             }
