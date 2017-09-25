@@ -24,7 +24,9 @@ public abstract class GrowFunction {
      * @return Zoom level at which {@code glyph} touches {@code side} side of
      *         {@code cell}.
      */
-    public abstract double exitAt(Glyph glyph, QuadTree cell, Side side);
+    public double exitAt(Glyph glyph, QuadTree cell, Side side) {
+        return intersectAt(cell.getSide(side), glyph);
+    }
 
     /**
      * Returns at which zoom level two glyphs will touch. Both glyphs are

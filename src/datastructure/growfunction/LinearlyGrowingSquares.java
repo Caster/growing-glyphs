@@ -2,10 +2,8 @@ package datastructure.growfunction;
 
 import java.awt.geom.Rectangle2D;
 
-import datastructure.QuadTree;
 import datastructure.Glyph;
 import datastructure.Utils;
-import datastructure.events.OutOfCell.Side;
 
 /**
  * A simple {@link GrowFunction} that scales {@link Glyph squares} linearly.
@@ -14,11 +12,6 @@ import datastructure.events.OutOfCell.Side;
  * is the number of entities represented by the square.
  */
 public class LinearlyGrowingSquares extends GrowFunction {
-
-        @Override
-        public double exitAt(Glyph square, QuadTree cell, Side side) {
-            return intersectAt(cell.getSide(side), square);
-        }
 
         @Override
         public double intersectAt(Glyph a, Glyph b) {
@@ -33,11 +26,11 @@ public class LinearlyGrowingSquares extends GrowFunction {
         }
 
         @Override
-        public Rectangle2D sizeAt(Glyph square, double at) {
-            int n = square.getN();
+        public Rectangle2D sizeAt(Glyph glyph, double at) {
+            int n = glyph.getN();
             return new Rectangle2D.Double(
-                    square.getX() - at * n,
-                    square.getY() - at * n,
+                    glyph.getX() - at * n,
+                    glyph.getY() - at * n,
                     2 * at * n, 2 * at * n
                 );
         }

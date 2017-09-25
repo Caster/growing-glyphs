@@ -295,7 +295,7 @@ public class AgglomerativeClustering {
                 }
             }
         }
-        // register square in cell(s) it grows into
+        // register glyph in cell(s) it grows into
         for (QuadTree neighbor : neighbors) {
             if (neighbor.getGlyphs().contains(glyph)) {
                 continue;
