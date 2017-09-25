@@ -2,6 +2,7 @@ package datastructure;
 
 import java.awt.Shape;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -147,17 +148,31 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             if (clustering == null) {
                 throw new NullPointerException();
             }
+
+            // create set of current nodes
             this.curr = new HashSet<>();
             this.curr.add(clustering);
-            this.prev = new PriorityQueue<>();
+
+            // create queue for previous nodes
+            // this code has a reversed ordering, as the events that happened last
+            // should be undone first, when going back
+            this.prev = new PriorityQueue<>(new Comparator<HierarchicalClustering>() {
+                @Override
+                public int compare(HierarchicalClustering o1, HierarchicalClustering o2) {
+                    return o2.compareTo(o1);
+                }
+            });
             if (clustering.createdFrom != null) {
                 this.prev.add(clustering);
             }
+
+            // create queue for next nodes
             this.next = new PriorityQueue<>();
             if (clustering.mergedInto != null) {
                 this.next.add(clustering.mergedInto);
             }
 
+            // keep undoing merges until we are at the start of the clustering
             this.n = 0;
             this.countingSteps = true;
             this.halfStep = false;
