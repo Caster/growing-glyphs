@@ -6,7 +6,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.util.Random;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBoxMenuItem;
@@ -19,6 +18,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
 import algorithm.AgglomerativeClustering;
+import algorithm.glyphgenerator.GlyphGenerator;
+import algorithm.glyphgenerator.Perlin;
+import algorithm.glyphgenerator.UniformRandom;
 import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
@@ -32,6 +34,9 @@ import io.PointIO;
  */
 public class GrowingGlyphs extends JFrame {
 
+    public static final GlyphGenerator[] GENERATORS = new GlyphGenerator[] {
+            new UniformRandom(), new Perlin()
+        };
     public static final Settings SETTINGS = new Settings();
     public static final int NUM_POINTS_INITIALLY = 6;
 
@@ -39,7 +44,6 @@ public class GrowingGlyphs extends JFrame {
     private AgglomerativeClustering clusterer;
     private GrowFunction g;
     private QuadTree tree;
-    private Random r;
     private HierarchicalClustering.View view;
 
     private DrawPanel drawPanel;
@@ -65,8 +69,7 @@ public class GrowingGlyphs extends JFrame {
         this.drawPanel = new DrawPanel(tree, this);
         add(drawPanel, BorderLayout.CENTER);
 
-        this.r = new Random();
-        randomGlyphs(NUM_POINTS_INITIALLY);
+        randomGlyphs(NUM_POINTS_INITIALLY, GENERATORS[0]);
 
         addKeyListener(new KeyListener());
         add(status = new JLabel("Ready. Press 'h' for help."), BorderLayout.SOUTH);
@@ -80,15 +83,12 @@ public class GrowingGlyphs extends JFrame {
         drawPanel.resetView();
     }
 
-    public void randomGlyphs(int n) {
+    public void randomGlyphs(int n, GlyphGenerator gen) {
         tree.clear();
         Glyph[] glyphs = new Glyph[n];
+        gen.init(n, tree.getRectangle());
         for (int i = 0; i < n; ++i) {
-            glyphs[i] = new Glyph(
-                    r.nextDouble() * tree.getWidth() + tree.getX(),
-                    r.nextDouble() * tree.getHeight() + tree.getY(),
-                    r.nextInt(10) + 1
-                );
+            glyphs[i] = gen.next();
             tree.insertCenterOf(glyphs[i]);
         }
         drawPanel.setGlyphs(null);
@@ -136,6 +136,24 @@ public class GrowingGlyphs extends JFrame {
     }
 
     /**
+     * Ask user for number of points to generate, then do so using the given
+     * glyph generator.
+     *
+     * @param generatorIndex Index in {@link #GENERATORS}.
+     */
+    private void random(int generatorIndex) {
+        try {
+            randomGlyphs(Integer.parseInt(
+                    JOptionPane.showInputDialog(GrowingGlyphs.this,
+                            "How many points?",
+                            NUM_POINTS_INITIALLY)), GENERATORS[generatorIndex]);
+        } catch (NumberFormatException nfe) {
+            // Silly user, not typing integers when they should be.
+            // We ignore them. That'll teach them. Maybe.
+        }
+    }
+
+    /**
      * Execute clustering algorithm.
      *
      * @param events Ignored.
@@ -165,7 +183,7 @@ public class GrowingGlyphs extends JFrame {
 
 
     public static void main(String[] args) {
-        int w = 600;
+        int w = 512 + DrawPanel.PADDING * 2;
         int h = w;
         File toOpen = null;
         if (args.length > 0) {
@@ -190,7 +208,7 @@ public class GrowingGlyphs extends JFrame {
             } catch (Exception e) {
                 // ignore, we have a default anyway
                 System.err.println("Usage: java gui.GrowingGlyphs [path to open] "
-                        + "[width = 600] [height = width]");
+                        + "[width = " + h + "] [height = width]");
             }
         }
         GrowFunction g = new LinearlyGrowingSquares();
@@ -242,15 +260,7 @@ public class GrowingGlyphs extends JFrame {
                 System.out.println(clusterer.getClustering());
                 break;
             case KeyEvent.VK_R:
-                try {
-                    randomGlyphs(Integer.parseInt(
-                            JOptionPane.showInputDialog(GrowingGlyphs.this,
-                                    "How many points?",
-                                    NUM_POINTS_INITIALLY)));
-                } catch (NumberFormatException nfe) {
-                    // Silly user, not typing integers when they should be.
-                    // We ignore them. That'll teach them. Maybe.
-                }
+                random(0);
                 break;
             case KeyEvent.VK_S:
                 save();
@@ -309,6 +319,15 @@ public class GrowingGlyphs extends JFrame {
             optionsMenu.addSeparator();
             optionsMenu.add(new MenuItem("Cluster", frame::run));
             add(optionsMenu);
+
+            JMenu genMenu = new JMenu("Generate");
+            for (int i = 0; i < GENERATORS.length; ++i) {
+                final int ind = i;
+                genMenu.add(new MenuItem(GENERATORS[i].getName(), (ActionEvent e) -> {
+                    frame.random(ind);
+                }));
+            }
+            add(genMenu);
         }
     }
 
