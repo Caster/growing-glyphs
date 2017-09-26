@@ -371,20 +371,21 @@ public class QuadTree {
         if (range != null) {
             // reduce checking overlap to a 1D problem, as the given range and
             // this cell are extended to infinity in one dimension
-            double minR, maxR, minC, maxC;
+            double[] r = new double[2];
+            double[] c = new double[2];
             if (side == Side.TOP || side == Side.BOTTOM) {
-                minR = range.getMinX();
-                maxR = range.getMaxX();
-                minC = cell.getMinX();
-                maxC = cell.getMaxX();
+                r[0] = range.getMinX();
+                r[1] = range.getMaxX();
+                c[0] = cell.getMinX();
+                c[1] = cell.getMaxX();
             } else {
-                minR = range.getMinY();
-                maxR = range.getMaxY();
-                minC = cell.getMinY();
-                maxC = cell.getMaxY();
+                r[0] = range.getMinY();
+                r[1] = range.getMaxY();
+                c[0] = cell.getMinY();
+                c[1] = cell.getMaxY();
             }
             // in case there is no overlap, return
-            if (!(maxC >= minR && maxR >= minC)) {
+            if (!Utils.openIntervalsOverlap(r, c)) {
                 return;
             }
         }
@@ -418,7 +419,7 @@ public class QuadTree {
             if (neighbor == null) {
                 return;
             }
-            neighbor.getLeaves(side, cell, result);
+            neighbor.getLeaves(side.opposite(), cell, result);
         }
     }
 

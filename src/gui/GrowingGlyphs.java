@@ -19,9 +19,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
 import algorithm.AgglomerativeClustering;
+import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
-import datastructure.Glyph;
 import datastructure.growfunction.GrowFunction;
 import datastructure.growfunction.LinearlyGrowingSquares;
 import gui.Settings.Setting;

@@ -72,6 +72,8 @@ public class Utils {
     /**
      * Given two intervals [min, max], return whether they overlap. This method
      * uses at most two comparisons and no branching.
+     *
+     * @see {@link #openIntervalsOverlap(double[], double[])
      */
     public static boolean intervalsOverlap(double[] a, double[] b) {
         return (a[1] >= b[0] && a[0] <= b[1]);
@@ -108,6 +110,16 @@ public class Utils {
                 (side.getY() == rect.getMinY() || side.getY() == rect.getMaxY()) &&
                 side.getMinX() >= rect.getMinX() && side.getMaxX() <= rect.getMaxX())
         );
+    }
+
+    /**
+     * Given two intervals (min, max), return whether they overlap. This method
+     * uses at most two comparisons and no branching.
+     *
+     * @see {@link #intervalsOverlap(double[], double[])
+     */
+    public static boolean openIntervalsOverlap(double[] a, double[] b) {
+        return (a[1] > b[0] && a[0] < b[1]);
     }
 
 

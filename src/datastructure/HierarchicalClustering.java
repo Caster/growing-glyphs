@@ -109,7 +109,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
         if (createdFrom == null) {
             sb.append("\n");
         } else {
-            sb.append(" from \n");
+            sb.append(String.format(" from (%d)\n", createdFrom.size()));
             for (HierarchicalClustering hc : createdFrom) {
                 sb.append(hc.toString(moreIndent));
             }
