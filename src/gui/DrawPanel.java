@@ -227,7 +227,7 @@ public class DrawPanel extends JPanel implements
                 }
                 // add to status when a point is found
                 if (closest != null) {
-                    extra = String.format(", closest glyph at [%.2f, %.2f]",
+                    extra = String.format(", highlighted glyph at [%.2f, %.2f]",
                         closest.getX(), closest.getY());
                 }
             } else if (highlightedGlyph != null) {
