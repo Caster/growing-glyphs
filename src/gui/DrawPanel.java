@@ -107,7 +107,7 @@ public class DrawPanel extends JPanel implements
         // transform for panning and zooming
         g2.translate(translation.x + getWidth() / 2,
                 translation.y + getHeight() / 2);
-        g2.scale(zoom, -zoom);
+        g2.scale(zoom, zoom);
 
         // QuadTree
         Queue<QuadTree> toDraw = new ArrayDeque<>();
@@ -198,7 +198,7 @@ public class DrawPanel extends JPanel implements
             // find coordinate in view space
             p.setLocation(
                     (p.getX() - translation.x - getWidth() / 2) / zoom,
-                    -(p.getY() - translation.y - getHeight() / 2) / zoom
+                    (p.getY() - translation.y - getHeight() / 2) / zoom
                 );
             // find closest glyph
             QuadTree leaf = tree.findLeafAt(p.getX(), p.getY());

@@ -81,4 +81,22 @@ public class Utils {
         return result;
     }
 
+    /**
+     * Given a zero-width or zero-height rectangle, return if that line segment
+     * is on the border of the given rectangle.
+     *
+     * @param side Line segment to consider.
+     * @param rect Rectangle to consider.
+     */
+    public static boolean onBorderOf(Rectangle2D side, Rectangle2D rect) {
+        return (
+            (side.getWidth() == 0 &&
+                (side.getX() == rect.getMinX() || side.getX() == rect.getMaxX()) &&
+                side.getMinY() >= rect.getMinY() && side.getMaxY() <= rect.getMaxY()) ||
+            (side.getHeight() == 0 &&
+                (side.getY() == rect.getMinY() || side.getY() == rect.getMaxY()) &&
+                side.getMinX() >= rect.getMinX() && side.getMaxX() <= rect.getMaxX())
+        );
+    }
+
 }

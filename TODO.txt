@@ -1,5 +1,0 @@
-  - In `input/overlap`, it can be seen that a merged glyph contains other glyphs
-    after being created. Looks like something goes wrong in the continuous
-    merging loop. Investigating...
-  - Optimization: do not add OUT_OF_CELL event when the border to add it for is
-    on the border of the root QuadTree cell. Growing into the void is okay.
