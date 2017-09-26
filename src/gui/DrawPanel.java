@@ -18,13 +18,16 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Queue;
+import java.util.Set;
 
 import javax.swing.JPanel;
 
 import datastructure.Glyph;
 import datastructure.QuadTree;
 import datastructure.QuadTree.InsertedWhen;
+import datastructure.events.OutOfCell.Side;
 import gui.Settings.Setting;
 
 /**
@@ -104,7 +107,7 @@ public class DrawPanel extends JPanel implements
         // transform for panning and zooming
         g2.translate(translation.x + getWidth() / 2,
                 translation.y + getHeight() / 2);
-        g2.scale(zoom, zoom);
+        g2.scale(zoom, -zoom);
 
         // QuadTree
         Queue<QuadTree> toDraw = new ArrayDeque<>();
@@ -194,8 +197,8 @@ public class DrawPanel extends JPanel implements
             Point p = e.getPoint();
             // find coordinate in view space
             p.setLocation(
-                    p.getX() / zoom - translation.x - getWidth() / 2,
-                    p.getY() / zoom - translation.y - getHeight() / 2
+                    (p.getX() - translation.x - getWidth() / 2) / zoom,
+                    -(p.getY() - translation.y - getHeight() / 2) / zoom
                 );
             // find closest glyph
             QuadTree leaf = tree.findLeafAt(p.getX(), p.getY());
@@ -203,12 +206,19 @@ public class DrawPanel extends JPanel implements
             if (leaf != null) {
                 Glyph closest = null;
                 double minDist = Double.MAX_VALUE;
-                // TODO: this doesn't actually find the nearest neighbor
-                for (Glyph glyph : leaf.getGlyphs(InsertedWhen.INITIALLY)) {
-                    double d;
-                    if ((d = p.distanceSq(glyph.getX(), glyph.getY())) < minDist) {
-                        minDist = d;
-                        closest = glyph;
+                // also search neighboring cells of leaf, nearest point may be there
+                Set<QuadTree> nodes = new HashSet<>();
+                nodes.add(leaf);
+                for (Side side : Side.values()) {
+                    nodes.addAll(leaf.getNeighbors(side));
+                }
+                for (QuadTree node : nodes) {
+                    for (Glyph glyph : node.getGlyphs(InsertedWhen.INITIALLY)) {
+                        double d;
+                        if ((d = p.distanceSq(glyph.getX(), glyph.getY())) < minDist) {
+                            minDist = d;
+                            closest = glyph;
+                        }
                     }
                 }
                 if (closest != highlightedGlyph) {
