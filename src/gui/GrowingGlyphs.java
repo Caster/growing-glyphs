@@ -62,7 +62,7 @@ public class GrowingGlyphs extends JFrame {
                 g
             );
         this.clusterer = new AgglomerativeClustering(tree, g);
-        this.drawPanel = new DrawPanel(tree);
+        this.drawPanel = new DrawPanel(tree, this);
         add(drawPanel, BorderLayout.CENTER);
 
         this.r = new Random();
@@ -95,6 +95,10 @@ public class GrowingGlyphs extends JFrame {
         if (status != null) {
             status.setText("Loaded new random set of " + n + " glyphs.");
         }
+    }
+
+    public void setStatusText(String text) {
+        status.setText(text);
     }
 
 

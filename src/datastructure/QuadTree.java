@@ -111,6 +111,31 @@ public class QuadTree {
         this.glyphs.clear();
     }
 
+    /**
+     * Return the leaf cell in this QuadTree that contains the given point. In
+     * case the point lies outside of this QuadTree, {@code null} is returned.
+     *
+     * @param x X-coordinate of query point.
+     * @param y Y-coordinate of query point.
+     */
+    public QuadTree findLeafAt(double x, double y) {
+        if (!cell.contains(x, y)) {
+            return null;
+        }
+        // already a match?
+        if (isLeaf()) {
+            return this;
+        }
+        // find correct child
+        QuadTree result;
+        for (QuadTree child : children) {
+            if ((result = child.findLeafAt(x, y)) != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
     public QuadTree[] getChildren() {
         return this.children;
     }

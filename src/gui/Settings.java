@@ -8,6 +8,7 @@ public class Settings extends HashMap<Setting, Object> {
 
     public enum Setting {
         DEBUG("Debug", Boolean.FALSE),
+        SHOW_COORDS("Show coordinates on mouse over", Boolean.TRUE),
         STEP("Step through", Boolean.FALSE);
 
         private final Object defaultValue;

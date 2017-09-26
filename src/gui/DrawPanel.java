@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.MouseEvent;
@@ -24,6 +25,7 @@ import javax.swing.JPanel;
 import datastructure.Glyph;
 import datastructure.QuadTree;
 import datastructure.QuadTree.InsertedWhen;
+import gui.Settings.Setting;
 
 /**
  * Panel that draws a {@link QuadTree} and the {@link Glyph glyphs} inside of it.
@@ -37,6 +39,10 @@ public class DrawPanel extends JPanel implements
 
 
     /**
+     * Parent frame.
+     */
+    private GrowingGlyphs parent;
+    /**
      * QuadTree that is shown.
      */
     private QuadTree tree;
@@ -44,6 +50,11 @@ public class DrawPanel extends JPanel implements
      * Glyphs that are shown on top of the QuadTree.
      */
     private Shape[] glyphs;
+    /**
+     * Glyph that is to be highlighted. Can be {@code null} when no glyph is
+     * highlighted at the moment.
+     */
+    private Glyph highlightedGlyph;
     /**
      * Point where mouse started dragging. {@code null} when no drag is occurring.
      */
@@ -58,9 +69,11 @@ public class DrawPanel extends JPanel implements
     private double zoom;
 
 
-    public DrawPanel(QuadTree tree) {
+    public DrawPanel(QuadTree tree, GrowingGlyphs parent) {
+        this.parent = parent;
         this.tree = tree;
         this.glyphs = null;
+        this.highlightedGlyph = null;
         this.dragStart = null;
         this.translation = new Point2D.Double();
         resetView();
@@ -85,13 +98,12 @@ public class DrawPanel extends JPanel implements
         g2.setStroke(new BasicStroke((float) (2 / zoom)));
 
         // background
-        g.setColor(Color.WHITE);
-        g.fillRect(0, 0, getWidth(), getHeight());
+        g2.setColor(Color.WHITE);
+        g2.fillRect(0, 0, getWidth(), getHeight());
 
         // transform for panning and zooming
-        double w = getWidth();
-        double h = getHeight();
-        g2.translate(translation.x + w / 2, translation.y + h / 2);
+        g2.translate(translation.x + getWidth() / 2,
+                translation.y + getHeight() / 2);
         g2.scale(zoom, zoom);
 
         // QuadTree
@@ -99,7 +111,7 @@ public class DrawPanel extends JPanel implements
         toDraw.add(tree);
         double r = MARK_RADIUS / zoom;
         while (!toDraw.isEmpty()) {
-            g.setColor(Color.GRAY);
+            g2.setColor(Color.GRAY);
             QuadTree cell = toDraw.poll();
             if (cell.isRoot()) {
                 g2.draw(cell.getRectangle());
@@ -118,8 +130,8 @@ public class DrawPanel extends JPanel implements
                         cell.getY() + cell.getHeight() / 2
                     ));
             }
-            g.setColor(Color.BLACK);
             for (Glyph s : cell.getGlyphs(InsertedWhen.INITIALLY)) {
+                g2.setColor(s == highlightedGlyph ? Color.RED : Color.BLACK);
                 g2.fill(new Rectangle2D.Double(
                         s.getX() - r,
                         s.getY() - r,
@@ -133,6 +145,7 @@ public class DrawPanel extends JPanel implements
 
         // glyphs
         if (glyphs != null) {
+            g2.setColor(Color.BLACK);
             for (Shape glyph : glyphs) {
                 g2.draw(glyph);
             }
@@ -176,7 +189,43 @@ public class DrawPanel extends JPanel implements
 
 
     @Override
-    public void mouseMoved(MouseEvent e) {}
+    public void mouseMoved(MouseEvent e) {
+        if (GrowingGlyphs.SETTINGS.getBoolean(Setting.SHOW_COORDS)) {
+            Point p = e.getPoint();
+            // find coordinate in view space
+            p.setLocation(
+                    p.getX() / zoom - translation.x - getWidth() / 2,
+                    p.getY() / zoom - translation.y - getHeight() / 2
+                );
+            // find closest glyph
+            QuadTree leaf = tree.findLeafAt(p.getX(), p.getY());
+            String extra = "";
+            if (leaf != null) {
+                Glyph closest = null;
+                double minDist = Double.MAX_VALUE;
+                // TODO: this doesn't actually find the nearest neighbor
+                for (Glyph glyph : leaf.getGlyphs(InsertedWhen.INITIALLY)) {
+                    double d;
+                    if ((d = p.distanceSq(glyph.getX(), glyph.getY())) < minDist) {
+                        minDist = d;
+                        closest = glyph;
+                    }
+                }
+                if (closest != highlightedGlyph) {
+                    highlightedGlyph = closest;
+                    repaint();
+                }
+                // add to status when a point is found
+                if (closest != null) {
+                    extra = String.format(", closest glyph at [%.2f, %.2f]",
+                        closest.getX(), closest.getY());
+                }
+            }
+            // update status
+            parent.setStatusText(String.format(
+                "Cursor at [%.0f, %.0f]%s", p.getX(), p.getY(), extra));
+        }
+    }
 
 
     @Override
