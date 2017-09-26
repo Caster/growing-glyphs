@@ -1,6 +1,9 @@
 package datastructure.events;
 
 import datastructure.QuadTree;
+
+import java.awt.geom.Rectangle2D;
+
 import datastructure.Glyph;
 import datastructure.growfunction.GrowFunction;
 
@@ -22,6 +25,21 @@ public class OutOfCell extends Event {
             this.quadrants = new int[] {quadrant1, quadrant2};
         }
 
+
+        /**
+         * Given a rectangle and a side, return an interval capturing the given
+         * side of the rectangle. For example, the TOP side of a rectangle is
+         * characterized by its minimum and maximum X-coordinates.
+         *
+         * @param rect Rectangle to consider.
+         * @param side Side to take of {@code rect}.
+         */
+        public static double[] interval(Rectangle2D rect, Side side) {
+            if (side == TOP || side == Side.BOTTOM) {
+                return new double[] {rect.getMinX(), rect.getMaxX()};
+            }
+            return new double[] {rect.getMinY(), rect.getMaxY()};
+        }
 
         /**
          * Given a quadrant, for example TOP + LEFT, return the two neighboring

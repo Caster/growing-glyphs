@@ -57,7 +57,7 @@ public abstract class GrowFunction {
     }
 
     /**
-     * Returns a rectangle representing the glyph at the given time stamp/zoom
+     * Returns a shape representing the glyph at the given time stamp/zoom
      * level, according to this grow function.
      *
      * @param s glyph to compute the size of.

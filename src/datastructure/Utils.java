@@ -67,6 +67,14 @@ public class Utils {
     }
 
     /**
+     * Given two intervals [min, max], return whether they overlap. This method
+     * uses at most two comparisons and no branching.
+     */
+    public static boolean intervalsOverlap(double[] a, double[] b) {
+        return (a[1] >= b[0] && a[0] <= b[1]);
+    }
+
+    /**
      * Given an array of keys and a map, return an array with all values in the
      * same order as the keys in the input array were.
      *

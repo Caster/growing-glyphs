@@ -77,7 +77,7 @@ public class AgglomerativeClustering {
             boolean includeOutOfCell, boolean step) {
         LOGGER.log(Level.FINE, "ENTRY into AgglomerativeClustering#cluster()");
         // construct a queue, put everything in there
-        PriorityQueue<Event> q = new PriorityQueue<>();
+        Q q = new Q();
         // also create a result for each glyph, and a map to find them
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
         // finally, create an indication of which glyphs still participate
@@ -109,13 +109,15 @@ public class AgglomerativeClustering {
                 new Object[] {q.size(), alive.size()});
         // merge glyphs until no pairs to merge remain
         queue: while (!q.isEmpty() && alive.size() > 1) {
-            Event e = q.poll();
+            Event e = q.peek();
             // we ignore this event if not all glyphs from it are alive anymore
             for (Glyph glyph : e.getGlyphs()) {
                 if (!alive.contains(glyph)) {
+                    q.discard();
                     continue queue;
                 }
             }
+            e = q.poll();
             LOGGER.log(Level.FINE, "handling {0} at {1} involving",
                     new Object[] {e.getType(), e.getAt()});
             for (Glyph glyph : e.getGlyphs()) {
@@ -188,10 +190,11 @@ public class AgglomerativeClustering {
                     wasMerged = new HashSet<>(m.getSize());
                 }
                 merging: while (next != null && next.getAt() < mergedAt) {
-                    e = q.poll();
+                    e = q.peek();
                     // we ignore this event if not all glyphs from it are alive anymore
                     for (Glyph glyph : e.getGlyphs()) {
                         if (!alive.contains(glyph)) {
+                            q.discard();
                             step(step);
                             next = q.peek();
                             continue merging;
@@ -203,6 +206,7 @@ public class AgglomerativeClustering {
                         break;
                     }
                     // otherwise, handle the nested merge, or OUT_OF_CELL
+                    e = q.poll();
                     LOGGER.log(Level.FINER, "handling {0} at {1} involving",
                             new Object[] {e.getType(), e.getAt()});
                     for (Glyph glyph : e.getGlyphs()) {
@@ -281,6 +285,8 @@ public class AgglomerativeClustering {
             step(step);
         }
         LOGGER.log(Level.FINE, "RETURN from AgglomerativeClustering#cluster()");
+        LOGGER.log(Level.INFO, "created {0} events, handled {1} and discarded {2}; {3} events were never considered",
+                new Object[] {q.insertions, q.deletions, q.discarded, q.insertions - q.deletions - q.discarded});
         return this;
     }
 
@@ -295,12 +301,20 @@ public class AgglomerativeClustering {
             map.put(glyph, hc);
         }
         double oAt = o.getAt();
+        Side oppositeSide = o.getSide().opposite();
         // create merge events with the glyphs in the neighbors
-        // TODO: should take size of glyph at that point in time into account
+        // we take the size of the glyph at that point in time into account
+        double[] sideInterval = Side.interval(g.sizeAt(glyph, oAt).getBounds2D(), o.getSide());
+        LOGGER.log(Level.FINER, "size at border is {0}", Arrays.toString(sideInterval));
         Set<QuadTree> neighbors = o.getCell().getNeighbors(o.getSide());
         LOGGER.log(Level.FINER, "growing into");
         for (QuadTree neighbor : neighbors) {
             LOGGER.log(Level.FINEST, "{0}", neighbor);
+            if (!Utils.intervalsOverlap(Side.interval(
+                    neighbor.getSide(oppositeSide), oppositeSide), sideInterval)) {
+                LOGGER.log(Level.FINEST, "-> but not at this point in time, so ignoring");
+                continue;
+            }
             if (neighbor.getGlyphs().contains(glyph)) {
                 LOGGER.log(Level.FINEST, "-> but was already in there, so ignoring");
                 continue;
@@ -363,6 +377,36 @@ public class AgglomerativeClustering {
                 // Well, that's weird. #ShouldNeverHappen #FamousLastWords
             }
         }
+    }
+
+
+    /**
+     * {@link PriorityQueue} that keeps track of the number of insertions and
+     * deletions into/from it. Can be asked for these stats too.
+     */
+    private static class Q extends PriorityQueue<Event> {
+
+        private int insertions = 0;
+        private int deletions = 0;
+        private int discarded = 0;
+
+        @Override
+        public boolean add(Event e) {
+            insertions++;
+            return super.add(e);
+        }
+
+        public void discard() {
+            discarded++;
+            super.poll();
+        }
+
+        @Override
+        public Event poll() {
+            deletions++;
+            return super.poll();
+        }
+
     }
 
 }
