@@ -3,6 +3,9 @@ package datastructure;
 import java.awt.geom.Rectangle2D;
 import java.util.Map;
 
+/**
+ * A collection of static utility functions.
+ */
 public class Utils {
 
     /**
@@ -105,6 +108,30 @@ public class Utils {
                 (side.getY() == rect.getMinY() || side.getY() == rect.getMaxY()) &&
                 side.getMinX() >= rect.getMinX() && side.getMaxX() <= rect.getMaxX())
         );
+    }
+
+
+    /**
+     * Static utility functions related to double precision arithmetic.
+     */
+    public static class Double {
+
+        /**
+         * Returns whether two double values are equal, up to a difference
+         * of {@link Utils#EPS}. This accounts for inaccuracies.
+         */
+        public static boolean eq(double a, double b) {
+            return (Math.abs(a - b) <= Utils.EPS);
+        }
+
+        /**
+         * Returns whether two double values are equal, meaning their
+         * difference is greater than {@link Utils#EPS}.
+         */
+        public static boolean neq(double a, double b) {
+            return !eq(a, b);
+        }
+
     }
 
 }

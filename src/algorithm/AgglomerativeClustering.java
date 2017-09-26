@@ -295,7 +295,8 @@ public class AgglomerativeClustering {
             Set<Glyph> alive, boolean includeOutOfCell, PriorityQueue<Event> q) {
         Glyph glyph = o.getGlyphs()[0];
         // possibly include the event
-        if (includeOutOfCell) {
+        if (includeOutOfCell &&
+                Utils.Double.neq(map.get(glyph).getAt(), o.getAt())) {
             HierarchicalClustering hc = new HierarchicalClustering(glyph,
                     o.getAt(), map.get(glyph));
             map.put(glyph, hc);
