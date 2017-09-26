@@ -220,6 +220,9 @@ public class DrawPanel extends JPanel implements
                     extra = String.format(", closest glyph at [%.2f, %.2f]",
                         closest.getX(), closest.getY());
                 }
+            } else if (highlightedGlyph != null) {
+                highlightedGlyph = null;
+                repaint();
             }
             // update status
             parent.setStatusText(String.format(
