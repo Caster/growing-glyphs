@@ -26,6 +26,7 @@ public class Settings extends HashMap<Setting, Object> {
         DRAW_CELLS(SettingSection.DRAW, "Draw cells", Boolean.TRUE, true),
         DRAW_CENTERS(SettingSection.DRAW, "Draw glyph centers", Boolean.TRUE, true),
         DRAW_GLYPHS(SettingSection.DRAW, "Draw glyph outlines", Boolean.TRUE, true),
+        DRAW_MAP(SettingSection.DRAW, "Draw map in background", Boolean.FALSE, true),
         SHOW_COORDS(SettingSection.MISC, "Show coordinates on mouse over", Boolean.TRUE),
         STEP(SettingSection.ALGORITHM, "Step through", Boolean.FALSE);
 

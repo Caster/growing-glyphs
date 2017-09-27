@@ -13,9 +13,12 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -50,6 +53,10 @@ public class DrawPanel extends JPanel implements
      */
     private QuadTree tree;
     /**
+     * Cache for map tiles.
+     */
+    private TileImageCache cache;
+    /**
      * Glyphs that are shown on top of the QuadTree.
      */
     private Shape[] glyphs;
@@ -75,6 +82,7 @@ public class DrawPanel extends JPanel implements
     public DrawPanel(QuadTree tree, GrowingGlyphs parent) {
         this.parent = parent;
         this.tree = tree;
+        this.cache = new TileImageCache();
         this.glyphs = null;
         this.highlightedGlyph = null;
         this.dragStart = null;
@@ -98,6 +106,8 @@ public class DrawPanel extends JPanel implements
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g2.setStroke(new BasicStroke((float) (2 / zoom)));
 
         // background
@@ -108,6 +118,49 @@ public class DrawPanel extends JPanel implements
         g2.translate(translation.x + getWidth() / 2,
                 translation.y + getHeight() / 2);
         g2.scale(zoom, zoom);
+
+        // map in background
+        if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_MAP)) {
+            int z = (int) Math.max(0, Math.floor(Math.log(zoom + 1) / Math.log(2)));
+            int l = 1 << z;
+            // determine viewport in viewspace coordinates
+            Rectangle2D.Double viewport = new Rectangle2D.Double();
+            Point2D p = new Point2D.Double();
+            toViewSpace(p);
+            viewport.x = p.getX();
+            viewport.y = p.getY();
+            p.setLocation(getWidth(), getHeight());
+            toViewSpace(p);
+            viewport.width = p.getX() - viewport.x;
+            viewport.height = p.getY() - viewport.y;
+            // work with copy of tree bbox, scale to correct size, translate in loop
+            Rectangle2D rect = tree.getRectangle();
+            double rx = rect.getX(); // save coords of root top left coordinate
+            double ry = rect.getY();
+            double rw = rect.getWidth();
+            double s = rw / l; // assumes square bbox
+            // find approximate range of tiles to iterate
+            int xMin = Math.max(0, (int) Math.floor(l * (viewport.x - rx) / rw));
+            int xMax = Math.min(l, (int) Math.ceil(l * (viewport.getMaxX() - rx) / rw));
+            int yMin = Math.max(0, (int) Math.floor(l * (viewport.y - ry) / rw));
+            int yMax = Math.min(l, (int) Math.ceil(l * (viewport.getMaxY() - ry) / rw));
+            // now draw all tiles in the correct locations
+            AffineTransform t = new AffineTransform();
+            for (int x = xMin; x < xMax; ++x) {
+                for (int y = yMin; y < yMax; ++y) {
+                    t.setToIdentity();
+                    t.translate(rx + x * s, ry + y * s);
+                    t.scale(s / 512, s / 512);
+                    try {
+                        BufferedImage tile = cache.get(x, y, z);
+                        g2.drawImage(tile, t, null);
+                    } catch (IOException e) {
+                        // well, then we don't draw the image
+                        continue;
+                    }
+                }
+            }
+        }
 
         // QuadTree
         if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CELLS) ||
@@ -180,6 +233,17 @@ public class DrawPanel extends JPanel implements
         repaint();
     }
 
+    /**
+     * Update location of a point in screen space to its projected location in
+     * view space. Useful for mouse events and determining viewport.
+     */
+    public void toViewSpace(Point2D p) {
+        p.setLocation(
+                (p.getX() - translation.x - getWidth() / 2) / zoom,
+                (p.getY() - translation.y - getHeight() / 2) / zoom
+            );
+    }
+
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
@@ -206,11 +270,7 @@ public class DrawPanel extends JPanel implements
     public void mouseMoved(MouseEvent e) {
         if (GrowingGlyphs.SETTINGS.getBoolean(Setting.SHOW_COORDS)) {
             Point p = e.getPoint();
-            // find coordinate in view space
-            p.setLocation(
-                    (p.getX() - translation.x - getWidth() / 2) / zoom,
-                    (p.getY() - translation.y - getHeight() / 2) / zoom
-                );
+            toViewSpace(p);
             // find closest glyph
             QuadTree leaf = tree.findLeafAt(p.getX(), p.getY());
             String extra = "";
