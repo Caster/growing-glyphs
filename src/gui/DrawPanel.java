@@ -247,11 +247,26 @@ public class DrawPanel extends JPanel implements
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        zoom -= e.getPreciseWheelRotation() / 10;
+        double oldZoom = zoom;
+        // update zoom level
+        //zoom -= e.getPreciseWheelRotation() / 10;
+        int r = e.getWheelRotation();
+        boolean zoomIn = (r < 0);
+        double factor = (zoomIn ? 1.1 : 1 / 1.1);
+        zoom *= Math.pow(factor, Math.abs(r));
+        // enforce minimum zoom level
         if (zoom < MIN_ZOOM) {
             zoom = MIN_ZOOM;
         }
-        repaint();
+        // update translation to keep point under cursor the same, repaint
+        if (oldZoom != zoom) {
+            Point p = e.getPoint();
+            toViewSpace(p);
+            double change = zoom - oldZoom;
+            translation.x -= change * p.getX();
+            translation.y -= change * p.getY();
+            repaint();
+        }
     }
 
 
