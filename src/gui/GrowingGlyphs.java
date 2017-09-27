@@ -30,6 +30,7 @@ import datastructure.growfunction.GrowFunction;
 import datastructure.growfunction.LinearlyGrowingSquares;
 import gui.Settings.Setting;
 import gui.Settings.SettingSection;
+import io.CsvIO;
 import io.PointIO;
 
 /**
@@ -131,7 +132,11 @@ public class GrowingGlyphs extends JFrame {
      */
     private void openFile(File file) {
         tree.clear();
-        PointIO.read(file, tree);
+        if (file.getName().endsWith(".csv") || file.getName().endsWith(".tsv")) {
+            CsvIO.read(file, tree);
+        } else {
+            PointIO.read(file, tree);
+        }
         drawPanel.setGlyphs(null);
         if (status != null) {
             status.setText("Loaded '" + file.getName() + "'.");
