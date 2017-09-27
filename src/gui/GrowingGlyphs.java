@@ -16,6 +16,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import algorithm.AgglomerativeClustering;
 import algorithm.glyphgenerator.GlyphGenerator;
@@ -160,14 +161,21 @@ public class GrowingGlyphs extends JFrame {
      * @param events Ignored.
      */
     private void run(ActionEvent...events) {
-        tree.reset();
-        boolean debug = SETTINGS.getBoolean(Setting.DEBUG);
-        clusterer.cluster(!debug, debug, SETTINGS.getBoolean(Setting.STEP));
-        if (clusterer.getClustering() != null) {
-            view = new HierarchicalClustering.View(clusterer.getClustering());
-            view.next(); // show first step that has actual glyphs
-            drawPanel.setGlyphs(view.getGlyphs(g));
-        }
+        status.setText("Clustering...");
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                tree.reset();
+                boolean debug = SETTINGS.getBoolean(Setting.DEBUG);
+                clusterer.cluster(!debug, debug, SETTINGS.getBoolean(Setting.STEP));
+                if (clusterer.getClustering() != null) {
+                    view = new HierarchicalClustering.View(clusterer.getClustering());
+                    view.next(); // show first step that has actual glyphs
+                    drawPanel.setGlyphs(view.getGlyphs(g));
+                }
+                status.setText("Clustering... done!");
+            }
+        });
     }
 
     /**
