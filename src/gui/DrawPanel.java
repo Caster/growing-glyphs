@@ -110,44 +110,55 @@ public class DrawPanel extends JPanel implements
         g2.scale(zoom, zoom);
 
         // QuadTree
-        Queue<QuadTree> toDraw = new ArrayDeque<>();
-        toDraw.add(tree);
-        double r = MARK_RADIUS / zoom;
-        while (!toDraw.isEmpty()) {
-            g2.setColor(Color.GRAY);
-            QuadTree cell = toDraw.poll();
-            if (cell.isRoot()) {
-                g2.draw(cell.getRectangle());
-            }
-            if (!cell.isLeaf()) {
-                g2.draw(new Line2D.Double(
-                        cell.getX() + cell.getWidth() / 2,
-                        cell.getY(),
-                        cell.getX() + cell.getWidth() / 2,
-                        cell.getY() + cell.getHeight()
-                    ));
-                g2.draw(new Line2D.Double(
-                        cell.getX(),
-                        cell.getY() + cell.getHeight() / 2,
-                        cell.getX() + cell.getWidth(),
-                        cell.getY() + cell.getHeight() / 2
-                    ));
-            }
-            for (Glyph s : cell.getGlyphs(InsertedWhen.INITIALLY)) {
-                g2.setColor(s == highlightedGlyph ? Color.RED : Color.BLACK);
-                g2.fill(new Rectangle2D.Double(
-                        s.getX() - r,
-                        s.getY() - r,
-                        r * 2, r * 2
-                    ));
-            }
-            if (!cell.isLeaf()) {
-                toDraw.addAll(Arrays.asList(cell.getChildren()));
+        if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CELLS) ||
+                GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CENTERS)) {
+            Queue<QuadTree> toDraw = new ArrayDeque<>();
+            toDraw.add(tree);
+            double r = MARK_RADIUS / zoom;
+            while (!toDraw.isEmpty()) {
+                QuadTree cell = toDraw.poll();
+                // cell outlines
+                if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CELLS)) {
+                    g2.setColor(Color.GRAY);
+                    if (cell.isRoot()) {
+                        g2.draw(cell.getRectangle());
+                    }
+                    if (!cell.isLeaf()) {
+                        g2.draw(new Line2D.Double(
+                                cell.getX() + cell.getWidth() / 2,
+                                cell.getY(),
+                                cell.getX() + cell.getWidth() / 2,
+                                cell.getY() + cell.getHeight()
+                            ));
+                        g2.draw(new Line2D.Double(
+                                cell.getX(),
+                                cell.getY() + cell.getHeight() / 2,
+                                cell.getX() + cell.getWidth(),
+                                cell.getY() + cell.getHeight() / 2
+                            ));
+                    }
+                }
+                // glyphs in cells (only the centers!)
+                if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CENTERS)) {
+                    for (Glyph s : cell.getGlyphs(InsertedWhen.INITIALLY)) {
+                        g2.setColor(s == highlightedGlyph ? Color.RED : Color.BLACK);
+                        g2.fill(new Rectangle2D.Double(
+                                s.getX() - r,
+                                s.getY() - r,
+                                r * 2, r * 2
+                            ));
+                    }
+                }
+                // recursively draw children
+                if (!cell.isLeaf()) {
+                    toDraw.addAll(Arrays.asList(cell.getChildren()));
+                }
             }
         }
 
-        // glyphs
-        if (glyphs != null) {
+        // glyphs (actual shapes)
+        if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_GLYPHS) &&
+                glyphs != null) {
             g2.setColor(Color.BLACK);
             for (Shape glyph : glyphs) {
                 g2.draw(glyph);

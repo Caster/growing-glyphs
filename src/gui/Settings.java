@@ -8,15 +8,24 @@ public class Settings extends HashMap<Setting, Object> {
 
     public enum Setting {
         DEBUG("Debug", Boolean.FALSE),
+        DRAW_CELLS("Draw cells", Boolean.TRUE, true),
+        DRAW_CENTERS("Draw glyph centers", Boolean.TRUE, true),
+        DRAW_GLYPHS("Draw glyph outlines", Boolean.TRUE, true),
         SHOW_COORDS("Show coordinates on mouse over", Boolean.TRUE),
         STEP("Step through", Boolean.FALSE);
 
         private final Object defaultValue;
         private final String name;
+        private final boolean triggersRepaint;
 
         private Setting(String name, Object defaultValue) {
+            this(name, defaultValue, false);
+        }
+
+        private Setting(String name, Object defaultValue, boolean triggersRepaint) {
             this.defaultValue = defaultValue;
             this.name = name;
+            this.triggersRepaint = triggersRepaint;
         }
 
 
@@ -27,6 +36,10 @@ public class Settings extends HashMap<Setting, Object> {
         @Override
         public String toString() {
             return name;
+        }
+
+        public boolean triggersRepaint() {
+            return triggersRepaint;
         }
 
 

@@ -323,6 +323,9 @@ public class GrowingGlyphs extends JFrame {
             for (Setting setting : Setting.booleanSettings()) {
                 optionsMenu.add(new MenuItemCheck(setting, (ActionEvent e) -> {
                     SETTINGS.toggle(setting);
+                    if (setting.triggersRepaint()) {
+                        frame.repaint();
+                    }
                 }));
             }
             optionsMenu.addSeparator();
