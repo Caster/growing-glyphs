@@ -6,31 +6,53 @@ import gui.Settings.Setting;
 
 public class Settings extends HashMap<Setting, Object> {
 
+    public enum SettingSection {
+        ALGORITHM("Algorithm options"), DRAW("Draw options"), MISC("Miscellaneous");
+
+        private final String name;
+
+        private SettingSection(String name) {
+            this.name= name;
+        }
+
+
+        public String getName() {
+            return name;
+        }
+    }
+
     public enum Setting {
-        DEBUG("Debug", Boolean.FALSE),
-        DRAW_CELLS("Draw cells", Boolean.TRUE, true),
-        DRAW_CENTERS("Draw glyph centers", Boolean.TRUE, true),
-        DRAW_GLYPHS("Draw glyph outlines", Boolean.TRUE, true),
-        SHOW_COORDS("Show coordinates on mouse over", Boolean.TRUE),
-        STEP("Step through", Boolean.FALSE);
+        DEBUG(SettingSection.ALGORITHM, "Debug", Boolean.FALSE),
+        DRAW_CELLS(SettingSection.DRAW, "Draw cells", Boolean.TRUE, true),
+        DRAW_CENTERS(SettingSection.DRAW, "Draw glyph centers", Boolean.TRUE, true),
+        DRAW_GLYPHS(SettingSection.DRAW, "Draw glyph outlines", Boolean.TRUE, true),
+        SHOW_COORDS(SettingSection.MISC, "Show coordinates on mouse over", Boolean.TRUE),
+        STEP(SettingSection.ALGORITHM, "Step through", Boolean.FALSE);
 
         private final Object defaultValue;
         private final String name;
+        private final SettingSection section;
         private final boolean triggersRepaint;
 
-        private Setting(String name, Object defaultValue) {
-            this(name, defaultValue, false);
+        private Setting(SettingSection section, String name, Object defaultValue) {
+            this(section, name, defaultValue, false);
         }
 
-        private Setting(String name, Object defaultValue, boolean triggersRepaint) {
+        private Setting(SettingSection section, String name, Object defaultValue,
+                boolean triggersRepaint) {
             this.defaultValue = defaultValue;
             this.name = name;
+            this.section = section;
             this.triggersRepaint = triggersRepaint;
         }
 
 
         public Object getDefaultValue() {
             return defaultValue;
+        }
+
+        public SettingSection getSection() {
+            return section;
         }
 
         @Override
@@ -43,22 +65,25 @@ public class Settings extends HashMap<Setting, Object> {
         }
 
 
-        public static Setting[] booleanSettings() {
+        public static Setting[] booleanSettings(SettingSection filter) {
             int count = 0;
             for (Setting setting : values()) {
-                if (setting.defaultValue instanceof Boolean) {
+                if ((filter == null || setting.section == filter) &&
+                        setting.defaultValue instanceof Boolean) {
                     count++;
                 }
             }
             Setting[] result = new Setting[count];
             count = 0;
             for (Setting setting : values()) {
-                if (setting.defaultValue instanceof Boolean) {
+                if ((filter == null || setting.section == filter) &&
+                        setting.defaultValue instanceof Boolean) {
                     result[count++] = setting;
                 }
             }
             return result;
         }
+
     }
 
 

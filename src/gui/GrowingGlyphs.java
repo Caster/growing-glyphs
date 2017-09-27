@@ -29,6 +29,7 @@ import datastructure.QuadTree;
 import datastructure.growfunction.GrowFunction;
 import datastructure.growfunction.LinearlyGrowingSquares;
 import gui.Settings.Setting;
+import gui.Settings.SettingSection;
 import io.PointIO;
 
 /**
@@ -320,13 +321,24 @@ public class GrowingGlyphs extends JFrame {
             add(fileMenu);
 
             JMenu optionsMenu = new JMenu("Options");
-            for (Setting setting : Setting.booleanSettings()) {
-                optionsMenu.add(new MenuItemCheck(setting, (ActionEvent e) -> {
-                    SETTINGS.toggle(setting);
-                    if (setting.triggersRepaint()) {
-                        frame.repaint();
-                    }
-                }));
+            for (SettingSection section : SettingSection.values()) {
+                JMenu subOptionsMenu;
+                if (section == SettingSection.MISC) {
+                    subOptionsMenu = optionsMenu;
+                } else {
+                    subOptionsMenu = new JMenu(section.getName());
+                }
+                for (Setting setting : Setting.booleanSettings(section)) {
+                    subOptionsMenu.add(new MenuItemCheck(setting, (ActionEvent e) -> {
+                        SETTINGS.toggle(setting);
+                        if (setting.triggersRepaint()) {
+                            frame.repaint();
+                        }
+                    }));
+                }
+                if (section != SettingSection.MISC) {
+                    optionsMenu.add(subOptionsMenu);
+                }
             }
             optionsMenu.addSeparator();
             optionsMenu.add(new MenuItem("Cluster", frame::run));
