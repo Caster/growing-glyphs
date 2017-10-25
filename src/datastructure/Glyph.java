@@ -13,6 +13,11 @@ import datastructure.growfunction.GrowFunction;
 public class Glyph {
 
     /**
+     * Used by clustering algorithm to track which glyphs are still of interest.
+     */
+    public boolean alive;
+
+    /**
      * X-coordinate of the center of the glyph.
      */
     private double x;

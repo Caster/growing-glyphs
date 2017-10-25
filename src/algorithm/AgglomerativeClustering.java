@@ -83,7 +83,7 @@ public class AgglomerativeClustering {
         // also create a result for each glyph, and a map to find them
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
         // finally, create an indication of which glyphs still participate
-        Set<Glyph> alive = new HashSet<>();
+        int numAlive = 0;
         Rectangle2D rect = tree.getRectangle();
         for (QuadTree leaf : tree.leaves()) {
             Glyph[] glyphs = leaf.getGlyphs().toArray(new Glyph[0]);
@@ -104,17 +104,17 @@ public class AgglomerativeClustering {
 
                 // create clustering leaves for all glyphs, mark them as alive
                 map.put(glyphs[i], new HierarchicalClustering(glyphs[i], 0));
-                alive.add(glyphs[i]);
+                glyphs[i].alive = true; numAlive++;
             }
         }
         LOGGER.log(Level.FINE, "created {0} events initially, for {1} glyphs",
-                new Object[] {q.size(), alive.size()});
+                new Object[] {q.size(), numAlive});
         // merge glyphs until no pairs to merge remain
-        queue: while (!q.isEmpty() && alive.size() > 1) {
+        queue: while (!q.isEmpty() && numAlive > 1) {
             Event e = q.peek();
             // we ignore this event if not all glyphs from it are alive anymore
             for (Glyph glyph : e.getGlyphs()) {
-                if (!alive.contains(glyph)) {
+                if (!glyph.alive) {
                     q.discard();
                     continue queue;
                 }
@@ -139,7 +139,7 @@ public class AgglomerativeClustering {
                 tree.insert(merged, mergedAt, g);
                 // mark merged glyphs as dead
                 for (Glyph glyph : m.getGlyphs()) {
-                    alive.remove(glyph);
+                    glyph.alive = false; numAlive--;
                     for (QuadTree cell : glyph.getCells()) {
                         cell.removeGlyphIf(glyph, InsertedWhen.BY_ALGORITHM);
                     }
@@ -147,7 +147,7 @@ public class AgglomerativeClustering {
                 // create events with remaining glyphs
                 for (QuadTree cell : merged.getCells()) {
                     for (Glyph glyph : cell.getGlyphs()) {
-                        if (alive.contains(glyph)) {
+                        if (glyph.alive) {
                             Event gme;
                             q.add(gme = new GlyphMerge(merged, glyph, g));
                             LOGGER.log(Level.FINEST, "-> merge at {0} with {1}",
@@ -177,7 +177,7 @@ public class AgglomerativeClustering {
                     }
                 }
                 // update bookkeeping
-                alive.add(merged);
+                merged.alive = true; numAlive++;
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;
@@ -195,7 +195,7 @@ public class AgglomerativeClustering {
                     e = q.peek();
                     // we ignore this event if not all glyphs from it are alive anymore
                     for (Glyph glyph : e.getGlyphs()) {
-                        if (!alive.contains(glyph)) {
+                        if (!glyph.alive) {
                             q.discard();
                             step(step);
                             next = q.peek();
@@ -219,13 +219,13 @@ public class AgglomerativeClustering {
                         m = (GlyphMerge) e;
                         // previous merged glyph was no good, let it die and update
                         wasMerged.add(merged);
-                        alive.remove(merged);
+                        merged.alive = false; numAlive--;
                         for (Glyph s : m.getGlyphs()) {
                             if (!wasMerged.contains(s)) {
                                 inMerged.add(s);
                                 // TODO: use multiMerge parameter here
                                 mergedHC.alsoCreatedFrom(map.get(s));
-                                alive.remove(s);
+                                s.alive = false; numAlive--;
                             }
                         }
                         map.remove(merged); // it's as if this glyph never existed
@@ -238,7 +238,7 @@ public class AgglomerativeClustering {
                         // create events with remaining glyphs
                         for (QuadTree cell : merged.getCells()) {
                             for (Glyph glyph : cell.getGlyphs()) {
-                                if (alive.contains(glyph)) {
+                                if (glyph.alive) {
                                     Event gme;
                                     q.add(gme = new GlyphMerge(merged, glyph, g));
                                     LOGGER.log(Level.FINEST, "-> merge at {0} with {1}",
@@ -267,11 +267,11 @@ public class AgglomerativeClustering {
                                         new Object[] {side, ooe.getAt(), cell});
                             }
                         }
-                        alive.add(merged);
+                        merged.alive = true; numAlive++;
                         map.put(merged, mergedHC);
                         break;
                     case OUT_OF_CELL:
-                        handleOutOfCell((OutOfCell) e, map, alive,
+                        handleOutOfCell((OutOfCell) e, map,
                                 includeOutOfCell, q);
                         break;
                     }
@@ -281,7 +281,7 @@ public class AgglomerativeClustering {
                 LOGGER.log(Level.FINE, "...DONE");
                 break;
             case OUT_OF_CELL:
-                handleOutOfCell((OutOfCell) e, map, alive, includeOutOfCell, q);
+                handleOutOfCell((OutOfCell) e, map, includeOutOfCell, q);
                 break;
             }
             step(step);
@@ -295,7 +295,7 @@ public class AgglomerativeClustering {
 
 
     private void handleOutOfCell(OutOfCell o, Map<Glyph, HierarchicalClustering> map,
-            Set<Glyph> alive, boolean includeOutOfCell, PriorityQueue<Event> q) {
+            boolean includeOutOfCell, PriorityQueue<Event> q) {
         Glyph glyph = o.getGlyphs()[0];
         // possibly include the event
         if (includeOutOfCell &&
@@ -324,7 +324,7 @@ public class AgglomerativeClustering {
                 continue;
             }
             for (Glyph otherGlyph : neighbor.getGlyphs()) {
-                if (alive.contains(otherGlyph)) {
+                if (otherGlyph.alive) {
                     Event gme;
                     q.add(gme = new GlyphMerge(glyph, otherGlyph, g));
                     LOGGER.log(Level.FINEST, "-> merge at {0} with {1}",
