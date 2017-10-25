@@ -53,7 +53,8 @@ public class AgglomerativeClustering {
     }
 
     /**
-     * Returns the result of the algorithm. Initially {@code null}.
+     * Returns the latest result of executing the clustering algorithm. Initially
+     * {@code null}.
      *
      * @see #cluster()
      */
@@ -76,6 +77,7 @@ public class AgglomerativeClustering {
     public AgglomerativeClustering cluster(boolean multiMerge,
             boolean includeOutOfCell, boolean step) {
         LOGGER.log(Level.FINE, "ENTRY into AgglomerativeClustering#cluster()");
+        long time = System.currentTimeMillis();
         // construct a queue, put everything in there
         Q q = new Q();
         // also create a result for each glyph, and a map to find them
@@ -287,6 +289,7 @@ public class AgglomerativeClustering {
         LOGGER.log(Level.FINE, "RETURN from AgglomerativeClustering#cluster()");
         LOGGER.log(Level.INFO, "created {0} events, handled {1} and discarded {2}; {3} events were never considered",
                 new Object[] {q.insertions, q.deletions, q.discarded, q.insertions - q.deletions - q.discarded});
+        LOGGER.log(Level.INFO, "took {0} ms (wall clock time)", new Object[] {System.currentTimeMillis() - time});
         return this;
     }
 

@@ -18,7 +18,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import algorithm.AgglomerativeClustering;
 import algorithm.glyphgenerator.GlyphGenerator;
 import algorithm.glyphgenerator.Perlin;
 import algorithm.glyphgenerator.PopulationSim;
@@ -30,7 +29,6 @@ import datastructure.growfunction.GrowFunction;
 import datastructure.growfunction.LinearlyGrowingSquares;
 import gui.Settings.Setting;
 import gui.Settings.SettingSection;
-import io.CsvIO;
 import io.PointIO;
 
 /**
@@ -45,9 +43,7 @@ public class GrowingGlyphs extends JFrame {
     public static final int NUM_POINTS_INITIALLY = 6;
 
 
-    private AgglomerativeClustering clusterer;
-    private GrowFunction g;
-    private QuadTree tree;
+    private GrowingGlyphsDaemon daemon;
     private HierarchicalClustering.View view;
 
     private DrawPanel drawPanel;
@@ -60,17 +56,9 @@ public class GrowingGlyphs extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        this.g = g;
+        this.daemon = new GrowingGlyphsDaemon(w, h, g);
         this.view = null;
-        this.tree = new QuadTree(
-                DrawPanel.PADDING - w / 2,
-                DrawPanel.PADDING - h / 2,
-                w - DrawPanel.PADDING * 2,
-                h - DrawPanel.PADDING * 2,
-                g
-            );
-        this.clusterer = new AgglomerativeClustering(tree, g);
-        this.drawPanel = new DrawPanel(tree, this);
+        this.drawPanel = new DrawPanel(this.daemon.getTree(), this);
         add(drawPanel, BorderLayout.CENTER);
 
         randomGlyphs(NUM_POINTS_INITIALLY, GENERATORS[0]);
@@ -88,12 +76,12 @@ public class GrowingGlyphs extends JFrame {
     }
 
     public void randomGlyphs(int n, GlyphGenerator gen) {
-        tree.clear();
+        daemon.getTree().clear();
         Glyph[] glyphs = new Glyph[n];
-        gen.init(n, tree.getRectangle());
+        gen.init(n, daemon.getTree().getRectangle());
         for (int i = 0; i < n; ++i) {
             glyphs[i] = gen.next();
-            tree.insertCenterOf(glyphs[i]);
+            daemon.getTree().insertCenterOf(glyphs[i]);
         }
         drawPanel.setGlyphs(null);
         if (status != null) {
@@ -131,12 +119,7 @@ public class GrowingGlyphs extends JFrame {
      * @param file File to open.
      */
     private void openFile(File file) {
-        tree.clear();
-        if (file.getName().endsWith(".csv") || file.getName().endsWith(".tsv")) {
-            CsvIO.read(file, tree);
-        } else {
-            PointIO.read(file, tree);
-        }
+        daemon.openFile(file);
         drawPanel.setGlyphs(null);
         if (status != null) {
             status.setText("Loaded '" + file.getName() + "'.");
@@ -171,13 +154,13 @@ public class GrowingGlyphs extends JFrame {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                tree.reset();
+                daemon.getTree().reset();
                 boolean debug = SETTINGS.getBoolean(Setting.DEBUG);
-                clusterer.cluster(!debug, debug, SETTINGS.getBoolean(Setting.STEP));
-                if (clusterer.getClustering() != null) {
-                    view = new HierarchicalClustering.View(clusterer.getClustering());
+                daemon.cluster(!debug, debug, SETTINGS.getBoolean(Setting.STEP));
+                if (daemon.getClustering() != null) {
+                    view = new HierarchicalClustering.View(daemon.getClustering());
                     view.next(); // show first step that has actual glyphs
-                    drawPanel.setGlyphs(view.getGlyphs(g));
+                    drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
                 }
                 status.setText("Clustering... done!");
             }
@@ -192,7 +175,7 @@ public class GrowingGlyphs extends JFrame {
     private void save(ActionEvent...events) {
         if (getFC().showSaveDialog(GrowingGlyphs.this) ==
                 JFileChooser.APPROVE_OPTION) {
-            PointIO.write(tree, getFC().getSelectedFile());
+            PointIO.write(daemon.getTree(), getFC().getSelectedFile());
         }
     }
 
@@ -201,11 +184,17 @@ public class GrowingGlyphs extends JFrame {
         int w = 512 + DrawPanel.PADDING * 2;
         int h = w;
         File toOpen = null;
+        boolean background = false;
         if (args.length > 0) {
             try {
                 int i = 0;
                 // argument for path to open
                 if (args.length > i) {
+                    if (args.length > i + 1 && args[i].equals("-d")) {
+                        background = true;
+                        i++;
+                    }
+
                     toOpen = new File(args[i]);
                     if (toOpen.isFile() && toOpen.canRead()) {
                         i++;
@@ -222,16 +211,26 @@ public class GrowingGlyphs extends JFrame {
                 }
             } catch (Exception e) {
                 // ignore, we have a default anyway
-                System.err.println("Usage: java gui.GrowingGlyphs [path to open] "
+                System.err.println("Usage: java gui.GrowingGlyphs [[-d] path to open] "
                         + "[width = " + h + "] [height = width]");
+                System.err.println("  -d causes program to not open a GUI, but "
+                        + "only execute the algorithm and quit");
             }
         }
         GrowFunction g = new LinearlyGrowingSquares();
-        GrowingGlyphs gg = new GrowingGlyphs(w, h, g);
-        if (toOpen != null) {
-            gg.openFile(toOpen);
+        if (background) {
+            GrowingGlyphsDaemon d = new GrowingGlyphsDaemon(w, h, g);
+            if (toOpen != null) {
+                d.openFile(toOpen);
+            }
+            d.cluster();
+        } else {
+            GrowingGlyphs gg = new GrowingGlyphs(w, h, g);
+            if (toOpen != null) {
+                gg.openFile(toOpen);
+            }
+            gg.setVisible(true);
         }
-        gg.setVisible(true);
     }
 
 
@@ -272,7 +271,7 @@ public class GrowingGlyphs extends JFrame {
                 open();
                 break;
             case KeyEvent.VK_P:
-                System.out.println(clusterer.getClustering());
+                System.out.println(daemon.getClustering());
                 break;
             case KeyEvent.VK_R:
                 random(0);
@@ -283,25 +282,25 @@ public class GrowingGlyphs extends JFrame {
             case KeyEvent.VK_LEFT:
                 if (view != null) {
                     view.previous();
-                    drawPanel.setGlyphs(view.getGlyphs(g));
+                    drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
                 }
                 break;
             case KeyEvent.VK_RIGHT:
                 if (view != null) {
                     view.next();
-                    drawPanel.setGlyphs(view.getGlyphs(g));
+                    drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
                 }
                 break;
             case KeyEvent.VK_HOME:
                 if (view != null) {
                     view.start();
-                    drawPanel.setGlyphs(view.getGlyphs(g));
+                    drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
                 }
                 break;
             case KeyEvent.VK_END:
                 if (view != null) {
                     view.end();
-                    drawPanel.setGlyphs(view.getGlyphs(g));
+                    drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
                 }
                 break;
             case KeyEvent.VK_SPACE:

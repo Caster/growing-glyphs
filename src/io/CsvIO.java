@@ -2,7 +2,6 @@ package io;
 
 import java.awt.geom.Point2D;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +15,7 @@ import datastructure.Utils;
 public class CsvIO {
 
     public static void read(File file, QuadTree tree) {
-        try (Scanner reader = new Scanner(new FileInputStream(file))) {
+        try (Scanner reader = new Scanner(file)) {
             // read title line
             if (!reader.hasNextLine()) {
                 return;
