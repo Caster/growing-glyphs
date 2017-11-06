@@ -248,8 +248,9 @@ public class DrawPanel extends JPanel implements
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
         double oldZoom = zoom;
+        Point p = e.getPoint();
+        toViewSpace(p); // use current zoom level to determine view space coords
         // update zoom level
-        //zoom -= e.getPreciseWheelRotation() / 10;
         int r = e.getWheelRotation();
         boolean zoomIn = (r < 0);
         double factor = (zoomIn ? 1.1 : 1 / 1.1);
@@ -260,8 +261,6 @@ public class DrawPanel extends JPanel implements
         }
         // update translation to keep point under cursor the same, repaint
         if (oldZoom != zoom) {
-            Point p = e.getPoint();
-            toViewSpace(p);
             double change = zoom - oldZoom;
             translation.x -= change * p.getX();
             translation.y -= change * p.getY();
