@@ -34,10 +34,17 @@ public class CsvIO {
             while (reader.hasNextLine()) {
                 line = reader.nextLine();
                 cols = line.split(splitOn);
+                // skip missing and null coordinates
+                if (cols.length <= Math.max(latInd, lngInd) || cols[latInd].equals("NULL") ||
+                        cols[lngInd].equals("NULL")) {
+                    continue;
+                }
+                // parse coordinates
                 LatLng p = new LatLng(
                         Double.parseDouble(cols[latInd]),
                         Double.parseDouble(cols[lngInd])
                     );
+                // increment count for that coordinate
                 if (read.containsKey(p)) {
                     read.put(p, read.get(p) + 1);
                 } else {
