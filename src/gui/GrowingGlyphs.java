@@ -6,6 +6,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBoxMenuItem;
@@ -48,6 +50,7 @@ public class GrowingGlyphs extends JFrame {
 
     private DrawPanel drawPanel;
     private JFileChooser fc;
+    private Menu menu;
     private JLabel status;
 
 
@@ -69,7 +72,7 @@ public class GrowingGlyphs extends JFrame {
                 BorderFactory.createLoweredBevelBorder(),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         this.fc = null;
-        setJMenuBar(new Menu(this));
+        setJMenuBar(this.menu = new Menu(this));
 
         pack();
         drawPanel.resetView();
@@ -268,11 +271,9 @@ public class GrowingGlyphs extends JFrame {
                         + "Drag the mouse and scroll to pan and zoom.");
                 break;
             case KeyEvent.VK_M:
-                boolean toMap = !SETTINGS.getBoolean(Setting.DRAW_MAP);
-                SETTINGS.set(Setting.DRAW_CELLS, !toMap);
-                SETTINGS.set(Setting.DRAW_CENTERS, !toMap);
-                SETTINGS.set(Setting.DRAW_MAP, toMap);
-                drawPanel.repaint();
+                menu.booleanSettings.get(Setting.DRAW_CELLS).doClick();
+                menu.booleanSettings.get(Setting.DRAW_CENTERS).doClick();
+                menu.booleanSettings.get(Setting.DRAW_MAP).doClick();
                 break;
             case KeyEvent.VK_O:
                 open();
@@ -322,6 +323,8 @@ public class GrowingGlyphs extends JFrame {
 
 
     private static class Menu extends JMenuBar {
+        public Map<Setting, MenuItemCheck> booleanSettings;
+
         public Menu(GrowingGlyphs frame) {
             JMenu fileMenu = new JMenu("File");
             fileMenu.add(new MenuItem("Open", frame::open));
@@ -332,6 +335,7 @@ public class GrowingGlyphs extends JFrame {
             add(fileMenu);
 
             JMenu optionsMenu = new JMenu("Options");
+            this.booleanSettings = new HashMap<>();
             for (SettingSection section : SettingSection.values()) {
                 JMenu subOptionsMenu;
                 if (section == SettingSection.MISC) {
@@ -340,12 +344,14 @@ public class GrowingGlyphs extends JFrame {
                     subOptionsMenu = new JMenu(section.getName());
                 }
                 for (Setting setting : Setting.booleanSettings(section)) {
-                    subOptionsMenu.add(new MenuItemCheck(setting, (ActionEvent e) -> {
+                    MenuItemCheck item = new MenuItemCheck(setting, (ActionEvent e) -> {
                         SETTINGS.toggle(setting);
                         if (setting.triggersRepaint()) {
                             frame.repaint();
                         }
-                    }));
+                    });
+                    subOptionsMenu.add(item);
+                    booleanSettings.put(setting, item);
                 }
                 if (section != SettingSection.MISC) {
                     optionsMenu.add(subOptionsMenu);
