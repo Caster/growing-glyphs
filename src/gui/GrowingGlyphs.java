@@ -267,6 +267,13 @@ public class GrowingGlyphs extends JFrame {
                             + "View last step of clustering.<br><br>"
                         + "Drag the mouse and scroll to pan and zoom.");
                 break;
+            case KeyEvent.VK_M:
+                boolean toMap = !SETTINGS.getBoolean(Setting.DRAW_MAP);
+                SETTINGS.set(Setting.DRAW_CELLS, !toMap);
+                SETTINGS.set(Setting.DRAW_CENTERS, !toMap);
+                SETTINGS.set(Setting.DRAW_MAP, toMap);
+                drawPanel.repaint();
+                break;
             case KeyEvent.VK_O:
                 open();
                 break;
