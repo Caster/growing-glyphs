@@ -64,10 +64,13 @@ public class CsvIO {
             }
             // insert data into tree
             for (LatLng ll : read.keySet()) {
-                // QuadTree is built on zoom level 1 for now, but centered around [0, 0]
+                // QuadTree is built on zoom level 1, but centered around [0, 0]
                 Point2D p = ll.toPoint(1);
-                tree.insertCenterOf(new Glyph(p.getX() - 256, p.getY() - 256, read.get(ll)));
+                tree.insertCenterOf(new Glyph(p.getX() - 256, p.getY() - 256,
+                        read.get(ll)));
             }
+            LOGGER.log(Level.INFO, "loaded {0} locations", new Object[] {
+                    read.size()});
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
