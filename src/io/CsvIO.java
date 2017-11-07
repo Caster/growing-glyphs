@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import datastructure.Glyph;
 import datastructure.LatLng;
@@ -14,17 +16,24 @@ import datastructure.Utils;
 
 public class CsvIO {
 
+    private static final Logger LOGGER =
+            Logger.getLogger(CsvIO.class.getName());
+
+
     public static void read(File file, QuadTree tree) {
+        LOGGER.log(Level.FINE, "ENTRY into CsvIO#read()");
+        Utils.Timers.start("reading file");
+        final int[] ignoredRead = new int[] {0, 0};
         try (Scanner reader = new Scanner(file)) {
             // read title line
             if (!reader.hasNextLine()) {
                 return;
             }
-            String line = reader.nextLine();
-            String splitOn = (line.indexOf('\t') > 0 ? "\t" : "\\s*,\\s*");
-            String[] cols = line.split(splitOn);
-            int latInd = Utils.indexOf(cols, "latitude");
-            int lngInd = Utils.indexOf(cols, "longitude");
+            String titleLine = reader.nextLine();
+            String splitOn = (titleLine.indexOf('\t') > 0 ? "\t" : "\\s*,\\s*");
+            String[] titleCols = titleLine.split(splitOn);
+            int latInd = Utils.indexOf(titleCols, "latitude");
+            int lngInd = Utils.indexOf(titleCols, "longitude");
             if (latInd < 0 || lngInd < 0) {
                 throw new RuntimeException("need columns 'latitude' and "
                         + "'longitude' in data");
@@ -32,11 +41,12 @@ public class CsvIO {
             // read data
             Map<LatLng, Integer> read = new HashMap<>();
             while (reader.hasNextLine()) {
-                line = reader.nextLine();
-                cols = line.split(splitOn);
+                String line = reader.nextLine();
+                String[] cols = line.split(splitOn);
                 // skip missing and null coordinates
                 if (cols.length <= Math.max(latInd, lngInd) || cols[latInd].equals("NULL") ||
                         cols[lngInd].equals("NULL")) {
+                    ignoredRead[0]++;
                     continue;
                 }
                 // parse coordinates
@@ -50,6 +60,7 @@ public class CsvIO {
                 } else {
                     read.put(p, 1);
                 }
+                ignoredRead[1]++;
             }
             // insert data into tree
             for (LatLng ll : read.keySet()) {
@@ -60,6 +71,10 @@ public class CsvIO {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+        Utils.Timers.log("reading file", LOGGER);
+        LOGGER.log(Level.INFO, "read {0} entries and ignored {1}",
+                new Object[] {ignoredRead[1], ignoredRead[0]});
+        LOGGER.log(Level.FINE, "RETURN from CsvIO#read()");
     }
 
 }

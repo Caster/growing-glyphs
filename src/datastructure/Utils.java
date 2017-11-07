@@ -1,7 +1,10 @@
 package datastructure;
 
 import java.awt.geom.Rectangle2D;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A collection of static utility functions.
@@ -142,6 +145,47 @@ public class Utils {
          */
         public static boolean neq(double a, double b) {
             return !eq(a, b);
+        }
+
+    }
+
+
+    /**
+     * Static utility functions related to wall clock timing.
+     */
+    public static class Timers {
+
+        /**
+         * Map of timer names to starting times.
+         */
+        private static Map<String, Long> timers = new HashMap<>();
+
+
+        /**
+         * Log the time that elapsed to the given logger.
+         *
+         * @param name Name of the timer.
+         * @param logger Logger to log to.
+         * @see Utils.Timers#start(String)
+         */
+        public static void log(String name, Logger logger) {
+            if (!timers.containsKey(name)) {
+                return;
+            }
+            long elapsed = System.currentTimeMillis() - timers.get(name);
+            logger.log(Level.INFO, "{0} took {1} ms (wall clock time)",
+                    new Object[] {name, elapsed});
+        }
+
+        /**
+         * Start a new timer with the given name. Overwrites any existing timer
+         * with the same name, so can be used to restart timers too.
+         *
+         * @param name Name of the timer. Used when reading off elapsed time.
+         * @see Utils.Timers#log(String, Logger)
+         */
+        public static void start(String name) {
+            timers.put(name, System.currentTimeMillis());
         }
 
     }
