@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
+import utils.Utils;
 
 /**
  * A QuadTree implementation that can track growing glyphs.

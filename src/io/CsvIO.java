@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 import datastructure.Glyph;
 import datastructure.LatLng;
 import datastructure.QuadTree;
-import datastructure.Utils;
+import utils.Utils;
 
 public class CsvIO {
 

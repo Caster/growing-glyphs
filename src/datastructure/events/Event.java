@@ -25,7 +25,18 @@ public abstract class Event implements Comparable<Event> {
         /**
          * Event type to be used when two or more glyphs grew to touch.
          */
-        MERGE
+        MERGE;
+
+        private String cache = null;
+
+        @Override
+        public String toString() {
+            if (cache == null) {
+                cache = super.toString().toLowerCase().replaceAll("_", " ") +
+                    " event";
+            }
+            return cache;
+        }
     };
 
 

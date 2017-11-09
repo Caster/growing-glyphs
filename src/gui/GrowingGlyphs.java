@@ -7,6 +7,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -184,6 +185,8 @@ public class GrowingGlyphs extends JFrame {
 
 
     public static void main(String[] args) {
+        Locale.setDefault(Locale.Category.FORMAT, Locale.GERMAN);
+
         int w = 512 + DrawPanel.PADDING * 2;
         int h = w;
         File toOpen = null;

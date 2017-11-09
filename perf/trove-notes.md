@@ -43,3 +43,15 @@ General idea: process events within a cell of the QuadTree. As soon as an OUT_OF
 Overall approach: have a queue with "work packages". Each package is either a cell and some glyphs (initial state), or four partially clustered cells and the assignment to combine them. When clustering of a cell has completed, it should be checked if this was the last cell of its siblings to complete. If so, the parent should be added to the queue as a work package. Clustering completes when the root has been clustered. Because work packages are disjoint, this can be parallellized.
 
 The hope is that not too much work needs to be undone when combining partial clusterings.
+
+# More debug information
+
+Now logging more detailed logging information: specific operations, nanosecond accuracy, number of events per type, queue size, ...
+
+    INFO    |  loaded 447 locations
+    INFO    |  reading file took 0,13 seconds (wall clock time)
+    INFO    |  read 6.924 entries and ignored 0
+    INFO    |  created 27.972 events, handled 2.647 and discarded 23.232; 2.093 events were never considered
+    INFO    |  clustering took 0,388 seconds (wall clock time)
+    INFO    |  queue operations took 0,023 seconds (wall clock time, 53.851 timings)
+    INFO    |  queue size was 8.148,914 on average, over 53.851 measurements

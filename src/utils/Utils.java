@@ -1,6 +1,7 @@
-package datastructure;
+package utils;
 
 import java.awt.geom.Rectangle2D;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -151,6 +152,42 @@ public class Utils {
 
 
     /**
+     * Static utility functions related to statistics.
+     */
+    public static class Stats {
+
+        /**
+         * Map of stat names to objects recording full stat information.
+         */
+        private static Map<String, Stat> stats = new HashMap<>();
+
+
+        public static Stat get(String name) {
+            return stats.get(name);
+        }
+
+        public static void log(String name, Logger logger) {
+            if (!stats.containsKey(name)) {
+                return;
+            }
+            Stat s = stats.get(name);
+            logger.log(Level.INFO, "{0} was {1} on average, over {2} "
+                + "measurements", new Object[] {name, s.getAverage(), s.getN()});
+        }
+
+        public static void record(String name, double value) {
+            if (stats.containsKey(name)) {
+                stats.get(name).record(value);
+            } else {
+                Stat stat = new Stat(value);
+                stats.put(name, stat);
+            }
+        }
+
+    }
+
+
+    /**
      * Static utility functions related to wall clock timing.
      */
     public static class Timers {
@@ -173,10 +210,25 @@ public class Utils {
 
 
         /**
-         * Map of timer names to starting times.
+         * Map of timer names to objects recording full timer information.
          */
-        private static Map<String, Long> timers = new HashMap<>();
+        private static Map<String, Timer> timers = new HashMap<>();
 
+
+        /**
+         * Returns how much time has passed between all start and stop events on
+         * the given timer. When the timer is currently running, that time is
+         * <em>not</em> included in this value.
+         *
+         * Use {@link #in(long, Units)} to convert the value returned by this
+         * function to a specific time unit.
+         *
+         * @param name Name of the timer.
+         * @see #in(long, Units)
+         */
+        public static long elapsed(String name) {
+            return timers.get(name).getElapsedTotal();
+        }
 
         /**
          * Returns the given timespan in a given unit.
@@ -189,7 +241,9 @@ public class Utils {
         }
 
         /**
-         * Log the time that elapsed to the given logger.
+         * Log the time that elapsed to the given logger. This will
+         * {@link Timer#stop() stop} the timer and log its {@link
+         * Timer#getElapsedTotal() total elapsed time}.
          *
          * @param name Name of the timer.
          * @param logger Logger to log to.
@@ -199,9 +253,12 @@ public class Utils {
             if (!timers.containsKey(name)) {
                 return;
             }
-            long elapsed = now() - timers.get(name);
-            logger.log(Level.INFO, "{0} took {1} seconds (wall clock time)",
-                    new Object[] {name, in(elapsed, Units.SECONDS)});
+            Timer t = timers.get(name);
+            t.stop();
+            logger.log(Level.INFO, "{0} took {1} seconds (wall clock time{2})",
+                    new Object[] {name, in(t.getElapsedTotal(), Units.SECONDS),
+                    (t.getNumCounts() == 1 ? "" : String.format(", %s timings",
+                    NumberFormat.getIntegerInstance().format(t.getNumCounts())))});
         }
 
         /**
@@ -219,7 +276,22 @@ public class Utils {
          * @see Utils.Timers#log(String, Logger)
          */
         public static void start(String name) {
-            timers.put(name, now());
+            if (timers.containsKey(name)) {
+                timers.get(name).start();
+            } else {
+                timers.put(name, new Timer());
+            }
+        }
+
+        /**
+         * Record time passed since last start event on the given timer. This
+         * time will now be included in {@code getElapsedTotal}. Stopping a
+         * stopped timer has no effect.
+         *
+         * @param name Name of the timer to stop.
+         */
+        public static void stop(String name) {
+            timers.get(name).stop();
         }
 
     }

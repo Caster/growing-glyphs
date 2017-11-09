@@ -3,7 +3,7 @@ package datastructure.growfunction;
 import java.awt.geom.Rectangle2D;
 
 import datastructure.Glyph;
-import datastructure.Utils;
+import utils.Utils;
 
 /**
  * A simple {@link GrowFunction} that scales {@link Glyph squares} linearly.

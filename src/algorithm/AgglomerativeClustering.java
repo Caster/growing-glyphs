@@ -15,13 +15,14 @@ import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
 import datastructure.QuadTree.InsertedWhen;
-import datastructure.Utils;
 import datastructure.events.Event;
 import datastructure.events.Event.Type;
 import datastructure.events.GlyphMerge;
 import datastructure.events.OutOfCell;
 import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
+import utils.Stat;
+import utils.Utils;
 
 public class AgglomerativeClustering {
 
@@ -288,7 +289,15 @@ public class AgglomerativeClustering {
         }
         LOGGER.log(Level.INFO, "created {0} events, handled {1} and discarded {2}; {3} events were never considered",
                 new Object[] {q.insertions, q.deletions, q.discarded, q.insertions - q.deletions - q.discarded});
+        for (Event.Type t : Event.Type.values()) {
+            String tn = t.toString();
+            Stat s = Utils.Stats.get(tn);
+            LOGGER.log(Level.INFO, "created {1} {0}s ({2} handled, {3} discarded)", new Object[] {
+                tn, s.getSum(), Utils.Stats.get(tn + " handled").getSum(), Utils.Stats.get(tn + " discarded").getSum()});
+        }
         Utils.Timers.log("clustering", LOGGER);
+        Utils.Timers.log("queue operations", LOGGER);
+        Utils.Stats.log("queue size", LOGGER);
         LOGGER.log(Level.FINE, "RETURN from AgglomerativeClustering#cluster()");
         return this;
     }
@@ -397,18 +406,32 @@ public class AgglomerativeClustering {
         @Override
         public boolean add(Event e) {
             insertions++;
-            return super.add(e);
+            Utils.Timers.start("queue operations");
+            boolean t = super.add(e);
+            Utils.Timers.stop("queue operations");
+            Utils.Stats.record("queue size", super.size());
+            Utils.Stats.record(e.getType().toString(), 1);
+            return t;
         }
 
         public void discard() {
             discarded++;
-            super.poll();
+            Utils.Timers.start("queue operations");
+            Event e = super.poll();
+            Utils.Timers.stop("queue operations");
+            Utils.Stats.record("queue size", super.size());
+            Utils.Stats.record(e.getType().toString() + " discarded", 1);
         }
 
         @Override
         public Event poll() {
             deletions++;
-            return super.poll();
+            Utils.Timers.start("queue operations");
+            Event e = super.poll();
+            Utils.Timers.stop("queue operations");
+            Utils.Stats.record("queue size", super.size());
+            Utils.Stats.record(e.getType().toString() + " handled", 1);
+            return e;
         }
 
     }
