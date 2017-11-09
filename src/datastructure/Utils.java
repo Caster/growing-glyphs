@@ -155,11 +155,38 @@ public class Utils {
      */
     public static class Timers {
 
+        public static enum Units {
+            NANOSECONDS (1),
+            MICROSECONDS(1000),
+            MILLISECONDS(1000000),
+            SECONDS     (1000000000);
+
+            /**
+             * The factor to divide nanoseconds by to get to this unit of time.
+             */
+            private final long factor;
+
+            private Units(long factor) {
+                this.factor = factor;
+            }
+        }
+
+
         /**
          * Map of timer names to starting times.
          */
         private static Map<String, Long> timers = new HashMap<>();
 
+
+        /**
+         * Returns the given timespan in a given unit.
+         *
+         * @param timeSpan Timespan in nanoseconds.
+         * @param units Unit to transform into.
+         */
+        public static double in(long timeSpan, Units units) {
+            return (timeSpan / ((double) units.factor));
+        }
 
         /**
          * Log the time that elapsed to the given logger.
@@ -172,9 +199,16 @@ public class Utils {
             if (!timers.containsKey(name)) {
                 return;
             }
-            long elapsed = System.currentTimeMillis() - timers.get(name);
-            logger.log(Level.INFO, "{0} took {1} ms (wall clock time)",
-                    new Object[] {name, elapsed});
+            long elapsed = now() - timers.get(name);
+            logger.log(Level.INFO, "{0} took {1} seconds (wall clock time)",
+                    new Object[] {name, in(elapsed, Units.SECONDS)});
+        }
+
+        /**
+         * Returns a timestamp that can be used to measure elapsed time.
+         */
+        public static long now() {
+            return System.nanoTime();
         }
 
         /**
@@ -185,7 +219,7 @@ public class Utils {
          * @see Utils.Timers#log(String, Logger)
          */
         public static void start(String name) {
-            timers.put(name, System.currentTimeMillis());
+            timers.put(name, now());
         }
 
     }
