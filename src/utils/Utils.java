@@ -163,6 +163,9 @@ public class Utils {
 
 
         public static Stat get(String name) {
+            if (!stats.containsKey(name)) {
+                stats.put(name, new Stat(0));
+            }
             return stats.get(name);
         }
 

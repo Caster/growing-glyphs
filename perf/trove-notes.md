@@ -108,3 +108,61 @@ As one can see, the logging format changed a bit while working on the implementa
     FINE    |  glyphs per cell was 0,17 on average and always between 0 and 5, over 4.793 measurements
 
 Seems to have gotten a bit slower, but changing the maximum number of glyphs per cell does have a big impact on performance.
+
+# Finding sweet spot for maximum number of glyphs per cell
+
+## at most 50 glyphs/cell: 57,811 seconds
+    INFO    |  loaded 7.758 locations
+    INFO    |  read 15.772.243 entries and ignored 438.657
+    FINE    |  QuadTree has 657 nodes and height 11, having at most 50 glyphs per cell and cell size at least 0,001
+    FINE    |  created 135.500 events initially, for 7.754 glyphs
+    FINE    |  created 6.846.394 events, handled 7.957 and discarded 6.261.882; 576.555 events were never considered
+    FINE    |  → 168.456 out of cell events (204 handled, 94.420 discarded)
+    FINE    |  → 6.677.938 merge events (7.753 handled, 6.167.462 discarded)
+    FINE    |  QuadTree has 689 nodes and height 11 now
+    FINE    |  clustering took 57,811 seconds (wall clock time)
+    FINE    |  queue operations took 10,027 seconds (wall clock time, 13.116.233 timings)
+    FINE    |  queue size was 1.892.456,943 on average and always between 1 and 2.856.039, over 13.116.233 measurements
+    FINE    |  glyphs per cell was 0,43 on average and always between 0 and 22, over 525 measurements
+
+## at most 100 glyphs/cell: 39,494 seconds
+    INFO    |  loaded 7.758 locations
+    INFO    |  read 15.772.243 entries and ignored 438.657
+    FINE    |  QuadTree has 333 nodes and height 11, having at most 100 glyphs per cell and cell size at least 0,001
+    FINE    |  created 234.806 events initially, for 7.754 glyphs
+    FINE    |  created 7.047.984 events, handled 7.819 and discarded 6.272.350; 767.815 events were never considered
+    FINE    |  → 136.430 out of cell events (66 handled, 70.376 discarded)
+    FINE    |  → 6.911.554 merge events (7.753 handled, 6.201.974 discarded)
+    FINE    |  QuadTree has 361 nodes and height 11 now
+    FINE    |  clustering took 39,494 seconds (wall clock time)
+    FINE    |  queue operations took 10,24 seconds (wall clock time, 13.328.153 timings)
+    FINE    |  queue size was 2.086.314,241 on average and always between 1 and 3.060.897, over 13.328.153 measurements
+    FINE    |  glyphs per cell was 0,932 on average and always between 0 and 26, over 278 measurements
+
+## at most 200 glyphs/cell: 29,485 seconds
+    INFO    |  loaded 7.758 locations
+    INFO    |  read 15.772.243 entries and ignored 438.657
+    FINE    |  QuadTree has 185 nodes and height 8, having at most 200 glyphs per cell and cell size at least 0,001
+    FINE    |  created 436.398 events initially, for 7.754 glyphs
+    FINE    |  created 7.594.051 events, handled 7.823 and discarded 6.359.518; 1.226.710 events were never considered
+    FINE    |  → 118.308 out of cell events (70 handled, 52.954 discarded)
+    FINE    |  → 7.475.743 merge events (7.753 handled, 6.306.564 discarded)
+    FINE    |  QuadTree has 209 nodes and height 8 now
+    FINE    |  clustering took 29,485 seconds (wall clock time)
+    FINE    |  queue operations took 9,888 seconds (wall clock time, 13.961.392 timings)
+    FINE    |  queue size was 2.490.642,093 on average and always between 1 and 3.498.958, over 13.961.392 measurements
+    FINE    |  glyphs per cell was 4,196 on average and always between 0 and 123, over 163 measurements
+
+## at most 500 glyphs/cell: 27,989 seconds seconds
+    INFO    |  loaded 7.758 locations
+    INFO    |  read 15.772.243 entries and ignored 438.657
+    FINE    |  QuadTree has 81 nodes and height 6, having at most 500 glyphs per cell and cell size at least 0,001
+    FINE    |  created 1.092.365 events initially, for 7.754 glyphs
+    FINE    |  created 9.128.530 events, handled 7.851 and discarded 6.581.706; 2.538.973 events were never considered
+    FINE    |  → 96.174 out of cell events (98 handled, 35.634 discarded)
+    FINE    |  → 9.032.356 merge events (7.753 handled, 6.546.072 discarded)
+    FINE    |  QuadTree has 81 nodes and height 6 now
+    FINE    |  clustering took 27,989 seconds (wall clock time)
+    FINE    |  queue operations took 10,667 seconds (wall clock time, 15.718.087 timings)
+    FINE    |  queue size was 3.582.380,938 on average and always between 1 and 4.800.366, over 15.718.087 measurements
+    FINE    |  glyphs per cell was 0 on average and always between 0 and 0, over 61 measurements
