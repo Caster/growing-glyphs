@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -21,7 +23,7 @@ import utils.Utils;
  *
  * @see Glyph
  */
-public class QuadTree {
+public class QuadTree implements Iterable<QuadTree> {
 
     /**
      * The maximum number of glyphs that should intersect any leaf cell.
@@ -283,6 +285,17 @@ public class QuadTree {
         return (this.parent == null);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This iterator will iterate over all cells of the QuadTree in a top-down
+     * manner: first a node, then its children.
+     */
+    @Override
+    public Iterator<QuadTree> iterator() {
+        return new Quaderator(this);
+    }
+
     public List<QuadTree> leaves() {
         List<QuadTree> leaves = new ArrayList<>();
         Queue<QuadTree> considering = new ArrayDeque<>();
@@ -473,6 +486,38 @@ public class QuadTree {
             return parent.children[Side.quadrantNeighbor(quadrant, side)];
         }
         return parent.upUntil(side);
+    }
+
+
+    /**
+     * Iterator for QuadTrees.
+     */
+    private static class Quaderator implements Iterator<QuadTree> {
+
+        private Queue<QuadTree> toVisit;
+
+
+        public Quaderator(QuadTree quadTree) {
+            this.toVisit = new LinkedList<>();
+            this.toVisit.add(quadTree);
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !toVisit.isEmpty();
+        }
+
+        @Override
+        public QuadTree next() {
+            QuadTree next = toVisit.poll();
+            if (!next.isLeaf()) {
+                for (QuadTree child : next.children) {
+                    toVisit.add(child);
+                }
+            }
+            return next;
+        }
+
     }
 
 }
