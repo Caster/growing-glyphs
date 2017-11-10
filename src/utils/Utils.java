@@ -171,8 +171,9 @@ public class Utils {
                 return;
             }
             Stat s = stats.get(name);
-            logger.log(Level.INFO, "{0} was {1} on average, over {2} "
-                + "measurements", new Object[] {name, s.getAverage(), s.getN()});
+            logger.log(Level.INFO, "{0} was {1} on average and always between "
+                + "{2} and {3}, over {4} measurements", new Object[] {name,
+                s.getAverage(), s.getMin(), s.getMax(), s.getN()});
         }
 
         public static void record(String name, double value) {
