@@ -92,6 +92,7 @@ public class DrawPanel extends JPanel implements
         addMouseListener(this);
         addMouseMotionListener(this);
         addMouseWheelListener(this);
+        setFocusable(true);
     }
 
     @Override

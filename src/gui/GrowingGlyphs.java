@@ -19,7 +19,10 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import algorithm.glyphgenerator.GlyphGenerator;
 import algorithm.glyphgenerator.Perlin;
@@ -53,6 +56,7 @@ public class GrowingGlyphs extends JFrame {
     private JFileChooser fc;
     private Menu menu;
     private JLabel status;
+    private JSlider viewNav;
 
 
     public GrowingGlyphs(int w, int h, GrowFunction g) {
@@ -67,13 +71,19 @@ public class GrowingGlyphs extends JFrame {
 
         randomGlyphs(NUM_POINTS_INITIALLY, GENERATORS[0]);
 
-        addKeyListener(new KeyListener());
+        add(viewNav = new JSlider(), BorderLayout.NORTH);
+        viewNav.setEnabled(false);
+        viewNav.setFocusable(false); // we handle keyboard input ourselves
         add(status = new JLabel("Ready. Press 'h' for help."), BorderLayout.SOUTH);
         status.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLoweredBevelBorder(),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         this.fc = null;
         setJMenuBar(this.menu = new Menu(this));
+
+        KeyListener kl = new KeyListener();
+        addKeyListener(kl);
+        drawPanel.addKeyListener(kl);
 
         pack();
         drawPanel.resetView();
@@ -178,8 +188,14 @@ public class GrowingGlyphs extends JFrame {
                 daemon.cluster(!debug, debug, SETTINGS.getBoolean(Setting.STEP));
                 if (daemon.getClustering() != null) {
                     view = new HierarchicalClustering.View(daemon.getClustering());
+                    view.syncWith(viewNav);
+                    view.setChangeListener(new ChangeListener() {
+                        @Override
+                        public void stateChanged(ChangeEvent e) {
+                            drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
+                        }
+                    });
                     view.next(); // show first step that has actual glyphs
-                    drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
                 }
                 status.setText("Clustering... done!");
             }

@@ -10,6 +10,10 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
 import datastructure.growfunction.GrowFunction;
 
 public class HierarchicalClustering implements Comparable<HierarchicalClustering> {
@@ -139,12 +143,17 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
          */
         private boolean halfStep;
         private boolean countingSteps;
-        private int n;
+        private int c; // current step
+        private int n; // total number of steps
         private boolean logging;
+        private JSlider syncWith;
+        private ChangeListener cl;
 
 
         public View(HierarchicalClustering clustering) {
             this.logging = false;
+            this.syncWith = null;
+            this.cl = null;
             if (clustering == null) {
                 throw new NullPointerException();
             }
@@ -178,6 +187,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             this.halfStep = false;
             start();
             this.countingSteps = false;
+            this.c = 1;
 
             // log current state
             this.logging = true;
@@ -196,6 +206,10 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
 
         public int getSize() {
             return curr.size();
+        }
+
+        public int getStep() {
+            return c;
         }
 
         public Shape[] getGlyphs(GrowFunction g) {
@@ -235,7 +249,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
                     (next.peek().createdFrom == null ||
                     next.peek().createdFrom.size() > 1)) {
                 halfStep = true;
-                step();
+                step(1);
                 return;
             }
             HierarchicalClustering node = next.poll();
@@ -254,7 +268,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             if (node.mergedInto != null && !next.contains(node.mergedInto)) {
                 next.add(node.mergedInto);
             }
-            step();
+            step(1);
         }
 
         /**
@@ -263,7 +277,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
         public void previous() {
             if (halfStep) {
                 halfStep = false;
-                step();
+                step(-1);
                 return;
             }
             HierarchicalClustering node = prev.poll();
@@ -284,7 +298,11 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
                 }
             }
             halfStep = true;
-            step();
+            step(-1);
+        }
+
+        public void setChangeListener(ChangeListener listener) {
+            cl = listener;
         }
 
         /**
@@ -296,6 +314,27 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
                 previous();
             }
             previous(); // undo half step, possibly
+        }
+
+        /**
+         * Enables the given slider and sets its bounds and current value. Update
+         * slider value when the view changes, and will change view when the
+         * slider value changes.
+         *
+         * @param slider Slider to synchronize with.
+         */
+        public void syncWith(JSlider slider) {
+            slider.setEnabled(true);
+            slider.setMinimum(1);
+            slider.setMaximum(n);
+            slider.setValue(c);
+            slider.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    stepTo(syncWith.getValue());
+                }
+            });
+            syncWith = slider;
         }
 
 
@@ -332,12 +371,41 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
          * Count a step, when counting is enabled.
          * Log the state, when logging is enabled.
          */
-        private void step() {
+        private void step(int delta) {
+            c += delta;
+            if (syncWith != null) {
+                syncWith.setValue(c);
+            }
             if (countingSteps) {
                 n++;
             }
             if (logging && LOGGER.isLoggable(Level.FINE)) {
                 logCurrentState();
+            }
+        }
+
+        /**
+         * Step until the current step index equals the given one. Stops at
+         * extreme values (1 and {@code n}).
+         *
+         * @param step Step index to move towards.
+         */
+        private void stepTo(int step) {
+            while (c != step) {
+                if (c < step) {
+                    next();
+                    if (c == n) {
+                        break;
+                    }
+                } else {
+                    previous();
+                    if (c == 1) {
+                        break;
+                    }
+                }
+            }
+            if (cl != null) {
+                cl.stateChanged(new ChangeEvent(this));
             }
         }
 
