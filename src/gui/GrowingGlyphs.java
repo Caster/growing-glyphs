@@ -98,6 +98,21 @@ public class GrowingGlyphs extends JFrame {
     }
 
 
+    private void changeView(int steps) {
+        if (view != null) {
+            if (steps < 0) {
+                for (; steps < 0; ++steps) {
+                    view.previous();
+                }
+            } else {
+                for (; steps > 0; --steps) {
+                    view.next();
+                }
+            }
+            drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
+        }
+    }
+
     private JFileChooser getFC() {
         if (fc == null) {
             fc = new JFileChooser();
@@ -291,16 +306,16 @@ public class GrowingGlyphs extends JFrame {
                 save();
                 break;
             case KeyEvent.VK_LEFT:
-                if (view != null) {
-                    view.previous();
-                    drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
-                }
+                changeView(-1);
                 break;
             case KeyEvent.VK_RIGHT:
-                if (view != null) {
-                    view.next();
-                    drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
-                }
+                changeView(1);
+                break;
+            case KeyEvent.VK_PAGE_DOWN:
+                changeView(-10);
+                break;
+            case KeyEvent.VK_PAGE_UP:
+                changeView(10);
                 break;
             case KeyEvent.VK_HOME:
                 if (view != null) {
