@@ -77,7 +77,9 @@ public class AgglomerativeClustering {
      */
     public AgglomerativeClustering cluster(boolean multiMerge,
             boolean includeOutOfCell, boolean step) {
-        LOGGER.log(Level.FINE, "ENTRY into AgglomerativeClustering#cluster()");
+        LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
+        LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1}",
+                new Object[] {tree.getSize(), tree.getTreeHeight()});
         Utils.Timers.start("clustering");
         // construct a queue, put everything in there
         Q q = new Q();
@@ -121,7 +123,7 @@ public class AgglomerativeClustering {
                 }
             }
             e = q.poll();
-            LOGGER.log(Level.FINE, "handling {0} at {1} involving",
+            LOGGER.log(Level.FINER, "handling {0} at {1} involving",
                     new Object[] {e.getType(), e.getAt()});
             for (Glyph glyph : e.getGlyphs()) {
                 LOGGER.log(Level.FINER, "{0}", glyph);
@@ -182,7 +184,7 @@ public class AgglomerativeClustering {
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;
-                LOGGER.log(Level.FINE, "CHECK FOR MORE MERGES...");
+                LOGGER.log(Level.FINER, "CHECK FOR MORE MERGES...");
                 // keep merging while next glyph overlaps before current event
                 Event next = q.peek();
                 Set<Glyph> inMerged = null; // keep track of glyphs that are merged
@@ -210,7 +212,7 @@ public class AgglomerativeClustering {
                     }
                     // otherwise, handle the nested merge, or OUT_OF_CELL
                     e = q.poll();
-                    LOGGER.log(Level.FINER, "handling {0} at {1} involving",
+                    LOGGER.log(Level.FINEST, "handling {0} at {1} involving",
                             new Object[] {e.getType(), e.getAt()});
                     for (Glyph glyph : e.getGlyphs()) {
                         LOGGER.log(Level.FINEST, "{0}", glyph);
@@ -279,7 +281,7 @@ public class AgglomerativeClustering {
                     step(step);
                     next = q.peek();
                 }
-                LOGGER.log(Level.FINE, "...DONE");
+                LOGGER.log(Level.FINER, "...DONE");
                 break;
             case OUT_OF_CELL:
                 handleOutOfCell((OutOfCell) e, map, includeOutOfCell, q);
@@ -287,18 +289,24 @@ public class AgglomerativeClustering {
             }
             step(step);
         }
-        LOGGER.log(Level.INFO, "created {0} events, handled {1} and discarded {2}; {3} events were never considered",
+        LOGGER.log(Level.FINE, "created {0} events, handled {1} and discarded {2}; {3} events were never considered",
                 new Object[] {q.insertions, q.deletions, q.discarded, q.insertions - q.deletions - q.discarded});
         for (Event.Type t : Event.Type.values()) {
             String tn = t.toString();
             Stat s = Utils.Stats.get(tn);
-            LOGGER.log(Level.INFO, "created {1} {0}s ({2} handled, {3} discarded)", new Object[] {
+            LOGGER.log(Level.FINE, "created {1} {0}s ({2} handled, {3} discarded)", new Object[] {
                 tn, s.getSum(), Utils.Stats.get(tn + " handled").getSum(), Utils.Stats.get(tn + " discarded").getSum()});
         }
         Utils.Timers.log("clustering", LOGGER);
         Utils.Timers.log("queue operations", LOGGER);
         Utils.Stats.log("queue size", LOGGER);
-        LOGGER.log(Level.FINE, "RETURN from AgglomerativeClustering#cluster()");
+        if (LOGGER.getLevel().intValue() >= Level.FINE.intValue()) {
+            for (QuadTree leaf : tree.leaves()) {
+                Utils.Stats.record("glyphs per cell", leaf.getGlyphs().size());
+            }
+            Utils.Stats.log("glyphs per cell", LOGGER);
+        }
+        LOGGER.log(Level.FINER, "RETURN from AgglomerativeClustering#cluster()");
         return this;
     }
 
@@ -320,7 +328,7 @@ public class AgglomerativeClustering {
         double[] sideInterval = Side.interval(g.sizeAt(glyph, oAt).getBounds2D(), o.getSide());
         LOGGER.log(Level.FINER, "size at border is {0}", Arrays.toString(sideInterval));
         Set<QuadTree> neighbors = o.getCell().getNeighbors(o.getSide());
-        LOGGER.log(Level.FINER, "growing into");
+        LOGGER.log(Level.FINEST, "growing into");
         for (QuadTree neighbor : neighbors) {
             LOGGER.log(Level.FINEST, "{0}", neighbor);
             if (!Utils.intervalsOverlap(Side.interval(

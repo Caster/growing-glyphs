@@ -145,6 +145,12 @@ public class QuadTree {
         return glyphs.keySet();
     }
 
+    public Set<Glyph> getGlyphs(InsertedWhen filter) {
+        return glyphs.keySet().stream()
+            .filter(s -> glyphs.get(s) == filter)
+            .collect(Collectors.toSet());
+    }
+
     public double getHeight() {
         return cell.getHeight();
     }
@@ -172,10 +178,34 @@ public class QuadTree {
             );
     }
 
-    public Set<Glyph> getGlyphs(InsertedWhen filter) {
-        return glyphs.keySet().stream()
-            .filter(s -> glyphs.get(s) == filter)
-            .collect(Collectors.toSet());
+    /**
+     * Returns the number of cells that make up this QuadTree.
+     */
+    public int getSize() {
+        if (isLeaf()) {
+            return 1;
+        }
+        int size = 1;
+        for (QuadTree child : children) {
+            size += child.getSize();
+        }
+        return size;
+    }
+
+    /**
+     * Returns the maximum number of links that need to be followed before a
+     * leaf cell is reached.
+     */
+    public int getTreeHeight() {
+        if (isLeaf()) {
+            return 0;
+        }
+        int height = 1;
+        for (QuadTree child : children) {
+            int childHeight = child.getTreeHeight();
+            height = Math.max(height, childHeight + 1);
+        }
+        return height;
     }
 
     public double getWidth() {

@@ -171,7 +171,7 @@ public class Utils {
                 return;
             }
             Stat s = stats.get(name);
-            logger.log(Level.INFO, "{0} was {1} on average and always between "
+            logger.log(Level.FINE, "{0} was {1} on average and always between "
                 + "{2} and {3}, over {4} measurements", new Object[] {name,
                 s.getAverage(), s.getMin(), s.getMax(), s.getN()});
         }
@@ -256,7 +256,7 @@ public class Utils {
             }
             Timer t = timers.get(name);
             t.stop();
-            logger.log(Level.INFO, "{0} took {1} seconds (wall clock time{2})",
+            logger.log(Level.FINE, "{0} took {1} seconds (wall clock time{2})",
                     new Object[] {name, in(t.getElapsedTotal(), Units.SECONDS),
                     (t.getNumCounts() == 1 ? "" : String.format(", %s timings",
                     NumberFormat.getIntegerInstance().format(t.getNumCounts())))});
