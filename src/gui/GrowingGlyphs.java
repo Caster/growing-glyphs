@@ -184,8 +184,8 @@ public class GrowingGlyphs extends JFrame {
             @Override
             public void run() {
                 daemon.getTree().reset();
-                boolean debug = SETTINGS.getBoolean(Setting.DEBUG);
-                daemon.cluster(!debug, debug, SETTINGS.getBoolean(Setting.STEP));
+                daemon.cluster(SETTINGS.getBoolean(Setting.DEBUG),
+                        SETTINGS.getBoolean(Setting.STEP));
                 if (daemon.getClustering() != null) {
                     view = new HierarchicalClustering.View(daemon.getClustering());
                     view.syncWith(viewNav);

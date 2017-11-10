@@ -47,24 +47,20 @@ public class GrowingGlyphsDaemon {
      * {@link #cluster(boolean, boolean, boolean)}.
      */
     public void cluster() {
-        cluster(true, false, false);
+        cluster(false, false);
     }
 
     /**
      * Execute clustering algorithm. The parameters are all meant for debugging
      * purposes. Should you not be interested in that, use {@link #cluster()}.
      *
-     * @param multiMerge Whether repeated merges (merged glyph overlaps other
-     *            glyph, causing repeated merge) should be executed without
-     *            reporting in the output ({@code true}) or explicitly recorded
-     *            ({@code false}).
      * @param includeOutOfCell Whether points in time where glyphs grow out of
      *            their cell should be included in the output.
      * @param step Whether the algorithm should pause after every event, only
      *            to continue when the user inputs a line (or just pressed enter).
      */
-    public void cluster(boolean multiMerge, boolean includeOutOfCell, boolean step) {
-        clusterer.cluster(multiMerge, includeOutOfCell, step);
+    public void cluster(boolean includeOutOfCell, boolean step) {
+        clusterer.cluster(includeOutOfCell, step);
     }
 
     /**

@@ -67,16 +67,13 @@ public class AgglomerativeClustering {
     /**
      * Run clustering algorithm on the QuadTree provided at construction time.
      *
-     * @param multiMerge Whether merges resulting in immediate overlap should be
-     *            merged immediately, thus not showing up in the resulting
-     *            {@link HierarchicalClustering}, or not.
      * @param includeOutOfCell Whether events caused by a glyph growing out of
      *            a cell should be included in the resulting clustering.
      * @param step Whether processing should be paused after every event.
      * @return A reference to the clustering instance, for chaining.
      */
-    public AgglomerativeClustering cluster(boolean multiMerge,
-            boolean includeOutOfCell, boolean step) {
+    public AgglomerativeClustering cluster(boolean includeOutOfCell,
+            boolean step) {
         LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
         LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1}",
                 new Object[] {tree.getSize(), tree.getTreeHeight()});
@@ -226,7 +223,6 @@ public class AgglomerativeClustering {
                         for (Glyph s : m.getGlyphs()) {
                             if (!wasMerged.contains(s)) {
                                 inMerged.add(s);
-                                // TODO: use multiMerge parameter here
                                 mergedHC.alsoCreatedFrom(map.get(s));
                                 s.alive = false; numAlive--;
                             }
@@ -234,8 +230,7 @@ public class AgglomerativeClustering {
                         map.remove(merged); // it's as if this glyph never existed
                         // create updated merged glyph
                         merged = new Glyph(inMerged);
-                        mergedHC.setGlyph(merged); // TODO: use multiMerge parameter here
-                        // TODO: update result to new HC node
+                        mergedHC.setGlyph(merged);
                         // add new glyph to QuadTree cell(s)
                         tree.insert(merged, m.getAt(), g);
                         // create events with remaining glyphs
@@ -294,9 +289,11 @@ public class AgglomerativeClustering {
         for (Event.Type t : Event.Type.values()) {
             String tn = t.toString();
             Stat s = Utils.Stats.get(tn);
-            LOGGER.log(Level.FINE, "created {1} {0}s ({2} handled, {3} discarded)", new Object[] {
+            LOGGER.log(Level.FINE, "→ {1} {0}s ({2} handled, {3} discarded)", new Object[] {
                 tn, s.getSum(), Utils.Stats.get(tn + " handled").getSum(), Utils.Stats.get(tn + " discarded").getSum()});
         }
+        LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1} now",
+                new Object[] {tree.getSize(), tree.getTreeHeight()});
         Utils.Timers.log("clustering", LOGGER);
         Utils.Timers.log("queue operations", LOGGER);
         Utils.Stats.log("queue size", LOGGER);

@@ -48,14 +48,37 @@ The hope is that not too much work needs to be undone when combining partial clu
 
 Now logging more detailed logging information: specific operations, nanosecond accuracy, number of events per type, queue size, ...
 
+## Trove
+
+    INFO    |  loaded 7.758 locations
+    INFO    |  read 15.772.243 entries and ignored 438.657
+    FINE    |  QuadTree has 5.909 nodes and height 15
+    FINE    |  created 39.439 events initially, for 7.754 glyphs
+    FINE    |  created 8.335.893 events, handled 8.118 and discarded 7.896.508; 431.267 events were never considered
+    FINE    |  created 340.814 out of cell events (365 handled, 235.931 discarded)
+    FINE    |  created 7.995.079 merge events (7.753 handled, 7.660.577 discarded)
+    FINE    |  clustering took 409,628 seconds (wall clock time)
+    FINE    |  queue operations took 11,18 seconds (wall clock time, 16.240.519 timings)
+    FINE    |  queue size was 1.887.522,031 on average and always between 1 and 2.855.186, over 16.240.519 measurements
+    FINE    |  glyphs per cell was 1.593,515 on average and always between 567 and 2.412, over 4.432 measurements
+
+Clearly, the QuadTree needs to be subdivided adaptively while the glyphs are growing.
+
+## Risse (used for debugging + optimizing)
+
     INFO    |  loaded 447 locations
     INFO    |  read 6.924 entries and ignored 0
     FINE    |  QuadTree has 341 nodes and height 9
     FINE    |  created 2.246 events initially, for 447 glyphs
-    FINE    |  created 27.964 events, handled 2.639 and discarded 23.232; 2.093 events were never considered
-    FINE    |  created 18.934 out of cell events (2.193 handled, 15.061 discarded)
-    FINE    |  created 9.030 merge events (446 handled, 8.171 discarded)
-    FINE    |  clustering took 0,357 seconds (wall clock time)
-    FINE    |  queue operations took 0,021 seconds (wall clock time, 53.835 timings)
-    FINE    |  queue size was 8.149,538 on average and always between 1 and 13.036, over 53.835 measurements
+    FINE    |  created 27.972 events, handled 2.647 and discarded 23.232; 2.093 events were never considered
+    FINE    |  → 18.942 out of cell events (2.201 handled, 15.061 discarded)
+    FINE    |  → 9.030 merge events (446 handled, 8.171 discarded)
+    FINE    |  QuadTree has 341 nodes and height 9 now
+    FINE    |  clustering took 0,392 seconds (wall clock time)
+    FINE    |  queue operations took 0,021 seconds (wall clock time, 53.851 timings)
+    FINE    |  queue size was 8.148,914 on average and always between 1 and 13.036, over 53.851 measurements
     FINE    |  glyphs per cell was 137,625 on average and always between 0 and 295, over 256 measurements
+
+As one can see, the logging format changed a bit while working on the implementation. Adaptive subdivision resulted in the below result.
+
+**TODO**
