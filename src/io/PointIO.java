@@ -26,7 +26,7 @@ public class PointIO {
 
     public static void write(QuadTree tree, File file) {
         try (PrintStream writer = new PrintStream(new FileOutputStream(file))) {
-            for (QuadTree leaf : tree.leaves()) {
+            for (QuadTree leaf : tree.getLeaves()) {
                 for (Glyph s : leaf.getGlyphs(InsertedWhen.INITIALLY)) {
                     writer.println(s.getX() + " " + s.getY() + " " + s.getN());
                 }

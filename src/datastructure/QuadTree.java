@@ -28,7 +28,11 @@ public class QuadTree implements Iterable<QuadTree> {
     /**
      * The maximum number of glyphs that should intersect any leaf cell.
      */
-    public static final int MAX_GLYPHS_PER_CELL = 5;
+    public static final int MAX_GLYPHS_PER_CELL = 50;
+    /**
+     * Minimum width/height of a cell.
+     */
+    public static final double MIN_CELL_SIZE = 0.001;
 
 
     /**
@@ -149,12 +153,62 @@ public class QuadTree implements Iterable<QuadTree> {
 
     public Set<Glyph> getGlyphs(InsertedWhen filter) {
         return glyphs.keySet().stream()
-            .filter(s -> glyphs.get(s) == filter)
+            .filter(glyph -> glyphs.get(glyph) == filter)
             .collect(Collectors.toSet());
+    }
+
+    public Set<Glyph> getGlyphsAlive() {
+        return glyphs.keySet().stream()
+                .filter(glyph -> glyph.alive)
+                .collect(Collectors.toSet());
     }
 
     public double getHeight() {
         return cell.getHeight();
+    }
+
+    public List<QuadTree> getLeaves() {
+        List<QuadTree> leaves = new ArrayList<>();
+        Queue<QuadTree> considering = new ArrayDeque<>();
+        considering.add(this);
+        while (!considering.isEmpty()) {
+            QuadTree cell = considering.poll();
+            if (cell.isLeaf()) {
+                leaves.add(cell);
+            } else {
+                considering.addAll(Arrays.asList(cell.children));
+            }
+        }
+        return leaves;
+    }
+
+    /**
+     * Returns a set of all QuadTree cells that are descendants of this cell,
+     * {@link #isLeaf() leaves} and have one side touching the {@code side}
+     * border of this cell.
+     *
+     * @param side Side of cell to find leaves on.
+     */
+    public Set<QuadTree> getLeaves(Side side) {
+        Set<QuadTree> result = new HashSet<>();
+        getLeaves(side, result);
+        return result;
+    }
+
+    /**
+     * Return a set of all leaves of this QuadTree that intersect the given
+     * glyph at the given point in time.
+     *
+     * @param glyph The glyph to consider.
+     * @param at Timestamp/zoom level at which glyph size is determined.
+     * @param g Function to determine size of glyph. Together with {@code at},
+     *          this is used to decide which cells {@code glyph} intersects.
+     * @see #insert(Glyph, double, GrowFunction)
+     */
+    public Set<QuadTree> getLeaves(Glyph glyph, double at, GrowFunction g) {
+        Set<QuadTree> result = new HashSet<>();
+        getLeaves(glyph, at, g, result);
+        return result;
     }
 
     public Set<QuadTree> getNeighbors(Side side) {
@@ -230,6 +284,7 @@ public class QuadTree implements Iterable<QuadTree> {
      * @param at Timestamp/zoom level at which insertion takes place.
      * @param g Function to determine size of glyph. Together with {@code at},
      *          this is used to decide which cells {@code glyph} intersects.
+     * @see #getLeaves(Glyph, double, GrowFunction)
      */
     public void insert(Glyph glyph, double at, GrowFunction g) {
         if (g.intersectAt(glyph, cell) > at + Utils.EPS) {
@@ -277,10 +332,16 @@ public class QuadTree implements Iterable<QuadTree> {
         return true;
     }
 
+    /**
+     * Returns whether this cell has child cells.
+     */
     public boolean isLeaf() {
         return (this.children == null);
     }
 
+    /**
+     * Returns whether this cell has a parent.
+     */
     public boolean isRoot() {
         return (this.parent == null);
     }
@@ -294,21 +355,6 @@ public class QuadTree implements Iterable<QuadTree> {
     @Override
     public Iterator<QuadTree> iterator() {
         return new Quaderator(this);
-    }
-
-    public List<QuadTree> leaves() {
-        List<QuadTree> leaves = new ArrayList<>();
-        Queue<QuadTree> considering = new ArrayDeque<>();
-        considering.add(this);
-        while (!considering.isEmpty()) {
-            QuadTree cell = considering.poll();
-            if (cell.isLeaf()) {
-                leaves.add(cell);
-            } else {
-                considering.addAll(Arrays.asList(cell.children));
-            }
-        }
-        return leaves;
     }
 
     /**
@@ -338,7 +384,7 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     public void reset() {
         Set<Glyph> toInsert = new HashSet<>();
-        for (QuadTree leaf : leaves()) {
+        for (QuadTree leaf : getLeaves()) {
             toInsert.addAll(leaf.getGlyphs(InsertedWhen.INITIALLY));
         }
         clear();
@@ -351,26 +397,11 @@ public class QuadTree implements Iterable<QuadTree> {
      * Performs a regular QuadTree split, treating all glyphs associated with
      * this cell as points, namely their centers. Distributes associated glyphs
      * to the relevant child cells.
+     *
+     * @see #split(double, GrowFunction)
      */
     public void split() {
-        // already split?
-        if (!isLeaf()) {
-            throw new RuntimeException("Cannot split cell that is already split.");
-        }
-        // do the split
-        this.children = new QuadTree[4];
-        double x = getX();
-        double y = getY();
-        double w = getWidth();
-        double h = getHeight();
-        for (int i = 0; i < 4; ++i) {
-            this.children[i] = new QuadTree(
-                    x + (i % 2 == 0 ? 0 : w / 2),
-                    y + (i < 2 ? 0 : h / 2),
-                    w / 2, h / 2, g
-                );
-            this.children[i].parent = this;
-        }
+        splitCell();
         // possibly distribute glyphs
         if (!glyphs.isEmpty()) {
             for (Glyph glyph : glyphs.keySet()) {
@@ -380,6 +411,38 @@ public class QuadTree implements Iterable<QuadTree> {
             }
             // only maintain glyphs in leaves
             glyphs.clear();
+        }
+    }
+
+    /**
+     * Split this cell in four and associate glyphs in this cell with the child
+     * cells they overlap.
+     *
+     * @param at Timestamp/zoom level at which split takes place.
+     * @param g Function to determine size of glyph. Together with {@code at},
+     *          this is used to decide which cells a glyph intersects.
+     * @see #split()
+     */
+    public void split(double at, GrowFunction g) {
+        splitCell();
+        // possibly distribute glyphs
+        if (!glyphs.isEmpty()) {
+            // insert glyph in every child cell it overlaps
+            // (a glyph can be inserted into more than one cell!)
+            for (Glyph glyph : glyphs.keySet()) {
+                // don't bother with dead glyphs
+                if (glyph.alive) {
+                    insert(glyph, at, g);
+                }
+            }
+            // only maintain glyphs in leaves
+            glyphs.clear();
+            // ensure that split did in fact have an effect
+            for (QuadTree child : children) {
+                if (child.glyphs.size() > MAX_GLYPHS_PER_CELL) {
+                    child.split(at, g);
+                }
+            }
         }
     }
 
@@ -394,8 +457,24 @@ public class QuadTree implements Iterable<QuadTree> {
 
 
     /**
+     * Actual implementation of {@link #getLeaves(Glyph, double, GrowFunction)}.
+     */
+    private void getLeaves(Glyph glyph, double at, GrowFunction g, Set<QuadTree> result) {
+        if (g.intersectAt(glyph, cell) > at + Utils.EPS) {
+            return;
+        }
+        if (isLeaf()) {
+            result.add(this);
+        } else {
+            for (QuadTree child : children) {
+                child.getLeaves(glyph, at, g, result);
+            }
+        }
+    }
+
+    /**
      * Add all leaf cells on the given side of the current cell to the given
-     * set. If the this cell is a leaf, it will add itself as a whole.
+     * set. If this cell is a leaf, it will add itself as a whole.
      *
      * @param side Side of cell to take leaves on.
      * @param result Set to add cells to.
@@ -464,6 +543,38 @@ public class QuadTree implements Iterable<QuadTree> {
                 return;
             }
             neighbor.getLeaves(side.opposite(), cell, result);
+        }
+    }
+
+    /**
+     * If not a leaf yet, create child cells and associate them with this cell
+     * as being their parent. This method does <em>not</em> reassign any glyphs
+     * associated with this cell to children.
+     *
+     * @see #split()
+     * @see #split(double, GrowFunction)
+     */
+    private void splitCell() {
+        // already split?
+        if (!isLeaf()) {
+            throw new RuntimeException("cannot split cell that is already split");
+        }
+        // do the split
+        this.children = new QuadTree[4];
+        double x = getX();
+        double y = getY();
+        double w = getWidth();
+        double h = getHeight();
+        if (w / 2 < MIN_CELL_SIZE || h / 2 < MIN_CELL_SIZE) {
+            throw new RuntimeException("cannot split a tiny cell");
+        }
+        for (int i = 0; i < 4; ++i) {
+            this.children[i] = new QuadTree(
+                    x + (i % 2 == 0 ? 0 : w / 2),
+                    y + (i < 2 ? 0 : h / 2),
+                    w / 2, h / 2, g
+                );
+            this.children[i].parent = this;
         }
     }
 

@@ -81,4 +81,30 @@ Clearly, the QuadTree needs to be subdivided adaptively while the glyphs are gro
 
 As one can see, the logging format changed a bit while working on the implementation. Adaptive subdivision resulted in the below result.
 
-**TODO**
+    INFO    |  loaded 447 locations
+    INFO    |  read 6.924 entries and ignored 0
+    FINE    |  QuadTree has 341 nodes and height 9
+    FINE    |  created 2.246 events initially, for 447 glyphs
+    FINE    |  created 25.643 events, handled 3.220 and discarded 20.342; 2.081 events were never considered
+    FINE    |  → 17.660 out of cell events (2.774 handled, 13.211 discarded)
+    FINE    |  → 7.983 merge events (446 handled, 7.131 discarded)
+    FINE    |  QuadTree has 629 nodes and height 11 now
+    FINE    |  clustering took 0,569 seconds (wall clock time)
+    FINE    |  queue operations took 0,021 seconds (wall clock time, 49.205 timings)
+    FINE    |  queue size was 6.983,72 on average and always between 1 and 10.834, over 49.205 measurements
+    FINE    |  glyphs per cell was 0,511 on average and always between 0 and 5, over 544 measurements
+
+    INFO    |  loaded 7.758 locations
+    INFO    |  read 15.772.243 entries and ignored 438.657
+    FINE    |  QuadTree has 5.909 nodes and height 15, having at most 5 glyphs per cell and cell size at least 0,001
+    FINE    |  created 39.439 events initially, for 7.754 glyphs
+    FINE    |  created 8.528.420 events, handled 8.121 and discarded 8.080.127; 440.172 events were never considered
+    FINE    |  → 341.260 out of cell events (368 handled, 236.552 discarded)
+    FINE    |  → 8.187.160 merge events (7.753 handled, 7.843.575 discarded)
+    FINE    |  QuadTree has 6.277 nodes and height 15 now
+    FINE    |  clustering took 460,273 seconds (wall clock time)
+    FINE    |  queue operations took 12,694 seconds (wall clock time, 16.616.668 timings)
+    FINE    |  queue size was 1.918.751,305 on average and always between 1 and 2.900.394, over 16.616.668 measurements
+    FINE    |  glyphs per cell was 0,17 on average and always between 0 and 5, over 4.793 measurements
+
+Seems to have gotten a bit slower, but changing the maximum number of glyphs per cell does have a big impact on performance.

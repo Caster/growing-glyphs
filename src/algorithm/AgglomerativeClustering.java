@@ -75,8 +75,15 @@ public class AgglomerativeClustering {
     public AgglomerativeClustering cluster(boolean includeOutOfCell,
             boolean step) {
         LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
-        LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1}",
-                new Object[] {tree.getSize(), tree.getTreeHeight()});
+        LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1}, having "
+                + "at most {2} glyphs per cell and cell size at least {3}",
+                new Object[] {tree.getSize(), tree.getTreeHeight(),
+                QuadTree.MAX_GLYPHS_PER_CELL, QuadTree.MIN_CELL_SIZE});
+        if (LOGGER.getLevel().intValue() >= Level.FINE.intValue()) {
+            for (QuadTree leaf : tree.getLeaves()) {
+                Utils.Stats.record("glyphs per cell", leaf.getGlyphsAlive().size());
+            }
+        }
         Utils.Timers.start("clustering");
         // construct a queue, put everything in there
         Q q = new Q();
@@ -85,7 +92,7 @@ public class AgglomerativeClustering {
         // finally, create an indication of which glyphs still participate
         int numAlive = 0;
         Rectangle2D rect = tree.getRectangle();
-        for (QuadTree leaf : tree.leaves()) {
+        for (QuadTree leaf : tree.getLeaves()) {
             Glyph[] glyphs = leaf.getGlyphs().toArray(new Glyph[0]);
             for (int i = 0; i < glyphs.length; ++i) {
                 // add events for when two glyphs in the same cell touch
@@ -112,6 +119,12 @@ public class AgglomerativeClustering {
         // merge glyphs until no pairs to merge remain
         queue: while (!q.isEmpty() && numAlive > 1) {
             Event e = q.peek();
+            // we ignore out of cell events for non-leaf cells
+            if (e.getType() == Type.OUT_OF_CELL &&
+                    !((OutOfCell) e).getCell().isLeaf()) {
+                q.discard();
+                continue queue;
+            }
             // we ignore this event if not all glyphs from it are alive anymore
             for (Glyph glyph : e.getGlyphs()) {
                 if (!glyph.alive) {
@@ -193,6 +206,14 @@ public class AgglomerativeClustering {
                 }
                 merging: while (next != null && next.getAt() < mergedAt) {
                     e = q.peek();
+                    // we ignore out of cell events for non-leaf cells
+                    if (e.getType() == Type.OUT_OF_CELL &&
+                            !((OutOfCell) e).getCell().isLeaf()) {
+                        q.discard();
+                        step(step);
+                        next = q.peek();
+                        continue merging;
+                    }
                     // we ignore this event if not all glyphs from it are alive anymore
                     for (Glyph glyph : e.getGlyphs()) {
                         if (!glyph.alive) {
@@ -297,12 +318,7 @@ public class AgglomerativeClustering {
         Utils.Timers.log("clustering", LOGGER);
         Utils.Timers.log("queue operations", LOGGER);
         Utils.Stats.log("queue size", LOGGER);
-        if (LOGGER.getLevel().intValue() >= Level.FINE.intValue()) {
-            for (QuadTree leaf : tree.leaves()) {
-                Utils.Stats.record("glyphs per cell", leaf.getGlyphs().size());
-            }
-            Utils.Stats.log("glyphs per cell", LOGGER);
-        }
+        Utils.Stats.log("glyphs per cell", LOGGER);
         LOGGER.log(Level.FINER, "RETURN from AgglomerativeClustering#cluster()");
         return this;
     }
@@ -328,54 +344,90 @@ public class AgglomerativeClustering {
         LOGGER.log(Level.FINEST, "growing into");
         for (QuadTree neighbor : neighbors) {
             LOGGER.log(Level.FINEST, "{0}", neighbor);
+
+            // ensure that glyph actually grows into this neighbor
             if (!Utils.intervalsOverlap(Side.interval(
                     neighbor.getSide(oppositeSide), oppositeSide), sideInterval)) {
                 LOGGER.log(Level.FINEST, "-> but not at this point in time, so ignoring");
                 continue;
             }
+
+            // ensure that glyph was not in this cell yet
             if (neighbor.getGlyphs().contains(glyph)) {
                 LOGGER.log(Level.FINEST, "-> but was already in there, so ignoring");
                 continue;
             }
-            for (Glyph otherGlyph : neighbor.getGlyphs()) {
-                if (otherGlyph.alive) {
-                    Event gme;
-                    q.add(gme = new GlyphMerge(glyph, otherGlyph, g));
-                    LOGGER.log(Level.FINEST, "-> merge at {0} with {1}",
-                            new Object[] {gme.getAt(), otherGlyph});
-                }
-            }
-        }
-        // register glyph in cell(s) it grows into
-        for (QuadTree neighbor : neighbors) {
-            if (neighbor.getGlyphs().contains(glyph)) {
-                continue;
-            }
 
+            // register glyph in cell(s) it grows into
             neighbor.insert(glyph, oAt, g);
 
-            // create out of cell events for the cells the glyph grows into,
-            // but only when they happen after the current event
-            for (Side side : o.getSide().opposite().others()) {
-                double at = g.exitAt(glyph, neighbor, side);
-                if (at >= oAt) {
-                    // only create an event when at least one neighbor on
-                    // this side does not contain the glyph yet
-                    boolean create = false;
-                    Set<QuadTree> neighbors2 = neighbor.getNeighbors(side);
-                    for (QuadTree neighbor2 : neighbors2) {
-                        if (!neighbor2.getGlyphs().contains(glyph)) {
-                            create = true;
-                            break;
-                        }
+            // split cell if necessary, to maintain maximum glyphs per cell
+            Set<QuadTree> grownInto;
+            if (neighbor.getGlyphs().size() > QuadTree.MAX_GLYPHS_PER_CELL) {
+                // 1. split and move glyphs in cell to appropriate leaf cells
+                //    (this may split the cell more than once!)
+                neighbor.split(oAt, g);
+                // 2. invalidate out of cell events with `neighbor`
+                //    → done by discarding such events as they exit the queue
+                //      (those events work on non-leaf cells; detectable)
+                // 3. invalidate merge events across cell boundaries
+                //    → not strictly needed; this may result in having multiple
+                //      merge events for the same pair of glyphs, but once the
+                //      first one is handled, the others are discarded
+                // TODO: check if this makes things more efficient in some form
+                // 4. continue with making events in appropriate cells instead
+                //    of `neighbor` or all glyphs associated with `neighbor`
+                grownInto = neighbor.getLeaves(glyph, oAt, g);
+                if (LOGGER.getLevel().intValue() >= Level.FINE.intValue()) {
+                    for (QuadTree in : neighbor.getLeaves()) {
+                        Utils.Stats.record("glyphs per cell",
+                                in.getGlyphsAlive().size());
                     }
-                    if (!create) {
+                }
+            } else {
+                grownInto = new HashSet<>(1);
+                grownInto.add(neighbor);
+            }
+
+            for (QuadTree in : grownInto) {
+                // create merge events with other glyphs in the cells the glyph
+                // grows into, even when they happen before the current one
+                // (those events will immediately be handled after this one)
+                for (Glyph otherGlyph : in.getGlyphs()) {
+                    if (otherGlyph == glyph) {
                         continue;
                     }
-                    // now, actually create an OUT_OF_CELL event
-                    LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
-                            new Object[] {side, at, neighbor});
-                    q.add(new OutOfCell(glyph, neighbor, side, at));
+                    if (otherGlyph.alive) {
+                        Event gme;
+                        q.add(gme = new GlyphMerge(glyph, otherGlyph, g));
+                        LOGGER.log(Level.FINEST, "-> merge at {0} with {1}",
+                                new Object[] {gme.getAt(), otherGlyph});
+                    }
+                }
+
+                // create out of cell events for the cells the glyph grows into,
+                // but only when they happen after the current event
+                for (Side side : o.getSide().opposite().others()) {
+                    double at = g.exitAt(glyph, in, side);
+                    if (at >= oAt) {
+                        // only create an event when at least one neighbor on
+                        // this side does not contain the glyph yet
+                        boolean create = false;
+                        Set<QuadTree> neighbors2 = in.getNeighbors(side);
+                        for (QuadTree neighbor2 : neighbors2) {
+                            if (!neighbor2.getGlyphs().contains(glyph)) {
+                                create = true;
+                                break;
+                            }
+                        }
+                        if (!create) {
+                            continue;
+                        }
+                        // now, actually create an OUT_OF_CELL event
+                        LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
+                                new Object[] {side, at, in});
+                        q.add(new OutOfCell(glyph, in, side, at));
+                    }
                 }
             }
         }

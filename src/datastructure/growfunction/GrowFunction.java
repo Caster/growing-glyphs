@@ -43,28 +43,28 @@ public abstract class GrowFunction {
      * glyph is scaled using this {@link GrowFunction}.
      *
      * @param r Static rectangle.
-     * @param s Growing glyph.
-     * @return Zoom level at which {@code r} and {@code s} touch.
+     * @param glyph Growing glyph.
+     * @return Zoom level at which {@code r} and {@code glyph} touch.
      */
-    public abstract double intersectAt(Rectangle2D r, Glyph s);
+    public abstract double intersectAt(Rectangle2D r, Glyph glyph);
 
     /**
      * Same as {@link #intersectAt(Rectangle2D, Glyph)}, just with different order
      * of parameters. This is a convenience function.
      */
-    public double intersectAt(Glyph s, Rectangle2D r) {
-        return intersectAt(r, s);
+    public double intersectAt(Glyph glyph, Rectangle2D r) {
+        return intersectAt(r, glyph);
     }
 
     /**
      * Returns a shape representing the glyph at the given time stamp/zoom
      * level, according to this grow function.
      *
-     * @param s glyph to compute the size of.
+     * @param glyph glyph to compute the size of.
      * @param at Time stamp or zoom level at which size must be computed.
      * @return A rectangle representing the glyph at time/zoom {@code at}.
      */
-    public abstract Shape sizeAt(Glyph s, double at);
+    public abstract Shape sizeAt(Glyph glyph, double at);
 
     public Shape[] sizesAt(double at, Glyph... glyphs) {
         Shape[] result = new Shape[glyphs.length];
