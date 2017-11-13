@@ -47,7 +47,7 @@ public class Glyph {
         if (n < 1) {
             throw new IllegalArgumentException("n must be at least 1");
         }
-        this.alive = true;
+        this.alive = false;
         this.x = x;
         this.y = y;
         this.n = n;
