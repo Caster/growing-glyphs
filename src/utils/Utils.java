@@ -3,7 +3,10 @@ package utils;
 import java.awt.geom.Rectangle2D;
 import java.text.NumberFormat;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.Locale.Category;
 import java.util.Map;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -146,6 +149,62 @@ public class Utils {
          */
         public static boolean neq(double a, double b) {
             return !eq(a, b);
+        }
+
+    }
+
+
+    /**
+     * Static utility functions related to locales.
+     */
+    public static class Locales {
+
+        /**
+         * The top of this stack maintains the current locale at all times. The
+         * stack is initialized to have the current default locale on it, and
+         * that value is never popped from the stack.
+         */
+        private static final Stack<Locale> STACK = new Stack<>();
+        static {
+            STACK.push(Locale.getDefault(Category.FORMAT));
+        }
+
+
+        /**
+         * Returns the last set locale, which is the top of the stack.
+         */
+        public static Locale get() {
+            return STACK.peek();
+        }
+
+        /**
+         * Sets the locale to the second-to-last value, popping the current
+         * locale from the stack and returning it. The new value can be
+         * retrieved using {@link #get()}, for example.
+         */
+        public static Locale pop() {
+            Locale prev = get();
+            if (STACK.size() > 1) {
+                STACK.pop();
+            }
+            set(STACK.peek());
+            return prev;
+        }
+
+        /**
+         * Change the {@link Locale.Category#FORMAT format} category locale to
+         * the given locale, and store it on the internal stack.
+         *
+         * @param locale Locale to change format locale into.
+         */
+        public static void push(Locale locale) {
+            STACK.push(set(locale));
+        }
+
+
+        private static Locale set(Locale locale) {
+            Locale.setDefault(Category.FORMAT, locale);
+            return locale;
         }
 
     }

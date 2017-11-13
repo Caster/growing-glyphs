@@ -36,6 +36,7 @@ import datastructure.growfunction.LinearlyGrowingSquares;
 import gui.Settings.Setting;
 import gui.Settings.SettingSection;
 import io.PointIO;
+import utils.Utils.Locales;
 
 /**
  * A debug view of {@link QuadTree QuadTrees} and growing {@link Glyph glyphs}.
@@ -216,7 +217,7 @@ public class GrowingGlyphs extends JFrame {
 
 
     public static void main(String[] args) {
-        Locale.setDefault(Locale.Category.FORMAT, Locale.GERMAN);
+        Locales.push(Locale.GERMAN);
 
         int w = 512 + DrawPanel.PADDING * 2;
         int h = w;

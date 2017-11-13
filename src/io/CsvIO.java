@@ -4,6 +4,7 @@ import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -13,6 +14,7 @@ import datastructure.Glyph;
 import datastructure.LatLng;
 import datastructure.QuadTree;
 import utils.Utils;
+import utils.Utils.Locales;
 
 public class CsvIO {
 
@@ -22,6 +24,7 @@ public class CsvIO {
 
     public static void read(File file, QuadTree tree) {
         LOGGER.log(Level.FINE, "ENTRY into CsvIO#read()");
+        Locales.push(Locale.US);
         Utils.Timers.start("reading file");
         final int[] ignoredRead = new int[] {0, 0};
         try (Scanner reader = new Scanner(file)) {
@@ -77,6 +80,7 @@ public class CsvIO {
         Utils.Timers.log("reading file", LOGGER);
         LOGGER.log(Level.INFO, "read {0} entries and ignored {1}",
                 new Object[] {ignoredRead[1], ignoredRead[0]});
+        Locales.pop();
         LOGGER.log(Level.FINE, "RETURN from CsvIO#read()");
     }
 
