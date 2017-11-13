@@ -1,13 +1,8 @@
 package algorithm;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,23 +31,6 @@ public class FirstMergeRecorder {
      * practice this will almost always contain just a single glyph.
      */
     private Set<Glyph> minGlyphs;
-    /**
-     * Input for {@link #workers}. Refer to {@link Worker} for details.
-     */
-    private Glyph[] tasks;
-    /**
-     * Workers that are used for parallelizing recording.
-     */
-    private Worker[] workers;
-    /**
-     * Pool of threads that workers will run on.
-     */
-    private ExecutorService workerPool;
-    /**
-     * Service wrapping {@link #workerPool} that is used to run many jobs in a
-     * single threadpool, and easily wait for tasks to complete.
-     */
-    private ExecutorCompletionService<Double> workerService;
 
 
     /**
@@ -64,22 +42,6 @@ public class FirstMergeRecorder {
         this.g = g;
         this.minAt = Double.MAX_VALUE;
         this.minGlyphs = new HashSet<>(1);
-
-        this.tasks = null;
-        int numParallel = Math.max(1,
-                Runtime.getRuntime().availableProcessors() / 2);
-        if (numParallel > 1) {
-            this.workers = new Worker[numParallel];
-            for (int i = 0; i < numParallel; ++i) {
-                this.workers[i] = new Worker(i);
-            }
-            this.workerPool = Executors.newFixedThreadPool(numParallel);
-            this.workerService = new ExecutorCompletionService<>(this.workerPool);
-        } else {
-            this.workers = null;
-            this.workerPool = null;
-            this.workerService = null;
-        }
     }
 
 
@@ -120,9 +82,6 @@ public class FirstMergeRecorder {
         this.from = from;
         this.minAt = Double.MAX_VALUE;
         this.minGlyphs.clear();
-        for (int i = 0; i < workers.length; ++i) {
-            this.workers[i].reset();
-        }
     }
 
     /**
@@ -153,39 +112,8 @@ public class FirstMergeRecorder {
      * @param upto Index up to but excluding which glyphs will be recorded.
      */
     public void record(Glyph[] glyphs, int from, int upto) {
-        // when there are enough tasks, do this in parallel
-        if (workers != null && (upto - from) / workers.length > 1000) {
-            // find tasks
-            tasks = Arrays.copyOfRange(glyphs, from, upto);
-            // submit workers that will start working on the tasks
-            for (int i = 0; i < workers.length; ++i) {
-                workerService.submit(workers[i]);
-            }
-            // wait until workers are done
-            for (int i = 0; i < workers.length; ++i) {
-                try {
-                    workerService.take();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e.getCause());
-                }
-            }
-            // merge the results
-            for (int i = 0; i < workers.length; ++i) {
-                Worker w = workers[i];
-                if (w.minAt < minAt) {
-                    minAt = w.minAt;
-                    minGlyphs.clear();
-                    minGlyphs.addAll(w.minGlyphs);
-                } else if (w.minAt == minAt) {
-                    minGlyphs.addAll(w.minGlyphs);
-                }
-            }
-        } else {
-            // when there are few tasks, the overhead of using threads is not
-            // worth it, so do everything in a sequential fashion
-            for (int i = from; i < upto; ++i) {
-                record(glyphs[i]);
-            }
+        for (int i = from; i < upto; ++i) {
+            record(glyphs[i]);
         }
     }
 
@@ -204,65 +132,6 @@ public class FirstMergeRecorder {
                 .toArray(Glyph[]::new);
         Timers.stop("set to array");
         record(arr, 0, arr.length);
-    }
-
-    /**
-     * Stop background threads. When this is done, no further recording tasks
-     * can be accepted. No errors are thrown when they are.
-     */
-    public void shutdown() {
-        if (workerPool != null) {
-            workerPool.shutdown();
-        }
-    }
-
-
-    /**
-     * Same functionality, but bundled in a worker for parallelization purposes.
-     *
-     * A worker always uses the {@link FirstMergeRecorder#from} and
-     * {@link FirstMergeRecorder#g grow function} of its parent.
-     */
-    private class Worker implements Callable<Double> {
-
-        private int id;
-        private double minAt;
-        private Set<Glyph> minGlyphs;
-
-        public Worker(int id) {
-            this.id = id;
-            this.minAt = Double.MAX_VALUE;
-            this.minGlyphs = new HashSet<>(1);
-        }
-
-        @Override
-        public Double call() throws Exception {
-            int tasksPerWorker = (int) Math.round(((double) tasks.length) / workers.length);
-            int from = tasksPerWorker * id;
-            int upto = tasksPerWorker * (id + 1);
-            if (id == workers.length - 1) {
-                upto = tasks.length;
-            }
-
-            for (int i = from; i < upto; ++i) {
-                Glyph glyph = tasks[i];
-                double at = g.intersectAt(FirstMergeRecorder.this.from, glyph);
-                if (at < minAt) {
-                    minAt = at;
-                    minGlyphs.clear();
-                    minGlyphs.add(glyph);
-                } else if (at == minAt) {
-                    minGlyphs.add(glyph);
-                }
-            }
-            return minAt;
-        }
-
-        public void reset() {
-            minAt = Double.MAX_VALUE;
-            minGlyphs.clear();
-        }
-
     }
 
 }

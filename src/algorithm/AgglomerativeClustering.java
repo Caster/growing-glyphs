@@ -315,7 +315,6 @@ public class AgglomerativeClustering {
             }
             step(step);
         }
-        rec.shutdown();
         LOGGER.log(Level.FINE, "created {0} events, handled {1} and discarded {2}; {3} events were never considered",
                 new Object[] {q.insertions, q.deletions, q.discarded, q.insertions - q.deletions - q.discarded});
         for (Event.Type t : Event.Type.values()) {
