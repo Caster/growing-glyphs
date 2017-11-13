@@ -18,6 +18,12 @@ import datastructure.growfunction.GrowFunction;
 public class FirstMergeRecorder {
 
     /**
+     * Collector for stream operations.
+     */
+    private static Collector<Glyph, FirstMerge, FirstMerge> collector;
+
+
+    /**
      * Glyph with which merges are recorded.
      */
     private Glyph from;
@@ -71,12 +77,14 @@ public class FirstMergeRecorder {
     }
 
     public Collector<Glyph, FirstMerge, FirstMerge> collector() {
-        return Collector.of(
-                () -> new FirstMerge(),
-                (m, g) -> m.accept(g),
-                (a, b) -> a.combine(b),
-                Characteristics.CONCURRENT,
-                Characteristics.UNORDERED);
+        if (collector == null) {
+            collector = Collector.of(
+                    () -> new FirstMerge(),
+                    (m, g) -> m.accept(g),
+                    (a, b) -> a.combine(b),
+                    Characteristics.UNORDERED);
+        }
+        return collector;
     }
 
     /**
