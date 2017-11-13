@@ -53,7 +53,7 @@ public class AgglomerativeClustering {
     public AgglomerativeClustering(QuadTree tree, GrowFunction g) {
         this.tree = tree;
         this.g = g;
-        this.rec = new FirstMergeRecorder(g);
+        this.rec = null;
         this.result = null;
     }
 
@@ -93,6 +93,8 @@ public class AgglomerativeClustering {
         Q q = new Q();
         // also create a result for each glyph, and a map to find them
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
+        // then create a single object that is used to find first merges
+        rec = new FirstMergeRecorder(g);
         // finally, create an indication of which glyphs still participate
         int numAlive = 0;
         Rectangle2D rect = tree.getRectangle();
@@ -101,9 +103,7 @@ public class AgglomerativeClustering {
             for (int i = 0; i < glyphs.length; ++i) {
                 // add events for when two glyphs in the same cell touch
                 rec.from(glyphs[i]);
-                for (int j = i + 1; j < glyphs.length; ++j) {
-                    rec.record(glyphs[j]);
-                }
+                rec.record(glyphs, i + 1, glyphs.length);
                 rec.addEventsTo(q);
 
                 // add events for when a glyph grows out of its cell
@@ -166,11 +166,7 @@ public class AgglomerativeClustering {
                 // create events with remaining glyphs
                 rec.from(merged);
                 for (QuadTree cell : merged.getCells()) {
-                    for (Glyph glyph : cell.getGlyphs()) {
-                        if (glyph.alive) {
-                            rec.record(glyph);
-                        }
-                    }
+                    rec.record(cell.getGlyphs());
                     // create out of cell events
                     for (Side side : Side.values()) {
                         // only create an event when at least one neighbor on
@@ -268,11 +264,7 @@ public class AgglomerativeClustering {
                         // create events with remaining glyphs
                         rec.from(merged);
                         for (QuadTree cell : merged.getCells()) {
-                            for (Glyph glyph : cell.getGlyphs()) {
-                                if (glyph.alive) {
-                                    rec.record(glyph);
-                                }
-                            }
+                            rec.record(cell.getGlyphs());
                             // create out of cell events
                             for (Side side : Side.values()) {
                                 // only create an event when at least one neighbor on
@@ -315,6 +307,7 @@ public class AgglomerativeClustering {
             }
             step(step);
         }
+        rec.shutdown();
         LOGGER.log(Level.FINE, "created {0} events, handled {1} and discarded {2}; {3} events were never considered",
                 new Object[] {q.insertions, q.deletions, q.discarded, q.insertions - q.deletions - q.discarded});
         for (Event.Type t : Event.Type.values()) {
@@ -404,14 +397,7 @@ public class AgglomerativeClustering {
                 // create merge events with other glyphs in the cells the glyph
                 // grows into, even when they happen before the current one
                 // (those events will immediately be handled after this one)
-                for (Glyph otherGlyph : in.getGlyphs()) {
-                    if (otherGlyph == glyph) {
-                        continue;
-                    }
-                    if (otherGlyph.alive) {
-                        rec.record(otherGlyph);
-                    }
-                }
+                rec.record(in.getGlyphs());
 
                 // create out of cell events for the cells the glyph grows into,
                 // but only when they happen after the current event

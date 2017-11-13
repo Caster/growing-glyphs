@@ -70,7 +70,7 @@ public class CsvIO {
                 // QuadTree is built on zoom level 1, but centered around [0, 0]
                 Point2D p = ll.toPoint(1);
                 tree.insertCenterOf(new Glyph(p.getX() - 256, p.getY() - 256,
-                        read.get(ll)));
+                        read.get(ll), true));
             }
             LOGGER.log(Level.INFO, "loaded {0} locations", new Object[] {
                     read.size()});

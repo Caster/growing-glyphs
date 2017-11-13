@@ -20,7 +20,7 @@ public class PointIO {
         try (Scanner reader = new Scanner(new FileInputStream(file))) {
             while (reader.hasNextDouble()) {
                 tree.insertCenterOf(new Glyph(reader.nextDouble(),
-                        reader.nextDouble(), reader.nextInt(10)));
+                        reader.nextDouble(), reader.nextInt(10), true));
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();

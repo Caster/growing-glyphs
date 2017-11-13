@@ -37,6 +37,7 @@ public class Glyph {
 
     /**
      * Construct a new glyph at the given coordinates, with given growing speed.
+     * The constructed glyph is not alive.
      *
      * @param x X-coordinate of the center of the glyph.
      * @param y Y-coordinate of the center of the glyph.
@@ -44,10 +45,23 @@ public class Glyph {
      * @throws IllegalArgumentException When n < 1.
      */
     public Glyph(double x, double y, int n) {
+        this(x, y, n, false);
+    }
+
+    /**
+     * Construct a new glyph at the given coordinates, with given growing speed.
+     *
+     * @param x X-coordinate of the center of the glyph.
+     * @param y Y-coordinate of the center of the glyph.
+     * @param n Number of entities represented by the glyph.
+     * @param alive Whether the glyph is marked alive or not.
+     * @throws IllegalArgumentException When n < 1.
+     */
+    public Glyph(double x, double y, int n, boolean alive) {
         if (n < 1) {
             throw new IllegalArgumentException("n must be at least 1");
         }
-        this.alive = false;
+        this.alive = alive;
         this.x = x;
         this.y = y;
         this.n = n;
