@@ -27,6 +27,19 @@ import utils.Utils.Timers;
 
 public class AgglomerativeClustering {
 
+    /**
+     * Whether merge events are to be created for all pairs of glyphs, or only
+     * the first one. In practice, creating only the first merge event appears
+     * to result in clusterings free of overlap, but in theory overlap can
+     * occur. Setting this to {@code true} implies a performance hit.
+     *
+     * Please note that {@link QuadTree#MAX_GLYPHS_PER_CELL} cannot be set to
+     * high values when setting this to {@code true}, or you need to allocate
+     * more memory to the clustering process for large data sets.
+     */
+    public static final boolean ROBUST = true;
+
+
     private static final Logger LOGGER =
             Logger.getLogger(AgglomerativeClustering.class.getName());
 

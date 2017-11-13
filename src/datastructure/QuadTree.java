@@ -12,6 +12,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import algorithm.AgglomerativeClustering;
 import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
 import utils.Utils;
@@ -26,7 +27,8 @@ public class QuadTree implements Iterable<QuadTree> {
     /**
      * The maximum number of glyphs that should intersect any leaf cell.
      */
-    public static final int MAX_GLYPHS_PER_CELL = 10000;
+    public static final int MAX_GLYPHS_PER_CELL =
+            (AgglomerativeClustering.ROBUST ? 500 : 10000);
     /**
      * Minimum width/height of a cell.
      */

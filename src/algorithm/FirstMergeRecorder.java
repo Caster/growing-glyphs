@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.Collector.Characteristics;
+import java.util.stream.Collectors;
 
 import datastructure.Glyph;
 import datastructure.events.Event;
@@ -68,7 +69,8 @@ public class FirstMergeRecorder {
      */
     public void addEventsTo(Queue<Event> q, Logger l) {
         for (Glyph with : merge.glyphs) {
-            q.add(new GlyphMerge(from, with, merge.at));
+            q.add(new GlyphMerge(from, with, (AgglomerativeClustering.ROBUST ?
+                    g.intersectAt(from, with) : merge.at)));
             if (l != null) {
                 l.log(Level.FINEST, "-> merge at {0} with {1}",
                         new Object[] {merge.at, with});
@@ -134,9 +136,16 @@ public class FirstMergeRecorder {
      * @param glyphs Stream of glyphs to record.
      */
     public void record(Stream<Glyph> glyphs) {
-        merge.combine(glyphs.parallel()
-            .filter((glyph) -> glyph.alive && glyph != from)
-            .collect(collector()));
+        if (AgglomerativeClustering.ROBUST) {
+            merge.glyphs.addAll(glyphs.parallel()
+                .filter((glyph) -> glyph.alive && glyph != from)
+                .collect(Collectors.toSet()));
+
+        } else {
+            merge.combine(glyphs.parallel()
+                .filter((glyph) -> glyph.alive && glyph != from)
+                .collect(collector()));
+        }
     }
 
 
