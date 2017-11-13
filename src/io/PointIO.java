@@ -8,10 +8,9 @@ import java.io.PrintStream;
 import java.util.Locale;
 import java.util.Scanner;
 
-import datastructure.QuadTree;
-import datastructure.QuadTree.InsertedWhen;
-import utils.Utils.Locales;
 import datastructure.Glyph;
+import datastructure.QuadTree;
+import utils.Utils.Locales;
 
 public class PointIO {
 
@@ -32,7 +31,7 @@ public class PointIO {
         Locales.push(Locale.US);
         try (PrintStream writer = new PrintStream(new FileOutputStream(file))) {
             for (QuadTree leaf : tree.getLeaves()) {
-                for (Glyph s : leaf.getGlyphs(InsertedWhen.INITIALLY)) {
+                for (Glyph s : leaf.getGlyphs()) {
                     writer.println(s.getX() + " " + s.getY() + " " + s.getN());
                 }
             }

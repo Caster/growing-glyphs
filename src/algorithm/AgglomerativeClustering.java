@@ -22,6 +22,8 @@ import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
 import utils.Stat;
 import utils.Utils;
+import utils.Utils.Stats;
+import utils.Utils.Timers;
 
 public class AgglomerativeClustering {
 
@@ -85,10 +87,10 @@ public class AgglomerativeClustering {
                 QuadTree.MAX_GLYPHS_PER_CELL, QuadTree.MIN_CELL_SIZE});
         if (LOGGER.getLevel().intValue() >= Level.FINE.intValue()) {
             for (QuadTree leaf : tree.getLeaves()) {
-                Utils.Stats.record("glyphs per cell", leaf.getGlyphs().size());
+                Stats.record("glyphs per cell", leaf.getGlyphs().size());
             }
         }
-        Utils.Timers.start("clustering");
+        Timers.start("clustering");
         // construct a queue, put everything in there
         Q q = new Q();
         // also create a result for each glyph, and a map to find them
@@ -103,7 +105,9 @@ public class AgglomerativeClustering {
             for (int i = 0; i < glyphs.length; ++i) {
                 // add events for when two glyphs in the same cell touch
                 rec.from(glyphs[i]);
+                Timers.start("first merge recording");
                 rec.record(glyphs, i + 1, glyphs.length);
+                Timers.stop("first merge recording");
                 rec.addEventsTo(q);
 
                 // add events for when a glyph grows out of its cell
@@ -166,7 +170,9 @@ public class AgglomerativeClustering {
                 // create events with remaining glyphs
                 rec.from(merged);
                 for (QuadTree cell : merged.getCells()) {
+                    Timers.start("first merge recording");
                     rec.record(cell.getGlyphs());
+                    Timers.stop("first merge recording");
                     // create out of cell events
                     for (Side side : Side.values()) {
                         // only create an event when at least one neighbor on
@@ -264,7 +270,9 @@ public class AgglomerativeClustering {
                         // create events with remaining glyphs
                         rec.from(merged);
                         for (QuadTree cell : merged.getCells()) {
+                            Timers.start("first merge recording");
                             rec.record(cell.getGlyphs());
+                            Timers.stop("first merge recording");
                             // create out of cell events
                             for (Side side : Side.values()) {
                                 // only create an event when at least one neighbor on
@@ -312,16 +320,18 @@ public class AgglomerativeClustering {
                 new Object[] {q.insertions, q.deletions, q.discarded, q.insertions - q.deletions - q.discarded});
         for (Event.Type t : Event.Type.values()) {
             String tn = t.toString();
-            Stat s = Utils.Stats.get(tn);
+            Stat s = Stats.get(tn);
             LOGGER.log(Level.FINE, "→ {1} {0}s ({2} handled, {3} discarded)", new Object[] {
-                tn, s.getSum(), Utils.Stats.get(tn + " handled").getSum(), Utils.Stats.get(tn + " discarded").getSum()});
+                tn, s.getSum(), Stats.get(tn + " handled").getSum(), Stats.get(tn + " discarded").getSum()});
         }
         LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1} now",
                 new Object[] {tree.getSize(), tree.getTreeHeight()});
-        Utils.Timers.log("clustering", LOGGER);
-        Utils.Timers.log("queue operations", LOGGER);
-        Utils.Stats.log("queue size", LOGGER);
-        Utils.Stats.log("glyphs per cell", LOGGER);
+        Timers.log("clustering", LOGGER);
+        Timers.log("queue operations", LOGGER);
+        Timers.log("first merge recording", LOGGER);
+        Timers.log("set to array", LOGGER);
+        Stats.log("queue size", LOGGER);
+        Stats.log("glyphs per cell", LOGGER);
         LOGGER.log(Level.FINER, "RETURN from AgglomerativeClustering#cluster()");
         return this;
     }
@@ -383,7 +393,7 @@ public class AgglomerativeClustering {
                 grownInto = neighbor.getLeaves(glyph, oAt, g);
                 if (LOGGER.getLevel().intValue() >= Level.FINE.intValue()) {
                     for (QuadTree in : neighbor.getLeaves()) {
-                        Utils.Stats.record("glyphs per cell",
+                        Stats.record("glyphs per cell",
                                 in.getGlyphsAlive().size());
                     }
                 }
@@ -397,7 +407,9 @@ public class AgglomerativeClustering {
                 // create merge events with other glyphs in the cells the glyph
                 // grows into, even when they happen before the current one
                 // (those events will immediately be handled after this one)
+                Timers.start("first merge recording");
                 rec.record(in.getGlyphs());
+                Timers.stop("first merge recording");
 
                 // create out of cell events for the cells the glyph grows into,
                 // but only when they happen after the current event
@@ -458,31 +470,31 @@ public class AgglomerativeClustering {
         @Override
         public boolean add(Event e) {
             insertions++;
-            Utils.Timers.start("queue operations");
+            Timers.start("queue operations");
             boolean t = super.add(e);
-            Utils.Timers.stop("queue operations");
-            Utils.Stats.record("queue size", super.size());
-            Utils.Stats.record(e.getType().toString(), 1);
+            Timers.stop("queue operations");
+            Stats.record("queue size", super.size());
+            Stats.record(e.getType().toString(), 1);
             return t;
         }
 
         public void discard() {
             discarded++;
-            Utils.Timers.start("queue operations");
+            Timers.start("queue operations");
             Event e = super.poll();
-            Utils.Timers.stop("queue operations");
-            Utils.Stats.record("queue size", super.size());
-            Utils.Stats.record(e.getType().toString() + " discarded", 1);
+            Timers.stop("queue operations");
+            Stats.record("queue size", super.size());
+            Stats.record(e.getType().toString() + " discarded", 1);
         }
 
         @Override
         public Event poll() {
             deletions++;
-            Utils.Timers.start("queue operations");
+            Timers.start("queue operations");
             Event e = super.poll();
-            Utils.Timers.stop("queue operations");
-            Utils.Stats.record("queue size", super.size());
-            Utils.Stats.record(e.getType().toString() + " handled", 1);
+            Timers.stop("queue operations");
+            Stats.record("queue size", super.size());
+            Stats.record(e.getType().toString() + " handled", 1);
             return e;
         }
 

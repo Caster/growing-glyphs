@@ -184,7 +184,6 @@ public class GrowingGlyphs extends JFrame {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                daemon.getTree().reset();
                 daemon.cluster(SETTINGS.getBoolean(Setting.DEBUG),
                         SETTINGS.getBoolean(Setting.STEP));
                 if (daemon.getClustering() != null) {

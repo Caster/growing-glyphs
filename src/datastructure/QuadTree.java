@@ -4,12 +4,10 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,12 +34,6 @@ public class QuadTree implements Iterable<QuadTree> {
 
 
     /**
-     * Enumeration of moments when a glyph may be inserted into the tree.
-     */
-    public enum InsertedWhen { INITIALLY, BY_ALGORITHM; }
-
-
-    /**
      * Rectangle describing this cell.
      */
     private Rectangle2D cell;
@@ -59,11 +51,9 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     private GrowFunction g;
     /**
-     * Glyphs intersecting the cell. This is not just a set, but a map, because
-     * it tracks whether glyphs were inserted initially or while running the
-     * clustering algorithm.
+     * Glyphs intersecting the cell.
      */
-    private Map<Glyph, InsertedWhen> glyphs;
+    private Set<Glyph> glyphs;
 
 
     /**
@@ -103,7 +93,7 @@ public class QuadTree implements Iterable<QuadTree> {
         this.parent = null;
         this.children = null;
         this.g = g;
-        this.glyphs = new HashMap<>(MAX_GLYPHS_PER_CELL);
+        this.glyphs = new HashSet<>(MAX_GLYPHS_PER_CELL);
     }
 
 
@@ -112,7 +102,7 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     public void clear() {
         this.children = null;
-        for (Glyph glyph : this.glyphs.keySet()) {
+        for (Glyph glyph : this.glyphs) {
             glyph.removeCell(this);
         }
         this.glyphs.clear();
@@ -148,17 +138,11 @@ public class QuadTree implements Iterable<QuadTree> {
     }
 
     public Set<Glyph> getGlyphs() {
-        return glyphs.keySet();
-    }
-
-    public Set<Glyph> getGlyphs(InsertedWhen filter) {
-        return glyphs.keySet().stream()
-            .filter(glyph -> glyphs.get(glyph) == filter)
-            .collect(Collectors.toSet());
+        return glyphs;
     }
 
     public Set<Glyph> getGlyphsAlive() {
-        return glyphs.keySet().stream()
+        return glyphs.stream()
                 .filter(glyph -> glyph.alive)
                 .collect(Collectors.toSet());
     }
@@ -291,7 +275,7 @@ public class QuadTree implements Iterable<QuadTree> {
             return;
         }
         if (isLeaf()) {
-            glyphs.put(glyph, InsertedWhen.BY_ALGORITHM);
+            glyphs.add(glyph);
             glyph.addCell(this);
         } else {
             for (QuadTree child : children) {
@@ -315,7 +299,7 @@ public class QuadTree implements Iterable<QuadTree> {
         }
         // can we insert here?
         if (isLeaf() && glyphs.size() < MAX_GLYPHS_PER_CELL) {
-            glyphs.put(glyph, InsertedWhen.INITIALLY);
+            glyphs.add(glyph);
             glyph.addCell(this);
             return true;
         }
@@ -368,32 +352,6 @@ public class QuadTree implements Iterable<QuadTree> {
     }
 
     /**
-     * Like {@link #removeGlyph(Glyph)}, but only if the given glyph was inserted
-     * at the given time. Otherwise, the glyph is not removed and nothing changes.
-     *
-     * @param glyph Glyph to be removed.
-     * @param when Condition under which glyph is removed.
-     */
-    public void removeGlyphIf(Glyph glyph, InsertedWhen when) {
-        glyphs.remove(glyph, when);
-    }
-
-    /**
-     * Reset state to what it was after all initially inserted glyphs were
-     * there. This clears the tree and rebuilds it from scratch.
-     */
-    public void reset() {
-        Set<Glyph> toInsert = new HashSet<>();
-        for (QuadTree leaf : getLeaves()) {
-            toInsert.addAll(leaf.getGlyphs(InsertedWhen.INITIALLY));
-        }
-        clear();
-        for (Glyph s : toInsert) {
-            insertCenterOf(s);
-        }
-    }
-
-    /**
      * Performs a regular QuadTree split, treating all glyphs associated with
      * this cell as points, namely their centers. Distributes associated glyphs
      * to the relevant child cells.
@@ -404,7 +362,7 @@ public class QuadTree implements Iterable<QuadTree> {
         splitCell();
         // possibly distribute glyphs
         if (!glyphs.isEmpty()) {
-            for (Glyph glyph : glyphs.keySet()) {
+            for (Glyph glyph : glyphs) {
                 for (QuadTree child : children) {
                     child.insertCenterOf(glyph);
                 }
@@ -429,7 +387,7 @@ public class QuadTree implements Iterable<QuadTree> {
         if (!glyphs.isEmpty()) {
             // insert glyph in every child cell it overlaps
             // (a glyph can be inserted into more than one cell!)
-            for (Glyph glyph : glyphs.keySet()) {
+            for (Glyph glyph : glyphs) {
                 // don't bother with dead glyphs
                 if (glyph.alive) {
                     insert(glyph, at, g);

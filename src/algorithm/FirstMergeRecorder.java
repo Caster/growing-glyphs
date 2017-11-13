@@ -15,6 +15,7 @@ import datastructure.Glyph;
 import datastructure.events.Event;
 import datastructure.events.GlyphMerge;
 import datastructure.growfunction.GrowFunction;
+import utils.Utils.Timers;
 
 public class FirstMergeRecorder {
 
@@ -142,8 +143,8 @@ public class FirstMergeRecorder {
 
     /**
      * {@link #record(Glyph) Record} all glyphs in the given array between the
-     * given indices (including {@code from}, excluding {@code upto}). No further
-     * filtering is done!
+     * given indices (including {@code from}, excluding {@code upto}). Only when
+     * they are {@link Glyph#alive} and not {@link #from}, they are recorded.
      *
      * This method may use parallelization to speed up recording.
      *
@@ -197,9 +198,11 @@ public class FirstMergeRecorder {
      * @param glyphs Set of glyphs to record.
      */
     public void record(Set<Glyph> glyphs) {
+        Timers.start("set to array");
         Glyph[] arr = glyphs.parallelStream()
-                .filter((glyph) -> (glyph.alive && glyph != from))
+                .filter((glyph) -> glyph.alive && glyph != from)
                 .toArray(Glyph[]::new);
+        Timers.stop("set to array");
         record(arr, 0, arr.length);
     }
 

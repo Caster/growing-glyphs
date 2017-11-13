@@ -29,7 +29,6 @@ import javax.swing.JPanel;
 
 import datastructure.Glyph;
 import datastructure.QuadTree;
-import datastructure.QuadTree.InsertedWhen;
 import datastructure.events.OutOfCell.Side;
 import gui.Settings.Setting;
 
@@ -194,7 +193,7 @@ public class DrawPanel extends JPanel implements
                 }
                 // glyphs in cells (only the centers!)
                 if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CENTERS)) {
-                    for (Glyph s : cell.getGlyphs(InsertedWhen.INITIALLY)) {
+                    for (Glyph s : cell.getGlyphs()) {
                         g2.setColor(s == highlightedGlyph ? Color.RED : Color.BLACK);
                         g2.fill(new Rectangle2D.Double(
                                 s.getX() - r,
@@ -299,7 +298,7 @@ public class DrawPanel extends JPanel implements
                     nodes.addAll(leaf.getNeighbors(side));
                 }
                 for (QuadTree node : nodes) {
-                    for (Glyph glyph : node.getGlyphs(InsertedWhen.INITIALLY)) {
+                    for (Glyph glyph : node.getGlyphs()) {
                         double d;
                         if ((d = p.distanceSq(glyph.getX(), glyph.getY())) < minDist) {
                             minDist = d;
