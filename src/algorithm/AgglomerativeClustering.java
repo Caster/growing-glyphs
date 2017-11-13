@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
-import datastructure.QuadTree.InsertedWhen;
 import datastructure.events.Event;
 import datastructure.events.Event.Type;
 import datastructure.events.GlyphMerge;
@@ -161,7 +160,7 @@ public class AgglomerativeClustering {
                 for (Glyph glyph : m.getGlyphs()) {
                     glyph.alive = false; numAlive--;
                     for (QuadTree cell : glyph.getCells()) {
-                        cell.removeGlyphIf(glyph, InsertedWhen.BY_ALGORITHM);
+                        cell.removeGlyph(glyph);
                     }
                 }
                 // create events with remaining glyphs
@@ -247,11 +246,17 @@ public class AgglomerativeClustering {
                         // previous merged glyph was no good, let it die and update
                         wasMerged.add(merged);
                         merged.alive = false; numAlive--;
-                        for (Glyph s : m.getGlyphs()) {
-                            if (!wasMerged.contains(s)) {
-                                inMerged.add(s);
-                                mergedHC.alsoCreatedFrom(map.get(s));
-                                s.alive = false; numAlive--;
+                        for (QuadTree cell : merged.getCells()) {
+                            cell.removeGlyph(merged);
+                        }
+                        for (Glyph glyph : m.getGlyphs()) {
+                            if (!wasMerged.contains(glyph)) {
+                                inMerged.add(glyph);
+                                mergedHC.alsoCreatedFrom(map.get(glyph));
+                                glyph.alive = false; numAlive--;
+                                for (QuadTree cell : glyph.getCells()) {
+                                    cell.removeGlyph(glyph);
+                                }
                             }
                         }
                         map.remove(merged); // it's as if this glyph never existed
