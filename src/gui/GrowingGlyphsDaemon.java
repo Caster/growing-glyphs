@@ -18,6 +18,7 @@ import io.PointIO;
 public class GrowingGlyphsDaemon {
 
     private AgglomerativeClustering clusterer;
+    private boolean clustered;
     private GrowFunction g;
     private QuadTree tree;
 
@@ -31,6 +32,7 @@ public class GrowingGlyphsDaemon {
                 g
             );
         this.clusterer = new AgglomerativeClustering(this.tree, this.g);
+        this.clustered = false;
     }
 
     public GrowFunction getGrowFunction() {
@@ -54,13 +56,20 @@ public class GrowingGlyphsDaemon {
      * Execute clustering algorithm. The parameters are all meant for debugging
      * purposes. Should you not be interested in that, use {@link #cluster()}.
      *
+     * This method will do nothing if the current data set has already been
+     * clustered before. The flag for that is cleared when a new file is opened.
+     *
      * @param includeOutOfCell Whether points in time where glyphs grow out of
      *            their cell should be included in the output.
      * @param step Whether the algorithm should pause after every event, only
      *            to continue when the user inputs a line (or just pressed enter).
      */
     public void cluster(boolean includeOutOfCell, boolean step) {
+        if (clustered) {
+            return;
+        }
         clusterer.cluster(includeOutOfCell, step);
+        clustered = true;
     }
 
     /**
@@ -83,6 +92,7 @@ public class GrowingGlyphsDaemon {
         } else {
             PointIO.read(file, tree);
         }
+        clustered = false;
     }
 
 }

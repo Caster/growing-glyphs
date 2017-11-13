@@ -112,8 +112,8 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     public void clear() {
         this.children = null;
-        for (Glyph s : this.glyphs.keySet()) {
-            s.removeCell(this);
+        for (Glyph glyph : this.glyphs.keySet()) {
+            glyph.removeCell(this);
         }
         this.glyphs.clear();
     }
