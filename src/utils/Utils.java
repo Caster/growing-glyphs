@@ -234,8 +234,9 @@ public class Utils {
             }
             Stat s = stats.get(name);
             logger.log(Level.FINE, "{0} was {1} on average and always between "
-                + "{2} and {3}, over {4} measurements", new Object[] {name,
-                s.getAverage(), s.getMin(), s.getMax(), s.getN()});
+                + "{2} and {3}, over {4} measurement{5}", new Object[] {name,
+                s.getAverage(), s.getMin(), s.getMax(), s.getN(),
+                (s.getN() == 1 ? "" : "s")});
         }
 
         public static void record(String name, double value) {

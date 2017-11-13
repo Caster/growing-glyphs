@@ -86,7 +86,7 @@ public class AgglomerativeClustering {
                 QuadTree.MAX_GLYPHS_PER_CELL, QuadTree.MIN_CELL_SIZE});
         if (LOGGER.getLevel().intValue() >= Level.FINE.intValue()) {
             for (QuadTree leaf : tree.getLeaves()) {
-                Utils.Stats.record("glyphs per cell", leaf.getGlyphsAlive().size());
+                Utils.Stats.record("glyphs per cell", leaf.getGlyphs().size());
             }
         }
         Utils.Timers.start("clustering");
