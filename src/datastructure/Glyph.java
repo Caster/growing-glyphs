@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import algorithm.AgglomerativeClustering;
 import datastructure.growfunction.GrowFunction;
 
 /**
@@ -16,6 +17,11 @@ public class Glyph {
      * Used by clustering algorithm to track which glyphs are still of interest.
      */
     public boolean alive;
+    /**
+     * Used by the clustering algorithm to track which glyphs think they'll merge
+     * with {@code this} glyph before merging with any other glyph.
+     */
+    public Set<Glyph> trackedBy;
 
     /**
      * X-coordinate of the center of the glyph.
@@ -62,6 +68,11 @@ public class Glyph {
             throw new IllegalArgumentException("n must be at least 1");
         }
         this.alive = alive;
+        if (AgglomerativeClustering.TRACK) {
+            this.trackedBy = new HashSet<>(1);
+        } else {
+            this.trackedBy = null;
+        }
         this.x = x;
         this.y = y;
         this.n = n;

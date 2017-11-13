@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -37,7 +38,16 @@ public class AgglomerativeClustering {
      * high values when setting this to {@code true}, or you need to allocate
      * more memory to the clustering process for large data sets.
      */
-    public static final boolean ROBUST = true;
+    public static final boolean ROBUST = false;
+    /**
+     * When {@link #ROBUST} is {@code false}, this flag toggles behavior where
+     * glyphs track which glyphs think they'll merge with them first. Merge
+     * events are then updated for tracking glyphs, as glyphs merge.
+     *
+     * Same concern about {@link QuadTree#MAX_GLYPHS_PER_CELL} holds as for
+     * {@link #ROBUST}, except for CPU time instead of memory.
+     */
+    public static final boolean TRACK = true;
 
 
     private static final Logger LOGGER =
@@ -179,6 +189,22 @@ public class AgglomerativeClustering {
                     for (QuadTree cell : glyph.getCells()) {
                         cell.removeGlyph(glyph);
                     }
+                    // update merge events of glyphs that tracked merged glyphs
+                    if (TRACK && !ROBUST) {
+                        Iterator<Glyph> it = glyph.trackedBy.iterator();
+                        while (it.hasNext()) {
+                            Glyph orphan = it.next();
+                            if (orphan.alive) {
+                                rec.from(orphan);
+                                for (QuadTree cell : orphan.getCells()) {
+                                    rec.record(cell.getGlyphs());
+                                }
+                                rec.addEventsTo(q, LOGGER);
+                            } else {
+                                it.remove();
+                            }
+                        }
+                    }
                 }
                 // create events with remaining glyphs
                 rec.from(merged);
@@ -261,6 +287,9 @@ public class AgglomerativeClustering {
                         // previous merged glyph was no good, let it die and update
                         wasMerged.add(merged);
                         merged.alive = false; numAlive--;
+                        // at this point, because this is a nested merge, no other
+                        // glyphs have had time to track `merged` yet, so no need
+                        // to do anything even if `TRACK && !ROBUST`
                         for (QuadTree cell : merged.getCells()) {
                             cell.removeGlyph(merged);
                         }

@@ -71,6 +71,9 @@ public class FirstMergeRecorder {
         for (Glyph with : merge.glyphs) {
             q.add(new GlyphMerge(from, with, (AgglomerativeClustering.ROBUST ?
                     g.intersectAt(from, with) : merge.at)));
+            if (AgglomerativeClustering.TRACK) {
+                with.trackedBy.add(from);
+            }
             if (l != null) {
                 l.log(Level.FINEST, "-> merge at {0} with {1}",
                         new Object[] {merge.at, with});
