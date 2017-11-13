@@ -188,7 +188,7 @@ Seems to have gotten a bit slower, but changing the maximum number of glyphs per
     FINE    |  → 0 out of cell events (0 handled, 0 discarded)
     FINE    |  → 15.505 merge events (7.753 handled, 3.247 discarded)
     FINE    |  QuadTree has 1 nodes and height 0 now
-    FINE    |  clustering took 2,984 seconds (wall clock time)
-    FINE    |  queue operations took 0,012 seconds (wall clock time, 26.505 timings)
+    FINE    |  clustering took 2,875 seconds (wall clock time)
+    FINE    |  queue operations took 0,011 seconds (wall clock time, 26.505 timings)
     FINE    |  queue size was 5.610,292 on average and always between 1 and 7.753, over 26.505 measurements
-    FINE    |  glyphs per cell was 0 on average and always between 0 and 0, over 1 measurements
+    FINE    |  glyphs per cell was 7.754 on average and always between 7.754 and 7.754, over 1 measurement
