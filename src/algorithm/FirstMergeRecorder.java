@@ -63,15 +63,7 @@ public class FirstMergeRecorder {
      */
     public void addEventsTo(Queue<Event> q, Logger l) {
         for (Glyph with : minGlyphs) {
-            if (with.mergingWith != null &&
-                    with.mergingWith.getOther(with) == from) {
-                if (l != null) {
-                    l.log(Level.FINEST, "-> merge at {0} with {1}, but that "
-                        + "was already recorded", new Object[] {minAt, with});
-                }
-                continue;
-            }
-            q.add(from.mergingWith = new GlyphMerge(from, with, minAt));
+            q.add(new GlyphMerge(from, with, minAt));
             if (l != null) {
                 l.log(Level.FINEST, "-> merge at {0} with {1}",
                         new Object[] {minAt, with});
@@ -97,12 +89,6 @@ public class FirstMergeRecorder {
      * @param candidate Glyph that the {@code from} glyph could merge with.
      */
     public void record(Glyph candidate) {
-        // silently ignore comparing a glyph to itself
-        if (candidate == from) {
-            return;
-        }
-
-        // see when these two would touch, record if interesting
         double at = g.intersectAt(from, candidate);
         if (at < minAt) {
             minAt = at;

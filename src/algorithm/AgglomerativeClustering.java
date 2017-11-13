@@ -98,12 +98,12 @@ public class AgglomerativeClustering {
         int numAlive = 0;
         Rectangle2D rect = tree.getRectangle();
         for (QuadTree leaf : tree.getLeaves()) {
-            Set<Glyph> glyphs = leaf.getGlyphs();
-            for (Glyph glyph : glyphs) {
+            Glyph[] glyphs = leaf.getGlyphs().toArray(new Glyph[0]);
+            for (int i = 0; i < glyphs.length; ++i) {
                 // add events for when two glyphs in the same cell touch
-                rec.from(glyph);
-                for (Glyph otherGlyph : glyphs) {
-                    rec.record(otherGlyph);
+                rec.from(glyphs[i]);
+                for (int j = i + 1; j < glyphs.length; ++j) {
+                    rec.record(glyphs[j]);
                 }
                 rec.addEventsTo(q);
 
@@ -112,13 +112,13 @@ public class AgglomerativeClustering {
                     // only create an event when it is not a border of the root
                     if (!Utils.onBorderOf(leaf.getSide(side), rect)) {
                         // now, actually create an OUT_OF_CELL event
-                        q.add(new OutOfCell(glyph, g, leaf, side));
+                        q.add(new OutOfCell(glyphs[i], g, leaf, side));
                     }
                 }
 
                 // create clustering leaves for all glyphs, mark them as alive
-                map.put(glyph, new HierarchicalClustering(glyph, 0));
-                glyph.alive = true; numAlive++;
+                map.put(glyphs[i], new HierarchicalClustering(glyphs[i], 0));
+                glyphs[i].alive = true; numAlive++;
             }
         }
         LOGGER.log(Level.FINE, "created {0} events initially, for {1} glyphs",

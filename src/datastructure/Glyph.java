@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import datastructure.events.GlyphMerge;
 import datastructure.growfunction.GrowFunction;
 
 /**
@@ -17,12 +16,6 @@ public class Glyph {
      * Used by clustering algorithm to track which glyphs are still of interest.
      */
     public boolean alive;
-    /**
-     * Used by clustering algorithm to track with which glyph this one will
-     * merge first, possibly. This is used to prevent the creation of obsolete
-     * merge events in the event queue.
-     */
-    public GlyphMerge mergingWith;
 
     /**
      * X-coordinate of the center of the glyph.
