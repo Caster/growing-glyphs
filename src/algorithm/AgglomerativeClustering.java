@@ -36,6 +36,10 @@ public class AgglomerativeClustering {
     private QuadTree tree;
     private GrowFunction g;
     /**
+     * Single object that is used to easily find merge events to be added.
+     */
+    private FirstMergeRecorder rec;
+    /**
      * Resulting clustering.
      */
     private HierarchicalClustering result;
@@ -50,6 +54,7 @@ public class AgglomerativeClustering {
     public AgglomerativeClustering(QuadTree tree, GrowFunction g) {
         this.tree = tree;
         this.g = g;
+        this.rec = new FirstMergeRecorder(g);
         this.result = null;
     }
 
@@ -96,9 +101,11 @@ public class AgglomerativeClustering {
             Glyph[] glyphs = leaf.getGlyphs().toArray(new Glyph[0]);
             for (int i = 0; i < glyphs.length; ++i) {
                 // add events for when two glyphs in the same cell touch
+                rec.from(glyphs[i]);
                 for (int j = i + 1; j < glyphs.length; ++j) {
-                    q.add(new GlyphMerge(glyphs[i], glyphs[j], g));
+                    rec.record(glyphs[j]);
                 }
+                rec.addEventsTo(q);
 
                 // add events for when a glyph grows out of its cell
                 for (Side side : Side.values()) {
@@ -158,13 +165,11 @@ public class AgglomerativeClustering {
                     }
                 }
                 // create events with remaining glyphs
+                rec.from(merged);
                 for (QuadTree cell : merged.getCells()) {
                     for (Glyph glyph : cell.getGlyphs()) {
                         if (glyph.alive) {
-                            Event gme;
-                            q.add(gme = new GlyphMerge(merged, glyph, g));
-                            LOGGER.log(Level.FINEST, "-> merge at {0} with {1}",
-                                    new Object[] {gme.getAt(), glyph});
+                            rec.record(glyph);
                         }
                     }
                     // create out of cell events
@@ -189,6 +194,7 @@ public class AgglomerativeClustering {
                                 new Object[] {side, ooe.getAt(), cell});
                     }
                 }
+                rec.addEventsTo(q, LOGGER);
                 // update bookkeeping
                 merged.alive = true; numAlive++;
                 map.put(merged, mergedHC);
@@ -255,13 +261,11 @@ public class AgglomerativeClustering {
                         // add new glyph to QuadTree cell(s)
                         tree.insert(merged, m.getAt(), g);
                         // create events with remaining glyphs
+                        rec.from(merged);
                         for (QuadTree cell : merged.getCells()) {
                             for (Glyph glyph : cell.getGlyphs()) {
                                 if (glyph.alive) {
-                                    Event gme;
-                                    q.add(gme = new GlyphMerge(merged, glyph, g));
-                                    LOGGER.log(Level.FINEST, "-> merge at {0} with {1}",
-                                            new Object[] {gme.getAt(), glyph});
+                                    rec.record(glyph);
                                 }
                             }
                             // create out of cell events
@@ -286,6 +290,7 @@ public class AgglomerativeClustering {
                                         new Object[] {side, ooe.getAt(), cell});
                             }
                         }
+                        rec.addEventsTo(q, LOGGER);
                         merged.alive = true; numAlive++;
                         map.put(merged, mergedHC);
                         break;
@@ -389,6 +394,7 @@ public class AgglomerativeClustering {
                 grownInto.add(neighbor);
             }
 
+            rec.from(glyph);
             for (QuadTree in : grownInto) {
                 // create merge events with other glyphs in the cells the glyph
                 // grows into, even when they happen before the current one
@@ -398,10 +404,7 @@ public class AgglomerativeClustering {
                         continue;
                     }
                     if (otherGlyph.alive) {
-                        Event gme;
-                        q.add(gme = new GlyphMerge(glyph, otherGlyph, g));
-                        LOGGER.log(Level.FINEST, "-> merge at {0} with {1}",
-                                new Object[] {gme.getAt(), otherGlyph});
+                        rec.record(otherGlyph);
                     }
                 }
 
@@ -430,6 +433,7 @@ public class AgglomerativeClustering {
                     }
                 }
             }
+            rec.addEventsTo(q, LOGGER);
         }
     }
 

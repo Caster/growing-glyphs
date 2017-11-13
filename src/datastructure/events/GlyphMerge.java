@@ -9,7 +9,11 @@ import datastructure.growfunction.GrowFunction;
 public class GlyphMerge extends Event {
 
     public GlyphMerge(Glyph a, Glyph b, GrowFunction g) {
-        super(g.intersectAt(a, b), 2);
+        this(a, b, g.intersectAt(a, b));
+    }
+
+    public GlyphMerge(Glyph a, Glyph b, double at) {
+        super(at, 2);
         this.glyphs[0] = a;
         this.glyphs[1] = b;
     }

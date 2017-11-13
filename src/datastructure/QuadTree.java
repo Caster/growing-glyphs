@@ -28,7 +28,7 @@ public class QuadTree implements Iterable<QuadTree> {
     /**
      * The maximum number of glyphs that should intersect any leaf cell.
      */
-    public static final int MAX_GLYPHS_PER_CELL = 500;
+    public static final int MAX_GLYPHS_PER_CELL = 10000;
     /**
      * Minimum width/height of a cell.
      */
