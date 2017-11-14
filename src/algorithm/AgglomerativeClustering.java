@@ -48,6 +48,12 @@ public class AgglomerativeClustering {
      * {@link #ROBUST}, except for CPU time instead of memory.
      */
     public static final boolean TRACK = true;
+    /**
+     * Whether the event queue should be split into multiple queues (this value
+     * is at least 1), and at which point (when the last queue has filled up to
+     * contain {@link #QUEUE_BUCKETING} events).
+     */
+    public static final int QUEUE_BUCKETING = 10_000;
 
 
     private static final Logger LOGGER =
@@ -115,7 +121,7 @@ public class AgglomerativeClustering {
         }
         Timers.start("clustering");
         // construct a queue, put everything in there
-        Q q = new Q();
+        MultiQueue q = new MultiQueue(QUEUE_BUCKETING);
         // also create a result for each glyph, and a map to find them
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
         // then create a single object that is used to find first merges
@@ -374,13 +380,17 @@ public class AgglomerativeClustering {
             }
             step(step);
         }
-        LOGGER.log(Level.FINE, "created {0} events, handled {1} and discarded {2}; {3} events were never considered",
-                new Object[] {q.insertions, q.deletions, q.discarded, q.insertions - q.deletions - q.discarded});
+        LOGGER.log(Level.FINE, "created {0} events, handled {1} and discarded "
+                + "{2}; {3} events were never considered",
+                new Object[] {q.getInsertions(), q.getDeletions(),
+                q.getDiscarded(), q.getInsertions() - q.getDeletions() -
+                q.getDiscarded()});
         for (Event.Type t : Event.Type.values()) {
             String tn = t.toString();
             Stat s = Stats.get(tn);
             LOGGER.log(Level.FINE, "→ {1} {0}s ({2} handled, {3} discarded)", new Object[] {
-                tn, s.getSum(), Stats.get(tn + " handled").getSum(), Stats.get(tn + " discarded").getSum()});
+                tn, s.getSum(), Stats.get(tn + " handled").getSum(),
+                Stats.get(tn + " discarded").getSum()});
         }
         LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1} now",
                 new Object[] {tree.getSize(), tree.getTreeHeight()});
@@ -512,50 +522,6 @@ public class AgglomerativeClustering {
                 // Well, that's weird. #ShouldNeverHappen #FamousLastWords
             }
         }
-    }
-
-
-    /**
-     * {@link PriorityQueue} that keeps track of the number of insertions and
-     * deletions into/from it. Can be asked for these stats too.
-     */
-    private static class Q extends PriorityQueue<Event> {
-
-        private int insertions = 0;
-        private int deletions = 0;
-        private int discarded = 0;
-
-        @Override
-        public boolean add(Event e) {
-            insertions++;
-            Timers.start("queue operations");
-            boolean t = super.add(e);
-            Timers.stop("queue operations");
-            Stats.record("queue size", super.size());
-            Stats.record(e.getType().toString(), 1);
-            return t;
-        }
-
-        public void discard() {
-            discarded++;
-            Timers.start("queue operations");
-            Event e = super.poll();
-            Timers.stop("queue operations");
-            Stats.record("queue size", super.size());
-            Stats.record(e.getType().toString() + " discarded", 1);
-        }
-
-        @Override
-        public Event poll() {
-            deletions++;
-            Timers.start("queue operations");
-            Event e = super.poll();
-            Timers.stop("queue operations");
-            Stats.record("queue size", super.size());
-            Stats.record(e.getType().toString() + " handled", 1);
-            return e;
-        }
-
     }
 
 }
