@@ -301,6 +301,23 @@ public class AgglomerativeClustering {
                                 for (QuadTree cell : glyph.getCells()) {
                                     cell.removeGlyph(glyph);
                                 }
+                                // the remark above about `merged` does not hold for `glyph`,
+                                // so update merge events of glyphs that tracked `glyph`
+                                if (TRACK && !ROBUST) {
+                                    Iterator<Glyph> it = glyph.trackedBy.iterator();
+                                    while (it.hasNext()) {
+                                        Glyph orphan = it.next();
+                                        if (orphan.alive) {
+                                            rec.from(orphan);
+                                            for (QuadTree cell : orphan.getCells()) {
+                                                rec.record(cell.getGlyphs());
+                                            }
+                                            rec.addEventsTo(q, LOGGER);
+                                        } else {
+                                            it.remove();
+                                        }
+                                    }
+                                }
                             }
                         }
                         map.remove(merged); // it's as if this glyph never existed
