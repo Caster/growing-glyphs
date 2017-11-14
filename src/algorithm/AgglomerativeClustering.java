@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
+import datastructure.MultiQueue;
 import datastructure.QuadTree;
 import datastructure.events.Event;
 import datastructure.events.Event.Type;
