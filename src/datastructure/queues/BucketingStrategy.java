@@ -2,6 +2,8 @@ package datastructure.queues;
 
 import java.util.PriorityQueue;
 
+import utils.Utils;
+
 public enum BucketingStrategy {
     /**
      * Using this strategy in a {@link MultiQueue} means that the queue will
@@ -132,8 +134,21 @@ public enum BucketingStrategy {
 
     @Override
     public String toString() {
-        return String.format("%s (threshold %f, limit %f)", humanReadable,
-                threshold, limit).replaceAll("([1-9])0+\\b", "$1");
+        String format = "%1$s";
+        if (threshold != null || growing != null || limit != null) {
+            format += " (";
+            format += Utils.join("; ",
+                    (threshold == null ? "" : "threshold %2$.8f"),
+                    (growing == null ? "" : "growth %3$.8f"),
+                    (limit == null ? "" : "limit %4$.8f")
+                );
+            format += ")";
+        }
+        return String.format(format, humanReadable,
+                (threshold == null ? 0 : threshold.doubleValue()),
+                (growing == null ? 0 : growing.doubleValue()),
+                (limit == null ? 0 : limit.doubleValue()))
+                .replaceAll(",?0+([;)])", "$1");
     }
 
     /**
