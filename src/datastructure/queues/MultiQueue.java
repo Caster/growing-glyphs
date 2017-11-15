@@ -1,9 +1,7 @@
 package datastructure.queues;
 
 import java.util.PriorityQueue;
-import java.util.logging.Level;
 
-import algorithm.AgglomerativeClustering;
 import datastructure.events.Event;
 import utils.Utils.Stats;
 import utils.Utils.Timers;
@@ -149,14 +147,6 @@ public class MultiQueue extends PriorityQueue<Event> {
         poll(" discarded");
     }
 
-    public void logLoad() {
-        Stats.log("Q" + id + " size", AgglomerativeClustering.LOGGER);
-        AgglomerativeClustering.LOGGER.log(Level.FINE, String.format("(%.7f -- %.7f)", rangeStart, rangeEnd));
-        if (next != null) {
-            next.logLoad();
-        }
-    }
-
     @Override
     public Event peek() {
         Event e = super.peek();
@@ -224,21 +214,20 @@ public class MultiQueue extends PriorityQueue<Event> {
     private Event poll(String type) {
         Timers.start("queue operations");
         Event e = peek();
-        int[] qIdSize = poll(e);
+        poll(e);
         Timers.stop("queue operations");
         Stats.record("queue size", size());
-        Stats.record("Q" + qIdSize[0] + " size", qIdSize[1]);
         Stats.record(e.getType().toString() + type, 1);
         return e;
     }
 
-    private int[] poll(Event e) {
+    private void poll(Event e) {
         if (super.peek() == e) {
             super.poll();
-            return new int[] {id, super.size()};
+            return;
         }
         // the way we found `e` means that there must be a `next` now
-        return next.poll(e);
+        next.poll(e);
     }
 
     private int sizeNoPrev() {

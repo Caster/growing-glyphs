@@ -54,10 +54,10 @@ public class AgglomerativeClustering {
      * Whether the event queue should be split into multiple queues, and when.
      */
     public static final BucketingStrategy QUEUE_BUCKETING =
-            BucketingStrategy.ON_TIMESTAMP;
+            BucketingStrategy.NO_BUCKETING;
 
 
-    public static final Logger LOGGER =
+    private static final Logger LOGGER =
             Logger.getLogger(AgglomerativeClustering.class.getName());
 
 
@@ -409,7 +409,6 @@ public class AgglomerativeClustering {
         Timers.log("first merge recording", LOGGER);
         Timers.log("set to array", LOGGER);
         Stats.log("queue size", LOGGER);
-        q.logLoad();
         Stats.log("glyphs per cell", LOGGER);
         Timers.log("merge event processing", LOGGER);
         Timers.log("out of cell event processing", LOGGER);
