@@ -87,6 +87,23 @@ public class Utils {
     }
 
     /**
+     * Join a bunch of strings, ignoring empty strings, with a custom glue.
+     *
+     * @param glue String to insert between non-empty strings.
+     * @param strings Strings to join.
+     */
+    public static String join(String glue, String... strings) {
+        StringBuilder sb = new StringBuilder();
+        for (String string : strings) {
+            if (sb.length() > 0 && !string.isEmpty()) {
+                sb.append(glue);
+            }
+            sb.append(string);
+        }
+        return sb.toString();
+    }
+
+    /**
      * Given an array of keys and a map, return an array with all values in the
      * same order as the keys in the input array were.
      *

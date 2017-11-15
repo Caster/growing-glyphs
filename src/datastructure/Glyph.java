@@ -143,6 +143,29 @@ public class Glyph {
     }
 
     /**
+     * Hash only the location of the glyph, for performance reasons.
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        long temp;
+        temp = Double.doubleToLongBits(x);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(y);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
+        return result;
+    }
+
+    /**
+     * Implement strict equality.
+     */
+    @Override
+    public boolean equals(Object obj) {
+        return (this == obj);
+    }
+
+    /**
      * Returns at which zoom level this glyph touches a static rectangle, given a
      * specific {@link GrowFunction} to be used for scaling the glyph.
      *
