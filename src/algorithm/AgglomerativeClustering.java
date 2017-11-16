@@ -119,7 +119,7 @@ public class AgglomerativeClustering {
                 + "at most {2} glyphs per cell and cell size at least {3}",
                 new Object[] {tree.getSize(), tree.getTreeHeight(),
                 QuadTree.MAX_GLYPHS_PER_CELL, QuadTree.MIN_CELL_SIZE});
-        if (LOGGER.getLevel().intValue() >= Level.FINE.intValue()) {
+        if (LOGGER.isLoggable(Level.FINE)) {
             for (QuadTree leaf : tree.getLeaves()) {
                 Stats.record("glyphs per cell", leaf.getGlyphs().size());
             }
