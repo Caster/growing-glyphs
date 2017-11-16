@@ -182,7 +182,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             }
 
             // keep undoing merges until we are at the start of the clustering
-            this.n = 0;
+            this.n = 1;
             this.countingSteps = true;
             this.halfStep = false;
             start();

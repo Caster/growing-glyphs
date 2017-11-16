@@ -18,6 +18,13 @@ public class GlyphMerge extends Event {
         this.glyphs[1] = b;
     }
 
+    public Glyph getOther(Glyph glyph) {
+        if (glyphs[0] == glyph) {
+            return glyphs[1];
+        }
+        return glyphs[0];
+    }
+
     @Override
     public Type getType() {
         return Type.MERGE;

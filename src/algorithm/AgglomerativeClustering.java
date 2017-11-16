@@ -131,6 +131,9 @@ public class AgglomerativeClustering {
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
         // then create a single object that is used to find first merges
         rec = new FirstMergeRecorder(g);
+        // we have a queue for nested merges, and a temporary array that is reused
+        PriorityQueue<GlyphMerge> nestedMerges = new PriorityQueue<>();
+        HierarchicalClustering[] createdFromTmp = new HierarchicalClustering[2];
         // finally, create an indication of which glyphs still participate
         int numAlive = 0;
         Rectangle2D rect = tree.getRectangle();
@@ -186,38 +189,58 @@ public class AgglomerativeClustering {
             switch (e.getType()) {
             case MERGE:
                 Timers.start("merge event processing");
-                GlyphMerge m = (GlyphMerge) e;
-                double mergedAt = m.getAt();
-                // create a merged glyph
-                Glyph merged = new Glyph(m.getGlyphs());
-                HierarchicalClustering mergedHC = new HierarchicalClustering(merged,
-                        mergedAt, Utils.map(m.getGlyphs(), map,
-                                new HierarchicalClustering[m.getSize()]));
-                // add new glyph to QuadTree cell(s)
-                tree.insert(merged, mergedAt, g);
-                // mark merged glyphs as dead
-                for (Glyph glyph : m.getGlyphs()) {
-                    glyph.alive = false; numAlive--;
-                    for (QuadTree cell : glyph.getCells()) {
-                        cell.removeGlyph(glyph);
-                    }
-                    // update merge events of glyphs that tracked merged glyphs
-                    if (TRACK && !ROBUST) {
-                        Iterator<Glyph> it = glyph.trackedBy.iterator();
-                        while (it.hasNext()) {
-                            Glyph orphan = it.next();
-                            if (orphan.alive) {
-                                rec.from(orphan);
-                                for (QuadTree cell : orphan.getCells()) {
-                                    rec.record(cell.getGlyphs());
+                nestedMerges.add((GlyphMerge) e);
+                // create a merged glyph and ensure that the merged glyph does not
+                // overlap other glyphs at this time - repeat until no more overlap
+                Glyph merged = null;
+                HierarchicalClustering mergedHC = null;
+                double mergedAt = e.getAt();
+                do {
+                    while (!nestedMerges.isEmpty()) {
+                        GlyphMerge m = nestedMerges.poll();
+
+                        // create a merged glyph, update clustering
+                        if (mergedHC == null) {
+                            merged = new Glyph(m.getGlyphs());
+                            mergedHC = new HierarchicalClustering(merged,
+                                mergedAt, Utils.map(m.getGlyphs(), map,
+                                createdFromTmp));
+                        } else {
+                            mergedHC.alsoCreatedFrom(map.get(m.getGlyphs()[1]));
+                            merged = new Glyph(merged, m.getGlyphs()[1]);
+                            mergedHC.setGlyph(merged);
+                        }
+
+                        // mark merged glyphs as dead
+                        for (Glyph glyph : m.getGlyphs()) {
+                            if (glyph == null) {
+                                continue; // we skip the `merged` glyph, see `#findOverlap`
+                            }
+                            glyph.alive = false; numAlive--;
+                            for (QuadTree cell : glyph.getCells()) {
+                                cell.removeGlyph(glyph);
+                            }
+                            // update merge events of glyphs that tracked merged glyphs
+                            if (TRACK && !ROBUST) {
+                                Iterator<Glyph> it = glyph.trackedBy.iterator();
+                                while (it.hasNext()) {
+                                    Glyph orphan = it.next();
+                                    if (orphan.alive) {
+                                        rec.from(orphan);
+                                        for (QuadTree cell : orphan.getCells()) {
+                                            rec.record(cell.getGlyphs());
+                                        }
+                                        rec.addEventsTo(q, LOGGER);
+                                    } else {
+                                        it.remove();
+                                    }
                                 }
-                                rec.addEventsTo(q, LOGGER);
-                            } else {
-                                it.remove();
                             }
                         }
                     }
-                }
+                } while (findOverlap(merged, mergedAt, nestedMerges));
+                // add new glyph to QuadTree cell(s)
+                tree.insert(merged, mergedAt, g);
                 // create events with remaining glyphs
                 rec.from(merged);
                 for (QuadTree cell : merged.getCells()) {
@@ -239,11 +262,14 @@ public class AgglomerativeClustering {
                         if (!create) {
                             continue;
                         }
-                        // now, actually create an OUT_OF_CELL event
-                        Event ooe;
-                        q.add(ooe = new OutOfCell(merged, g, cell, side));
-                        LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
-                                new Object[] {side, ooe.getAt(), cell});
+                        // now, actually create an OUT_OF_CELL event, but only
+                        // if the event is still about to happen
+                        Event ooe = new OutOfCell(merged, g, cell, side);
+                        if (ooe.getAt() <= mergedAt) {
+                            q.add(ooe);
+                            LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
+                                    new Object[] {side, ooe.getAt(), cell});
+                        }
                     }
                 }
                 rec.addEventsTo(q, LOGGER);
@@ -252,133 +278,6 @@ public class AgglomerativeClustering {
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;
-                LOGGER.log(Level.FINER, "CHECK FOR MORE MERGES...");
-                // keep merging while next glyph overlaps before current event
-                Event next = q.peek();
-                Set<Glyph> inMerged = null; // keep track of glyphs that are merged
-                Set<Glyph> wasMerged = null; // keep track of intermediate merges
-                if (next != null) {
-                    inMerged = new HashSet<>(m.getSize() * 2);
-                    inMerged.addAll(Arrays.asList(m.getGlyphs()));
-                    wasMerged = new HashSet<>(m.getSize());
-                }
-                merging: while (next != null && next.getAt() < mergedAt) {
-                    e = q.peek();
-                    // we ignore out of cell events for non-leaf cells
-                    if (e.getType() == Type.OUT_OF_CELL &&
-                            !((OutOfCell) e).getCell().isLeaf()) {
-                        q.discard();
-                        step(step);
-                        next = q.peek();
-                        continue merging;
-                    }
-                    // we ignore this event if not all glyphs from it are alive anymore
-                    for (Glyph glyph : e.getGlyphs()) {
-                        if (!glyph.alive) {
-                            q.discard();
-                            step(step);
-                            next = q.peek();
-                            continue merging;
-                        }
-                    }
-                    // we stop the nested merging if it does not involve our glyph
-                    if (e.getType() == Type.MERGE &&
-                            Utils.indexOf(next.getGlyphs(), merged) < 0) {
-                        break;
-                    }
-                    // otherwise, handle the nested merge, or OUT_OF_CELL
-                    e = q.poll();
-                    LOGGER.log(Level.FINEST, "handling {0} at {1} involving",
-                            new Object[] {e.getType(), e.getAt()});
-                    for (Glyph glyph : e.getGlyphs()) {
-                        LOGGER.log(Level.FINEST, "{0}", glyph);
-                    }
-                    switch (e.getType()) {
-                    case MERGE:
-                        m = (GlyphMerge) e;
-                        // previous merged glyph was no good, let it die and update
-                        wasMerged.add(merged);
-                        merged.alive = false; numAlive--;
-                        // at this point, because this is a nested merge, no other
-                        // glyphs have had time to track `merged` yet, so no need
-                        // to do anything even if `TRACK && !ROBUST`
-                        for (QuadTree cell : merged.getCells()) {
-                            cell.removeGlyph(merged);
-                        }
-                        for (Glyph glyph : m.getGlyphs()) {
-                            if (!wasMerged.contains(glyph)) {
-                                inMerged.add(glyph);
-                                mergedHC.alsoCreatedFrom(map.get(glyph));
-                                glyph.alive = false; numAlive--;
-                                for (QuadTree cell : glyph.getCells()) {
-                                    cell.removeGlyph(glyph);
-                                }
-                                // the remark above about `merged` does not hold for `glyph`,
-                                // so update merge events of glyphs that tracked `glyph`
-                                if (TRACK && !ROBUST) {
-                                    Iterator<Glyph> it = glyph.trackedBy.iterator();
-                                    while (it.hasNext()) {
-                                        Glyph orphan = it.next();
-                                        if (orphan.alive) {
-                                            rec.from(orphan);
-                                            for (QuadTree cell : orphan.getCells()) {
-                                                rec.record(cell.getGlyphs());
-                                            }
-                                            rec.addEventsTo(q, LOGGER);
-                                        } else {
-                                            it.remove();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        map.remove(merged); // it's as if this glyph never existed
-                        // create updated merged glyph
-                        merged = new Glyph(inMerged);
-                        mergedHC.setGlyph(merged);
-                        // add new glyph to QuadTree cell(s)
-                        tree.insert(merged, m.getAt(), g);
-                        // create events with remaining glyphs
-                        rec.from(merged);
-                        for (QuadTree cell : merged.getCells()) {
-                            Timers.start("first merge recording");
-                            rec.record(cell.getGlyphs());
-                            Timers.stop("first merge recording");
-                            // create out of cell events
-                            for (Side side : Side.values()) {
-                                // only create an event when at least one neighbor on
-                                // this side does not contain the merged glyph yet
-                                boolean create = false;
-                                Set<QuadTree> neighbors = cell.getNeighbors(side);
-                                for (QuadTree neighbor : neighbors) {
-                                    if (!neighbor.getGlyphs().contains(merged)) {
-                                        create = true;
-                                        break;
-                                    }
-                                }
-                                if (!create) {
-                                    continue;
-                                }
-                                // now, actually create an OUT_OF_CELL event
-                                Event ooe;
-                                q.add(ooe = new OutOfCell(merged, g, cell, side));
-                                LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
-                                        new Object[] {side, ooe.getAt(), cell});
-                            }
-                        }
-                        rec.addEventsTo(q, LOGGER);
-                        merged.alive = true; numAlive++;
-                        map.put(merged, mergedHC);
-                        break;
-                    case OUT_OF_CELL:
-                        handleOutOfCell((OutOfCell) e, map,
-                                includeOutOfCell, q);
-                        break;
-                    }
-                    step(step);
-                    next = q.peek();
-                }
-                LOGGER.log(Level.FINER, "...DONE");
                 Timers.stop("merge event processing");
                 break;
             case OUT_OF_CELL:
@@ -401,7 +300,7 @@ public class AgglomerativeClustering {
                 tn, s.getSum(), Stats.get(tn + " handled").getSum(),
                 Stats.get(tn + " discarded").getSum()});
         }
-        LOGGER.log(Level.FINE, "events were stored in {0} queues", q.getNumQueues());
+        LOGGER.log(Level.FINE, "events were stored in {0} queue(s)", q.getNumQueues());
         LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1} now",
                 new Object[] {tree.getSize(), tree.getTreeHeight()});
         Timers.log("clustering", LOGGER);
@@ -416,6 +315,35 @@ public class AgglomerativeClustering {
         return this;
     }
 
+
+    /**
+     * Find glyphs that overlap the given glyph at the given timestamp/zoom level,
+     * and create merge events for those instances. Add those merge events to the
+     * given priority queue.
+     *
+     * The merge events created by this function are with {@code null} instead of
+     * with {@code with}, for convenience reasons in the nested merge loop. That
+     * is, the `merged` glyph changes (the object), even though the conceptual
+     * glyph does not. Representing with {@code null} fixes that problem.
+     *
+     * @param with Glyph to check overlap with.
+     * @param at Timestamp/zoom level at which overlap must be checked.
+     * @param addTo Queue to add merge events to.
+     * @return Whether any overlap was found at all.
+     */
+    private boolean findOverlap(Glyph with, double at, PriorityQueue<GlyphMerge> addTo) {
+        boolean foundOverlap = false;
+        double bAt; // before `at`, used to store time/zoom level of found merges
+        for (QuadTree cell : tree.getLeaves(with, at, g)) {
+            for (Glyph glyph : cell.getGlyphsAlive()) {
+                if ((bAt = g.intersectAt(with, glyph)) <= at) {
+                    foundOverlap = true;
+                    addTo.add(new GlyphMerge(null, glyph, bAt));
+                }
+            }
+        }
+        return foundOverlap;
+    }
 
     private void handleOutOfCell(OutOfCell o, Map<Glyph, HierarchicalClustering> map,
             boolean includeOutOfCell, PriorityQueue<Event> q) {
