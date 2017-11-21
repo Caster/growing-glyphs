@@ -303,14 +303,9 @@ public class AgglomerativeClustering {
         LOGGER.log(Level.FINE, "events were stored in {0} queue(s)", q.getNumQueues());
         LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1} now",
                 new Object[] {tree.getSize(), tree.getTreeHeight()});
-        Timers.log("clustering", LOGGER);
-        Timers.log("queue operations", LOGGER);
-        Timers.log("first merge recording", LOGGER);
-        Timers.log("set to array", LOGGER);
         Stats.log("queue size", LOGGER);
         Stats.log("glyphs per cell", LOGGER);
-        Timers.log("merge event processing", LOGGER);
-        Timers.log("out of cell event processing", LOGGER);
+        Timers.logAll(LOGGER);
         LOGGER.log(Level.FINER, "RETURN from AgglomerativeClustering#cluster()");
         return this;
     }

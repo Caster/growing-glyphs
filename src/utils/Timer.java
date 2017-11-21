@@ -1,5 +1,12 @@
 package utils;
 
+import java.text.NumberFormat;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import utils.Utils.Timers;
+import utils.Utils.Timers.Units;
+
 public class Timer {
 
     private int count;
@@ -38,6 +45,22 @@ public class Timer {
      */
     public int getNumCounts() {
         return count;
+    }
+
+    /**
+     * {@link #stop() Stop} this timer and log the {@link #getElapsedTotal()
+     * total elapsed time} to the given logger instance.
+     *
+     * @param logger Logger to log to.
+     * @param name Name of event that was timed.
+     */
+    public void log(Logger logger, String name) {
+        stop();
+        logger.log(Level.FINE, "{0} took {1} seconds (wall clock time{2})",
+                new Object[] {name, String.format("%6.3f", Timers.in(
+                        totalElapsed, Units.SECONDS)),
+                (count == 1 ? "" : String.format(", %s timings",
+                NumberFormat.getIntegerInstance().format(count)))});
     }
 
     /**

@@ -1,7 +1,7 @@
 package utils;
 
 import java.awt.geom.Rectangle2D;
-import java.text.NumberFormat;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Locale.Category;
@@ -334,12 +334,24 @@ public class Utils {
             if (!timers.containsKey(name)) {
                 return;
             }
-            Timer t = timers.get(name);
-            t.stop();
-            logger.log(Level.FINE, "{0} took {1} seconds (wall clock time{2})",
-                    new Object[] {name, in(t.getElapsedTotal(), Units.SECONDS),
-                    (t.getNumCounts() == 1 ? "" : String.format(", %s timings",
-                    NumberFormat.getIntegerInstance().format(t.getNumCounts())))});
+            timers.get(name).log(logger, name);;
+        }
+
+        /**
+         * Log the time that elapsed on all timers recorded so far. This will
+         * {@link Timer#stop() stop} the timers and log their {@Link
+         * Timer#getElapsedTotal() total elapsed time}.
+         *
+         * @param logger Logger to log to.
+         */
+        public static void logAll(Logger logger) {
+            int padTo = timers.keySet().stream().max(
+                    Comparator.comparingInt(String::length)).get().length();
+            String f = "%1$-" + padTo + "s";
+            timers.entrySet().stream()
+                .sorted((a, b) -> a.getKey().compareTo(b.getKey()))
+                .forEach((e) ->
+                    e.getValue().log(logger, String.format(f, e.getKey())));
         }
 
         /**
