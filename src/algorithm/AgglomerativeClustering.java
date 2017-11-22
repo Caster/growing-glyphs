@@ -163,9 +163,10 @@ public class AgglomerativeClustering {
                     // only create an event when it is not a border of the root
                     if (!Utils.onBorderOf(leaf.getSide(side), rect)) {
                         // now, actually create an OUT_OF_CELL event
-                        q.add(new OutOfCell(glyphs[i], g, leaf, side));
+                        glyphs[i].record(new OutOfCell(glyphs[i], g, leaf, side));
                     }
                 }
+                glyphs[i].pop(q);
 
                 // create clustering leaves for all glyphs, mark them as alive
                 map.put(glyphs[i], new HierarchicalClustering(glyphs[i], 0));
@@ -297,15 +298,16 @@ public class AgglomerativeClustering {
                         }
                         // now, actually create an OUT_OF_CELL event, but only
                         // if the event is still about to happen
-                        Event ooe = new OutOfCell(merged, g, cell, side);
+                        OutOfCell ooe = new OutOfCell(merged, g, cell, side);
                         if (ooe.getAt() <= mergedAt) {
-                            q.add(ooe);
+                            merged.record(ooe);
                             if (GrowingGlyphs.LOGGING_ENABLED)
                                 LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
                                         new Object[] {side, ooe.getAt(), cell});
                         }
                     }
                 }
+                merged.pop(q);
                 rec.addEventsTo(q, LOGGER);
                 // update bookkeeping
                 merged.alive = true; numAlive++;
@@ -404,7 +406,8 @@ public class AgglomerativeClustering {
                     cell.getRectangle())) {
                 // we do need to add an event for when this glyph grows out of
                 // the non-orphan cell, because that has not been done yet
-                q.add(new OutOfCell(glyph, g, cell, o.getSide()));
+                glyph.record(new OutOfCell(glyph, g, cell, o.getSide()));
+                glyph.pop(q);
                 return; // nothing to be done anymore
             }
         }
@@ -503,10 +506,11 @@ public class AgglomerativeClustering {
                         if (GrowingGlyphs.LOGGING_ENABLED)
                             LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
                                     new Object[] {side, at, in});
-                        q.add(new OutOfCell(glyph, in, side, at));
+                        glyph.record(new OutOfCell(glyph, in, side, at));
                     }
                 }
             }
+            glyph.pop(q);
             rec.addEventsTo(q, LOGGER);
         }
     }

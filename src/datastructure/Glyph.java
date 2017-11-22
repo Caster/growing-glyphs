@@ -3,9 +3,13 @@ package datastructure;
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Set;
 
 import algorithm.AgglomerativeClustering;
+import datastructure.events.Event;
+import datastructure.events.OutOfCell;
 import datastructure.growfunction.GrowFunction;
 
 /**
@@ -39,6 +43,11 @@ public class Glyph {
      * Set of QuadTree cells that this glyph intersects.
      */
     private Set<QuadTree> cells;
+    /**
+     * Events involving this glyph. Only one event is actually in the event
+     * queue, other are added only when that one is popped from the queue.
+     */
+    private Queue<OutOfCell> outOfCellEvents;
 
 
     /**
@@ -77,6 +86,7 @@ public class Glyph {
         this.y = y;
         this.n = n;
         this.cells = new HashSet<>();
+        this.outOfCellEvents = new PriorityQueue<>();
     }
 
     /**
@@ -185,6 +195,27 @@ public class Glyph {
      */
     public double intersects(Glyph that, GrowFunction g) {
         return g.intersectAt(this, that);
+    }
+
+    /**
+     * Add the next event, if any, to the given queue. This will add the first
+     * {@link #record(OutOfCell) recorded} event to the given queue.
+     *
+     * @param q Event queue to add {@link OutOfCell} to.
+     */
+    public void pop(Queue<Event> q) {
+        if (!outOfCellEvents.isEmpty()) {
+            q.add(outOfCellEvents.poll());
+        }
+    }
+
+    /**
+     * Acknowledge that the given event will happen.
+     *
+     * @param event Event involving this glyph.
+     */
+    public void record(OutOfCell event) {
+        outOfCellEvents.add(event);
     }
 
     /**
