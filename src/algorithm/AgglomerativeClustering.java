@@ -11,6 +11,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
@@ -23,6 +24,7 @@ import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
 import datastructure.queues.BucketingStrategy;
 import datastructure.queues.MultiQueue;
+import gui.GrowingGlyphs;
 import utils.Stat;
 import utils.Utils;
 import utils.Utils.Stats;
@@ -57,8 +59,8 @@ public class AgglomerativeClustering {
             BucketingStrategy.NO_BUCKETING;
 
 
-    private static final Logger LOGGER =
-            Logger.getLogger(AgglomerativeClustering.class.getName());
+    private static final Logger LOGGER = (GrowingGlyphs.LOGGING_ENABLED ?
+            Logger.getLogger(AgglomerativeClustering.class.getName()) : null);
 
 
     /**
@@ -110,23 +112,30 @@ public class AgglomerativeClustering {
      */
     public AgglomerativeClustering cluster(boolean includeOutOfCell,
             boolean step) {
-        LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
-        LOGGER.log(Level.FINE, "clustering using {0} strategy", Utils.join(" + ",
-                (ROBUST ? "ROBUST" : ""), (TRACK ? "TRACK" : ""),
-                (!ROBUST && !TRACK ? "FIRST MERGE ONLY" : ""),
-                QUEUE_BUCKETING.toString()));
-        LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1}, having "
-                + "at most {2} glyphs per cell and cell size at least {3}",
-                new Object[] {tree.getSize(), tree.getTreeHeight(),
-                QuadTree.MAX_GLYPHS_PER_CELL, QuadTree.MIN_CELL_SIZE});
-        if (LOGGER.isLoggable(Level.FINE)) {
-            for (QuadTree leaf : tree.getLeaves()) {
-                Stats.record("glyphs per cell", leaf.getGlyphs().size());
+        if (GrowingGlyphs.LOGGING_ENABLED) {
+            LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
+            LOGGER.log(Level.FINE, "clustering using {0} strategy", Utils.join(" + ",
+                    (ROBUST ? "ROBUST" : ""), (TRACK ? "TRACK" : ""),
+                    (!ROBUST && !TRACK ? "FIRST MERGE ONLY" : ""),
+                    QUEUE_BUCKETING.toString()));
+            LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1}, having "
+                    + "at most {2} glyphs per cell and cell size at least {3}",
+                    new Object[] {tree.getSize(), tree.getTreeHeight(),
+                    QuadTree.MAX_GLYPHS_PER_CELL, QuadTree.MIN_CELL_SIZE});
+            if (LOGGER.isLoggable(Level.FINE)) {
+                for (QuadTree leaf : tree.getLeaves()) {
+                    Stats.record("glyphs per cell", leaf.getGlyphs().size());
+                }
             }
         }
-        Timers.start("clustering");
-        // construct a queue, put everything in there
-        MultiQueue q = new MultiQueue(QUEUE_BUCKETING);
+        if (GrowingGlyphs.TIMERS_ENABLED) {
+            Timers.start("clustering");
+        }
+        // construct a queue, put everything in there - 10x number of glyphs
+        // appears to be a good estimate for needed capacity without bucketing
+        MultiQueue q = new MultiQueue(QUEUE_BUCKETING, 10 * tree.getLeaves()
+                .parallelStream().collect(
+                        Collectors.summingInt((cell) -> cell.getGlyphs().size())));
         // also create a result for each glyph, and a map to find them
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
         // then create a single object that is used to find first merges
@@ -142,9 +151,11 @@ public class AgglomerativeClustering {
             for (int i = 0; i < glyphs.length; ++i) {
                 // add events for when two glyphs in the same cell touch
                 rec.from(glyphs[i]);
-                Timers.start("first merge recording");
+                if (GrowingGlyphs.TIMERS_ENABLED)
+                    Timers.start("first merge recording");
                 rec.record(glyphs, i + 1, glyphs.length);
-                Timers.stop("first merge recording");
+                if (GrowingGlyphs.TIMERS_ENABLED)
+                    Timers.stop("first merge recording");
                 rec.addEventsTo(q);
 
                 // add events for when a glyph grows out of its cell
@@ -161,8 +172,9 @@ public class AgglomerativeClustering {
                 glyphs[i].alive = true; numAlive++;
             }
         }
-        LOGGER.log(Level.FINE, "created {0} events initially, for {1} glyphs",
-                new Object[] {q.size(), numAlive});
+        if (GrowingGlyphs.LOGGING_ENABLED)
+            LOGGER.log(Level.FINE, "created {0} events initially, for {1} glyphs",
+                    new Object[] {q.size(), numAlive});
         // merge glyphs until no pairs to merge remain
         queue: while (!q.isEmpty() && numAlive > 1) {
             Event e = q.peek();
@@ -180,15 +192,18 @@ public class AgglomerativeClustering {
                 }
             }
             e = q.poll();
-            LOGGER.log(Level.FINER, "handling {0} at {1} involving",
-                    new Object[] {e.getType(), e.getAt()});
-            for (Glyph glyph : e.getGlyphs()) {
-                LOGGER.log(Level.FINER, "{0}", glyph);
+            if (GrowingGlyphs.LOGGING_ENABLED) {
+                LOGGER.log(Level.FINER, "handling {0} at {1} involving",
+                        new Object[] {e.getType(), e.getAt()});
+                for (Glyph glyph : e.getGlyphs()) {
+                    LOGGER.log(Level.FINER, "{0}", glyph);
+                }
             }
             // depending on the type of event, handle it appropriately
             switch (e.getType()) {
             case MERGE:
-                Timers.start("merge event processing");
+                if (GrowingGlyphs.TIMERS_ENABLED)
+                    Timers.start("merge event processing");
                 nestedMerges.add((GlyphMerge) e);
                 // create a merged glyph and ensure that the merged glyph does not
                 // overlap other glyphs at this time - repeat until no more overlap
@@ -235,9 +250,13 @@ public class AgglomerativeClustering {
                                     Glyph orphan = it.next();
                                     if (orphan.alive) {
                                         rec.from(orphan);
+                                        if (GrowingGlyphs.TIMERS_ENABLED)
+                                            Timers.start("first merge recording");
                                         for (QuadTree cell : orphan.getCells()) {
                                             rec.record(cell.getGlyphs());
                                         }
+                                        if (GrowingGlyphs.TIMERS_ENABLED)
+                                            Timers.stop("first merge recording");
                                         rec.addEventsTo(q, LOGGER);
                                     } else {
                                         it.remove();
@@ -252,17 +271,21 @@ public class AgglomerativeClustering {
                 // create events with remaining glyphs
                 rec.from(merged);
                 for (QuadTree cell : merged.getCells()) {
-                    Timers.start("first merge recording");
+                    if (GrowingGlyphs.TIMERS_ENABLED)
+                        Timers.start("first merge recording");
                     rec.record(cell.getGlyphs());
-                    Timers.stop("first merge recording");
+                    if (GrowingGlyphs.TIMERS_ENABLED)
+                        Timers.stop("first merge recording");
                     // create out of cell events
                     for (Side side : Side.values()) {
                         // only create an event when at least one neighbor on
                         // this side does not contain the merged glyph yet
                         boolean create = false;
-                        Timers.start("neighbor finding");
+                        if (GrowingGlyphs.TIMERS_ENABLED)
+                            Timers.start("neighbor finding");
                         Set<QuadTree> neighbors = cell.getNeighbors(side);
-                        Timers.stop("neighbor finding");
+                        if (GrowingGlyphs.TIMERS_ENABLED)
+                            Timers.stop("neighbor finding");
                         for (QuadTree neighbor : neighbors) {
                             if (!neighbor.getGlyphs().contains(merged)) {
                                 create = true;
@@ -277,8 +300,9 @@ public class AgglomerativeClustering {
                         Event ooe = new OutOfCell(merged, g, cell, side);
                         if (ooe.getAt() <= mergedAt) {
                             q.add(ooe);
-                            LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
-                                    new Object[] {side, ooe.getAt(), cell});
+                            if (GrowingGlyphs.LOGGING_ENABLED)
+                                LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
+                                        new Object[] {side, ooe.getAt(), cell});
                         }
                     }
                 }
@@ -288,35 +312,42 @@ public class AgglomerativeClustering {
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;
-                Timers.stop("merge event processing");
+                if (GrowingGlyphs.TIMERS_ENABLED)
+                    Timers.stop("merge event processing");
                 break;
             case OUT_OF_CELL:
-                Timers.start("out of cell event processing");
+                if (GrowingGlyphs.TIMERS_ENABLED)
+                    Timers.start("out of cell event processing");
                 handleOutOfCell((OutOfCell) e, map, includeOutOfCell, q);
-                Timers.stop("out of cell event processing");
+                if (GrowingGlyphs.TIMERS_ENABLED)
+                    Timers.stop("out of cell event processing");
                 break;
             }
             step(step);
         }
-        LOGGER.log(Level.FINE, "created {0} events, handled {1} and discarded "
-                + "{2}; {3} events were never considered",
-                new Object[] {q.getInsertions(), q.getDeletions(),
-                q.getDiscarded(), q.getInsertions() - q.getDeletions() -
-                q.getDiscarded()});
-        for (Event.Type t : Event.Type.values()) {
-            String tn = t.toString();
-            Stat s = Stats.get(tn);
-            LOGGER.log(Level.FINE, "→ {1} {0}s ({2} handled, {3} discarded)", new Object[] {
-                tn, s.getSum(), Stats.get(tn + " handled").getSum(),
-                Stats.get(tn + " discarded").getSum()});
+        if (GrowingGlyphs.LOGGING_ENABLED) {
+            LOGGER.log(Level.FINE, "created {0} events, handled {1} and discarded "
+                    + "{2}; {3} events were never considered",
+                    new Object[] {q.getInsertions(), q.getDeletions(),
+                    q.getDiscarded(), q.getInsertions() - q.getDeletions() -
+                    q.getDiscarded()});
+            for (Event.Type t : Event.Type.values()) {
+                String tn = t.toString();
+                Stat s = Stats.get(tn);
+                LOGGER.log(Level.FINE, "→ {1} {0}s ({2} handled, {3} discarded)", new Object[] {
+                    tn, s.getSum(), Stats.get(tn + " handled").getSum(),
+                    Stats.get(tn + " discarded").getSum()});
+            }
+            LOGGER.log(Level.FINE, "events were stored in {0} queue(s)", q.getNumQueues());
+            LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1} now",
+                    new Object[] {tree.getSize(), tree.getTreeHeight()});
+            Stats.log("queue size", LOGGER);
+            Stats.log("glyphs per cell", LOGGER);
         }
-        LOGGER.log(Level.FINE, "events were stored in {0} queue(s)", q.getNumQueues());
-        LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1} now",
-                new Object[] {tree.getSize(), tree.getTreeHeight()});
-        Stats.log("queue size", LOGGER);
-        Stats.log("glyphs per cell", LOGGER);
-        Timers.logAll(LOGGER);
-        LOGGER.log(Level.FINER, "RETURN from AgglomerativeClustering#cluster()");
+        if (GrowingGlyphs.TIMERS_ENABLED)
+            Timers.logAll(LOGGER);
+        if (GrowingGlyphs.LOGGING_ENABLED)
+            LOGGER.log(Level.FINER, "RETURN from AgglomerativeClustering#cluster()");
         return this;
     }
 
@@ -386,22 +417,27 @@ public class AgglomerativeClustering {
         // create merge events with the glyphs in the neighbors
         // we take the size of the glyph at that point in time into account
         double[] sideInterval = Side.interval(g.sizeAt(glyph, oAt).getBounds2D(), o.getSide());
-        LOGGER.log(Level.FINER, "size at border is {0}", Arrays.toString(sideInterval));
+        if (GrowingGlyphs.LOGGING_ENABLED)
+            LOGGER.log(Level.FINER, "size at border is {0}", Arrays.toString(sideInterval));
         Set<QuadTree> neighbors = cell.getNeighbors(o.getSide());
-        LOGGER.log(Level.FINEST, "growing into");
+        if (GrowingGlyphs.LOGGING_ENABLED)
+            LOGGER.log(Level.FINEST, "growing into");
         for (QuadTree neighbor : neighbors) {
-            LOGGER.log(Level.FINEST, "{0}", neighbor);
+            if (GrowingGlyphs.LOGGING_ENABLED)
+                LOGGER.log(Level.FINEST, "{0}", neighbor);
 
             // ensure that glyph actually grows into this neighbor
             if (!Utils.intervalsOverlap(Side.interval(
                     neighbor.getSide(oppositeSide), oppositeSide), sideInterval)) {
-                LOGGER.log(Level.FINEST, "-> but not at this point in time, so ignoring");
+                if (GrowingGlyphs.LOGGING_ENABLED)
+                    LOGGER.log(Level.FINEST, "-> but not at this point in time, so ignoring");
                 continue;
             }
 
             // ensure that glyph was not in this cell yet
             if (neighbor.getGlyphs().contains(glyph)) {
-                LOGGER.log(Level.FINEST, "-> but was already in there, so ignoring");
+                if (GrowingGlyphs.LOGGING_ENABLED)
+                    LOGGER.log(Level.FINEST, "-> but was already in there, so ignoring");
                 continue;
             }
 
@@ -425,7 +461,7 @@ public class AgglomerativeClustering {
                 // 4. continue with making events in appropriate cells instead
                 //    of `neighbor` or all glyphs associated with `neighbor`
                 grownInto = neighbor.getLeaves(glyph, oAt, g);
-                if (LOGGER.isLoggable(Level.FINE)) {
+                if (GrowingGlyphs.LOGGING_ENABLED && LOGGER.isLoggable(Level.FINE)) {
                     for (QuadTree in : neighbor.getLeaves()) {
                         Stats.record("glyphs per cell",
                                 in.getGlyphsAlive().size());
@@ -464,8 +500,9 @@ public class AgglomerativeClustering {
                             continue;
                         }
                         // now, actually create an OUT_OF_CELL event
-                        LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
-                                new Object[] {side, at, in});
+                        if (GrowingGlyphs.LOGGING_ENABLED)
+                            LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
+                                    new Object[] {side, at, in});
                         q.add(new OutOfCell(glyph, in, side, at));
                     }
                 }

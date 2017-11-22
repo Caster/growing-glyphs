@@ -43,6 +43,8 @@ import utils.Utils.Locales;
  */
 public class GrowingGlyphs extends JFrame {
 
+    public static final boolean LOGGING_ENABLED = true;
+    public static final boolean TIMERS_ENABLED = true;
     public static final GlyphGenerator[] GENERATORS = new GlyphGenerator[] {
             new UniformRandom(), new Perlin(), new PopulationSim()
         };

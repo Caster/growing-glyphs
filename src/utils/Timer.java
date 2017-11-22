@@ -56,11 +56,20 @@ public class Timer {
      */
     public void log(Logger logger, String name) {
         stop();
-        logger.log(Level.FINE, "{0} took {1} seconds (wall clock time{2})",
-                new Object[] {name, String.format("%6.3f", Timers.in(
+        if (logger != null) {
+            logger.log(Level.FINE, "{0} took {1} seconds (wall clock time{2})",
+                new Object[] {name, String.format("%5.3f", Timers.in(
                         totalElapsed, Units.SECONDS)),
                 (count == 1 ? "" : String.format(", %s timings",
                 NumberFormat.getIntegerInstance().format(count)))});
+        } else {
+            System.out.println(String.format(
+                    "%1$s took %2$5.3f seconds (wall clock time%3$s",
+                    name, Timers.in(totalElapsed, Units.SECONDS),
+                    (count == 1 ? "" : String.format(", %s timings",
+                            NumberFormat.getIntegerInstance().format(count)))
+                ));
+        }
     }
 
     /**

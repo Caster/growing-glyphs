@@ -31,6 +31,10 @@ public class MultiQueue extends PriorityQueue<Event> {
      */
     private int id;
     /**
+     * Initial capacity of the queue.
+     */
+    private int initialCapacity;
+    /**
      * Pointer to next queue, when split.
      */
     private MultiQueue next;
@@ -59,12 +63,18 @@ public class MultiQueue extends PriorityQueue<Event> {
      *
      * @param splitAt Strategy for splitting. See {@link BucketingStrategy} for
      *            details about the various strategies.
+     * @param capacity Initial capacity of the queue.
      */
-    public MultiQueue(BucketingStrategy splitAt) {
-        this(splitAt, null);
+    public MultiQueue(BucketingStrategy splitAt, int capacity) {
+        this(splitAt, null, capacity);
     }
 
     private MultiQueue(BucketingStrategy splitAt, MultiQueue previous) {
+        this(splitAt, previous, previous.initialCapacity);
+    }
+
+    private MultiQueue(BucketingStrategy splitAt, MultiQueue previous, int capacity) {
+        super(capacity);
         if (splitAt != BucketingStrategy.NO_BUCKETING &&
                 splitAt.getThreshold() == null) {
             throw new RuntimeException(splitAt + " strategy needs to have a "
@@ -73,6 +83,7 @@ public class MultiQueue extends PriorityQueue<Event> {
 
         this.counts = (previous == null ? new int[3] : null);
         this.id = (previous == null ? 0 : previous.id + 1);
+        this.initialCapacity = capacity;
         this.next = null;
         this.rangeStart = Double.NaN;
         this.rangeEnd = Double.NaN;
