@@ -1,13 +1,16 @@
 package datastructure;
 
 import java.awt.geom.Rectangle2D;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,6 +60,10 @@ public class QuadTree implements Iterable<QuadTree> {
      * Glyphs intersecting the cell.
      */
     private Set<Glyph> glyphs;
+    /**
+     * Cache {@link #getNeighbors(Side)} for every side.
+     */
+    private List<Set<QuadTree>> neighbors;
 
 
     /**
@@ -97,6 +104,8 @@ public class QuadTree implements Iterable<QuadTree> {
         this.children = null;
         this.g = g;
         this.glyphs = new HashSet<>(MAX_GLYPHS_PER_CELL);
+        this.neighbors = new ArrayList<>(
+                Collections.nCopies(Side.values().length, null));
     }
 
 
@@ -198,9 +207,39 @@ public class QuadTree implements Iterable<QuadTree> {
         return result;
     }
 
+    /**
+     * Return a set of the neighboring cells on the given side of this cell.
+     *
+     * @param side Side of cell to find neighbors on.
+     */
     public Set<QuadTree> getNeighbors(Side side) {
+        if (neighbors.get(side.ordinal()) != null) {
+            Set<QuadTree> result = neighbors.get(side.ordinal());
+            // we cached the result, but we may need to update it...
+            // handle orphaned cells: remove orphans, replace by closest leaves
+            // set takes care of having each leaf at most once
+            Queue<Entry<QuadTree, QuadTree>> toSwap = new ArrayDeque<>();
+            for (QuadTree cell : result) {
+                QuadTree startCell = cell;
+                while (cell.isOrphan()) {
+                    cell = cell.parent;
+                }
+                if (startCell != cell) {
+                    toSwap.add(new SimpleImmutableEntry<>(startCell, cell));
+                }
+            }
+            while (!toSwap.isEmpty()) {
+                Entry<QuadTree, QuadTree> swap = toSwap.poll();
+                result.remove(swap.getKey());
+                result.add(swap.getValue());
+            }
+            // all of the above is still cheaper than finding the neighbors
+            // from scratch, it turns out: approximately twice as fast
+            return result;
+        }
         Set<QuadTree> result = new HashSet<>();
         getNeighbors(side, result);
+        neighbors.set(side.ordinal(), result);
         return result;
     }
 

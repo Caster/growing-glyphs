@@ -260,7 +260,9 @@ public class AgglomerativeClustering {
                         // only create an event when at least one neighbor on
                         // this side does not contain the merged glyph yet
                         boolean create = false;
+                        Timers.start("neighbor finding");
                         Set<QuadTree> neighbors = cell.getNeighbors(side);
+                        Timers.stop("neighbor finding");
                         for (QuadTree neighbor : neighbors) {
                             if (!neighbor.getGlyphs().contains(merged)) {
                                 create = true;
