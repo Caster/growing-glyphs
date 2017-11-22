@@ -320,6 +320,14 @@ public class QuadTree implements Iterable<QuadTree> {
     }
 
     /**
+     * Returns whether this cell is an orphan, which it is when its parent has
+     * joined and forgot about its children.
+     */
+    public boolean isOrphan() {
+        return (this.parent != null && this.parent.children == null);
+    }
+
+    /**
      * Returns whether this cell has child cells.
      */
     public boolean isLeaf() {
@@ -349,9 +357,17 @@ public class QuadTree implements Iterable<QuadTree> {
      * This method does <i>not</i> remove the cell from the glyph.
      *
      * @param glyph Glyph to be removed.
+     * @return Whether removing the glyph caused this cell to merge with its
+     *         siblings into its parent, making this cell an
+     *         {@link #isOrphan() orphan}. If this happens, merge events may
+     *         need to be updated and out of cell events may be outdated.
      */
-    public void removeGlyph(Glyph glyph) {
+    public boolean removeGlyph(Glyph glyph) {
         glyphs.remove(glyph);
+        if (parent != null) {
+            return parent.joinMaybe();
+        }
+        return false;
     }
 
     /**
@@ -505,6 +521,42 @@ public class QuadTree implements Iterable<QuadTree> {
             }
             neighbor.getLeaves(side.opposite(), cell, result);
         }
+    }
+
+    /**
+     * If the total number of glyphs of all children is at most
+     * {@link #MAX_GLYPHS_PER_CELL} and those children are leaves, delete the
+     * children (thus making this cell a leaf), and adopt the glyphs of the
+     * deleted children in this cell.
+     *
+     * @return Whether a join was performed.
+     */
+    private boolean joinMaybe() {
+        if (isLeaf()) {
+            return false;
+        }
+        int s = 0;
+        for (QuadTree child : children) {
+            if (!child.isLeaf()) {
+                return false;
+            }
+            s += child.glyphs.size();
+        }
+        if (s > MAX_GLYPHS_PER_CELL) {
+            return false;
+        }
+
+        // do a join, become a leaf, adopt glyphs of children
+        for (QuadTree child : children) {
+            for (Glyph glyph : child.glyphs) {
+                glyphs.add(glyph);
+                glyph.addCell(this);
+                glyph.removeCell(child);
+            }
+            child.glyphs.clear();
+        }
+        children = null;
+        return true;
     }
 
     /**

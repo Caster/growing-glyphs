@@ -7,14 +7,16 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
-import java.util.stream.Stream;
 import java.util.stream.Collector.Characteristics;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import datastructure.Glyph;
+import datastructure.QuadTree;
 import datastructure.events.Event;
 import datastructure.events.GlyphMerge;
 import datastructure.growfunction.GrowFunction;
+import utils.Utils.Timers;
 
 public class FirstMergeRecorder {
 
@@ -148,6 +150,18 @@ public class FirstMergeRecorder {
             merge.combine(glyphs.parallel()
                 .filter((glyph) -> glyph.alive && glyph != from)
                 .collect(collector()));
+        }
+    }
+
+    public void recordAllPairs(QuadTree cell, Queue<Event> q, Logger logger) {
+        Glyph[] glyphs = cell.getGlyphs().toArray(new Glyph[0]);
+        for (int i = 0; i < glyphs.length; ++i) {
+            // add events for when two glyphs in the same cell touch
+            from(glyphs[i]);
+            Timers.start("first merge recording");
+            record(glyphs, i + 1, glyphs.length);
+            Timers.stop("first merge recording");
+            addEventsTo(q);
         }
     }
 

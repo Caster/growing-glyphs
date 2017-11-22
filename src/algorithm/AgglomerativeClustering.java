@@ -217,8 +217,16 @@ public class AgglomerativeClustering {
                                 continue; // we skip the `merged` glyph, see `#findOverlap`
                             }
                             glyph.alive = false; numAlive--;
-                            for (QuadTree cell : glyph.getCells()) {
-                                cell.removeGlyph(glyph);
+                            // copy the set of cells the glyph is in currently, because we
+                            // are about to change that set and don't want to deal with
+                            // ConcurrentModificationExceptions...
+                            for (QuadTree cell : new HashSet<>(glyph.getCells())) {
+                                if (cell.removeGlyph(glyph)) {
+                                    // handle merge events
+                                    rec.recordAllPairs(cell, q, LOGGER);
+                                    // out of cell events are handled when they
+                                    // occur, see #handleOutOfCell
+                                }
                             }
                             // update merge events of glyphs that tracked merged glyphs
                             if (TRACK && !ROBUST) {
@@ -350,13 +358,34 @@ public class AgglomerativeClustering {
                     o.getAt(), map.get(glyph));
             map.put(glyph, hc);
         }
+        // handle orphaned cells
+        QuadTree cell = o.getCell();
+        if (cell.isOrphan()) {
+            // find first non-orphan cell (actual leaf cell)
+            do {
+                cell = cell.getParent();
+            } while (cell.isOrphan());
+            // if the event was for an internal border of this non-orphan cell,
+            // we don't have to add merge events anymore
+            if (!Utils.onBorderOf(o.getCell().getSide(o.getSide()),
+                    cell.getRectangle())) {
+                // we do need to add an event for when this glyph grows out of
+                // the non-orphan cell, because that has not been done yet
+                q.add(new OutOfCell(glyph, g, cell, o.getSide()));
+                return; // nothing to be done anymore
+            }
+        }
+
+        // because of the above check for the border being on the actual border of
+        // the non-orphaned cell, the timestamp is exactly the same, so we do not
+        // need to (re)calculate it
         double oAt = o.getAt();
         Side oppositeSide = o.getSide().opposite();
         // create merge events with the glyphs in the neighbors
         // we take the size of the glyph at that point in time into account
         double[] sideInterval = Side.interval(g.sizeAt(glyph, oAt).getBounds2D(), o.getSide());
         LOGGER.log(Level.FINER, "size at border is {0}", Arrays.toString(sideInterval));
-        Set<QuadTree> neighbors = o.getCell().getNeighbors(o.getSide());
+        Set<QuadTree> neighbors = cell.getNeighbors(o.getSide());
         LOGGER.log(Level.FINEST, "growing into");
         for (QuadTree neighbor : neighbors) {
             LOGGER.log(Level.FINEST, "{0}", neighbor);
