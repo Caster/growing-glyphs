@@ -69,7 +69,7 @@ public class Glyph {
         }
         this.alive = alive;
         if (AgglomerativeClustering.TRACK) {
-            this.trackedBy = new HashSet<>(1);
+            this.trackedBy = new HashSet<>(16);
         } else {
             this.trackedBy = null;
         }
