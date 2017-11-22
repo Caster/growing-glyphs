@@ -29,7 +29,7 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     public static final int MAX_GLYPHS_PER_CELL = (
             AgglomerativeClustering.ROBUST ? 100 : (
-            AgglomerativeClustering.TRACK  ? 20 : 10_000));
+            AgglomerativeClustering.TRACK  ? 150 : 10_000));
     /**
      * Minimum width/height of a cell.
      */
