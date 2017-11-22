@@ -166,7 +166,7 @@ public class AgglomerativeClustering {
                         glyphs[i].record(new OutOfCell(glyphs[i], g, leaf, side));
                     }
                 }
-                glyphs[i].pop(q);
+                glyphs[i].popOutOfCellInto(q);
 
                 // create clustering leaves for all glyphs, mark them as alive
                 map.put(glyphs[i], new HierarchicalClustering(glyphs[i], 0));
@@ -307,7 +307,7 @@ public class AgglomerativeClustering {
                         }
                     }
                 }
-                merged.pop(q);
+                merged.popOutOfCellInto(q);
                 rec.addEventsTo(q, LOGGER);
                 // update bookkeeping
                 merged.alive = true; numAlive++;
@@ -407,7 +407,7 @@ public class AgglomerativeClustering {
                 // we do need to add an event for when this glyph grows out of
                 // the non-orphan cell, because that has not been done yet
                 glyph.record(new OutOfCell(glyph, g, cell, o.getSide()));
-                glyph.pop(q);
+                glyph.popOutOfCellInto(q);
                 return; // nothing to be done anymore
             }
         }
@@ -510,7 +510,7 @@ public class AgglomerativeClustering {
                     }
                 }
             }
-            glyph.pop(q);
+            glyph.popOutOfCellInto(q);
             rec.addEventsTo(q, LOGGER);
         }
     }

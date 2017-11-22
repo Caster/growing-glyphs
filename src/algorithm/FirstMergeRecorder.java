@@ -1,6 +1,7 @@
 package algorithm;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
@@ -13,11 +14,18 @@ import java.util.stream.Stream;
 
 import datastructure.Glyph;
 import datastructure.QuadTree;
+import datastructure.Ring;
 import datastructure.events.Event;
 import datastructure.events.GlyphMerge;
 import datastructure.growfunction.GrowFunction;
 import utils.Utils.Timers;
 
+/**
+ * This class can be used to record the first merge(s) that will occur with a
+ * glyph. More than one merge may be recorded, and glyphs can be
+ * {@link Glyph#record(GlyphMerge) made aware} of the merges that are happening
+ * to them. This class respects {@link Glyph#MAX_MERGES_TO_RECORD}.
+ */
 public class FirstMergeRecorder {
 
     /**
@@ -35,7 +43,7 @@ public class FirstMergeRecorder {
      */
     private GrowFunction g;
     /**
-     * Container that records when the first merge occurs, and which glyph(s)
+     * Container that records when the first merge(s) occur(s), and which glyph(s)
      * will merge with {@link from} at that point in time.
      */
     private FirstMerge merge;
@@ -70,15 +78,15 @@ public class FirstMergeRecorder {
      * @param l Logger to log events to, can be {@code null}.
      */
     public void addEventsTo(Queue<Event> q, Logger l) {
-        for (Glyph with : merge.glyphs) {
-            q.add(new GlyphMerge(from, with, (AgglomerativeClustering.ROBUST ?
-                    g.intersectAt(from, with) : merge.at)));
+        for (GlyphMerge merge : merge.shift()) {
+            q.add(merge);
+            Glyph with = merge.getOther(from);
             if (AgglomerativeClustering.TRACK) {
                 with.trackedBy.add(from);
             }
             if (l != null) {
                 l.log(Level.FINEST, "-> merge at {0} with {1}",
-                        new Object[] {merge.at, with});
+                        new Object[] {merge.getAt(), with});
             }
         }
     }
@@ -142,7 +150,7 @@ public class FirstMergeRecorder {
      */
     public void record(Stream<Glyph> glyphs) {
         if (AgglomerativeClustering.ROBUST) {
-            merge.glyphs.addAll(glyphs.parallel()
+            merge.getGlyphs().addAll(glyphs.parallel()
                 .filter((glyph) -> glyph.alive && glyph != from)
                 .collect(Collectors.toSet()));
 
@@ -173,48 +181,74 @@ public class FirstMergeRecorder {
     private class FirstMerge {
 
         /**
-         * First time at which a merge event with {@link FirstMergeRecorder#from}
-         * is recorded so far.
+         * First times at which merge events with {@link FirstMergeRecorder#from}
+         * are recorded so far. This will contain the timestamp of the first
+         * event, then the timestamp of the second, et cetera.
          */
-        private double at;
+        private Ring<Double> at;
         /**
          * Set of glyphs that touch {@link FirstMergeRecorder#from} at time
          * {@link #at}. In practice this will almost always contain just a
-         * single glyph.
+         * single glyph. Similarly to {@link #at}, this is a list that tracks
+         * the set for the first, second, ... merge events.
          */
-        private Set<Glyph> glyphs;
+        private Ring<Set<Glyph>> glyphs;
 
 
         public FirstMerge() {
-            this.at = Double.MAX_VALUE;
-            this.glyphs = new HashSet<>(1);
+            this.at = new Ring<>(Collections.nCopies(
+                    Glyph.MAX_MERGES_TO_RECORD, Double.MAX_VALUE));
+            this.glyphs = new Ring<>(Collections.nCopies(
+                    Glyph.MAX_MERGES_TO_RECORD, new HashSet<>(1)));
         }
 
         public void accept(Glyph candidate) {
             double at = g.intersectAt(from, candidate);
-            if (at < this.at) {
-                this.at = at;
-                this.glyphs.clear();
-                this.glyphs.add(candidate);
-            } else if (at == this.at) {
-                this.glyphs.add(candidate);
+            for (int i = 0; i < Glyph.MAX_MERGES_TO_RECORD; ++i) {
+                if (at < this.at.get(i)) {
+                    this.at.set(i, at);
+                    this.glyphs.get(i).clear();
+                    this.glyphs.get(i).add(candidate);
+                } else if (at == this.at.get(i)) {
+                    this.glyphs.get(i).add(candidate);
+                }
             }
         }
 
         public FirstMerge combine(FirstMerge that) {
-            if (that.at < this.at) {
-                this.at = that.at;
-                this.glyphs.clear();
-                this.glyphs.addAll(that.glyphs);
-            } else if (that.at == this.at) {
-                this.glyphs.addAll(that.glyphs);
+            for (int i = 0; i < Glyph.MAX_MERGES_TO_RECORD; ++i) {
+                if (that.at.get(i) < this.at.get(i)) {
+                    this.at.set(i, that.at.get(i));
+                    this.glyphs.get(i).clear();
+                    this.glyphs.get(i).addAll(that.glyphs.get(i));
+                } else if (that.at.get(i) == this.at.get(i)) {
+                    this.glyphs.get(i).addAll(that.glyphs.get(i));
+                }
             }
             return this;
         }
 
+        public Set<Glyph> getGlyphs() {
+            return glyphs.get(0);
+        }
+
         public void reset() {
-            at = Double.MAX_VALUE;
-            glyphs.clear();
+            for (int i = 0; i < Glyph.MAX_MERGES_TO_RECORD; ++i) {
+                at.set(i, Double.MAX_VALUE);
+                glyphs.get(i).clear();
+            }
+        }
+
+        public GlyphMerge[] shift() {
+            double at = this.at.shift();
+            Set<Glyph> glyphs = this.glyphs.shift();
+            GlyphMerge[] result = new GlyphMerge[glyphs.size()];
+            int i = 0;
+            for (Glyph with : glyphs) {
+                result[i++] = new GlyphMerge(from, with,
+                    (AgglomerativeClustering.ROBUST ? g.intersectAt(from, with) : at));
+            }
+            return result;
         }
 
     }

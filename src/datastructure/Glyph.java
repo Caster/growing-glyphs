@@ -8,7 +8,9 @@ import java.util.Queue;
 import java.util.Set;
 
 import algorithm.AgglomerativeClustering;
+import algorithm.FirstMergeRecorder;
 import datastructure.events.Event;
+import datastructure.events.GlyphMerge;
 import datastructure.events.OutOfCell;
 import datastructure.growfunction.GrowFunction;
 
@@ -16,6 +18,14 @@ import datastructure.growfunction.GrowFunction;
  * A glyph starts as a point and then grows at a given speed.
  */
 public class Glyph {
+
+    /**
+     * Number of merge events that a glyph will record at most. This is not
+     * strictly enforced by the glyph itself, but should be respected by the
+     * {@link FirstMergeRecorder} and other code that records merges.
+     */
+    public static final int MAX_MERGES_TO_RECORD = 3;
+
 
     /**
      * Used by clustering algorithm to track which glyphs are still of interest.
@@ -45,7 +55,12 @@ public class Glyph {
     private Set<QuadTree> cells;
     /**
      * Events involving this glyph. Only one event is actually in the event
-     * queue, other are added only when that one is popped from the queue.
+     * queue, others are added only when that one is popped from the queue.
+     */
+    private Queue<GlyphMerge> mergeEvents;
+    /**
+     * Events involving this glyph. Only one event is actually in the event
+     * queue, others are added only when that one is popped from the queue.
      */
     private Queue<OutOfCell> outOfCellEvents;
 
@@ -86,6 +101,7 @@ public class Glyph {
         this.y = y;
         this.n = n;
         this.cells = new HashSet<>();
+        this.mergeEvents = new PriorityQueue<>(MAX_MERGES_TO_RECORD);
         this.outOfCellEvents = new PriorityQueue<>();
     }
 
@@ -199,14 +215,35 @@ public class Glyph {
 
     /**
      * Add the next event, if any, to the given queue. This will add the first
+     * {@link #record(GlyphMerge) recorded} event to the given queue.
+     *
+     * @param q Event queue to add {@link GlyphMerge} to.
+     */
+    public void popMergeInto(Queue<Event> q) {
+        if (!mergeEvents.isEmpty()) {
+            q.add(mergeEvents.poll());
+        }
+    }
+
+    /**
+     * Add the next event, if any, to the given queue. This will add the first
      * {@link #record(OutOfCell) recorded} event to the given queue.
      *
      * @param q Event queue to add {@link OutOfCell} to.
      */
-    public void pop(Queue<Event> q) {
+    public void popOutOfCellInto(Queue<Event> q) {
         if (!outOfCellEvents.isEmpty()) {
             q.add(outOfCellEvents.poll());
         }
+    }
+
+    /**
+     * Acknowledge that the given event will happen.
+     *
+     * @param event Event involving this glyph.
+     */
+    public void record(GlyphMerge event) {
+        mergeEvents.add(event);
     }
 
     /**
