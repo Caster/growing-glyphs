@@ -60,13 +60,16 @@ public class Ring<E> implements Collection<E> {
 
     @SuppressWarnings("unchecked")
     public E get(int index) {
+        if (0 > index || index >= size) {
+            throw new ArrayIndexOutOfBoundsException(index);
+        }
         return (E) data[(start + index) % data.length];
     }
 
     @Override
     public Iterator<E> iterator() {
         return new Iterator<E>() {
-            private int current = start;
+            private int current = start - 1;
 
             @Override
             public boolean hasNext() {
@@ -82,9 +85,19 @@ public class Ring<E> implements Collection<E> {
         };
     }
 
+    public E pop() {
+        E e = shift();
+        if (size > 0) {
+            size--;
+        }
+        return e;
+    }
+
     public void set(int index, E value) {
-        if (index < size) {
+        if (0 <= index && index < size) {
             data[(start + index) % data.length] = value;
+        } else {
+            throw new ArrayIndexOutOfBoundsException(index);
         }
     }
 
@@ -92,9 +105,8 @@ public class Ring<E> implements Collection<E> {
     public E shift() {
         if (size > 0) {
             start = (start + 1) % data.length;
-            size--;
         }
-        return (E) data[start];
+        return (E) data[(start - 1 + data.length) % data.length];
     }
 
     @Override
@@ -122,12 +134,11 @@ public class Ring<E> implements Collection<E> {
 
     @Override
     public boolean add(E e) {
+        data[(start + size) % data.length] = e;
         if (size < data.length) {
-            data[(start + size) % data.length] = e;
             size++;
         } else {
             start++;
-            data[(start + size) % data.length] = e;
         }
         return true;
     }
