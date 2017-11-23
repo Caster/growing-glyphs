@@ -2,7 +2,9 @@ package datastructure.growfunction;
 
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import datastructure.Glyph;
 import datastructure.QuadTree;
@@ -12,6 +14,32 @@ import datastructure.events.OutOfCell.Side;
  * Function determining how {@link Glyph Glyphs} should be scaled.
  */
 public abstract class GrowFunction {
+
+    /**
+     * Name of the grow function that is used by default.
+     */
+    public static final String DEFAULT = "Linearly Growing Squares";
+
+
+    /**
+     * Map of names to instances of grow functions. These instances can be used
+     * throughout the program, creating new instances should never be necessary.
+     */
+    private static final Map<String, GrowFunction> ALL = new HashMap<>();
+
+
+    /**
+     * Returns a map of names to instances of grow functions. Theses instances
+     * can always be used, creating new instances should never be necessary.
+     */
+    public static Map<String, GrowFunction> getAll() {
+        if (ALL.isEmpty()) {
+            ALL.put("Linearly Growing Circles", new LinearlyGrowingCircles());
+            ALL.put(DEFAULT, new LinearlyGrowingSquares());
+        }
+        return ALL;
+    }
+
 
     /**
      * Returns at which zoom level a glyph touches the given side of the given

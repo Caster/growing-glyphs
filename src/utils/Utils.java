@@ -64,6 +64,30 @@ public class Utils {
     }
 
     /**
+     * Returns the Euclidean distance between two points {@code p} and {@code q}.
+     */
+    public static double euclidean(double px, double py, double qx, double qy) {
+        double dx = qx - px;
+        double dy = qy - py;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /**
+     * Returns the minimum Euclidean distance between a point and any point in
+     * the given rectangle. This will in particular return 0 when the given
+     * point is contained in the rectangle.
+     */
+    public static double euclidean(Rectangle2D rect, double px, double py) {
+        if (rect.contains(px, py)) {
+            return 0;
+        }
+        // determine the distance between the point and the point projected
+        // onto the rectangle, or clamped into it, so to say
+        return euclidean(px, py, clamp(px, rect.getMinX(), rect.getMaxX()),
+                clamp(py, rect.getMinY(), rect.getMaxY()));
+    }
+
+    /**
      * Returns the index of an object in an array, or -1 if it cannot be found.
      * Uses {@link Object#equals(Object)} to compare objects.
      */

@@ -31,7 +31,7 @@ public class GrowingGlyphsDaemon {
                 h - DrawPanel.PADDING * 2,
                 g
             );
-        this.clusterer = new AgglomerativeClustering(this.tree, this.g);
+        this.clusterer = new AgglomerativeClustering(this.tree);
         this.clustered = false;
     }
 
@@ -68,7 +68,7 @@ public class GrowingGlyphsDaemon {
         if (clustered) {
             return;
         }
-        clusterer.cluster(includeOutOfCell, step);
+        clusterer.cluster(this.g, includeOutOfCell, step);
         clustered = true;
     }
 
@@ -93,6 +93,10 @@ public class GrowingGlyphsDaemon {
             PointIO.read(file, tree);
         }
         clustered = false;
+    }
+
+    public void setGrowFunction(GrowFunction g) {
+        this.g = g;
     }
 
 }

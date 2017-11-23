@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -18,6 +19,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
@@ -31,10 +33,11 @@ import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
 import datastructure.growfunction.GrowFunction;
-import datastructure.growfunction.LinearlyGrowingSquares;
 import gui.Settings.Setting;
 import gui.Settings.SettingSection;
 import io.PointIO;
+import utils.Utils.Timers;
+import utils.Utils.Timers.Units;
 
 /**
  * A debug view of {@link QuadTree QuadTrees} and growing {@link Glyph glyphs}.
@@ -180,6 +183,9 @@ public class GrowingGlyphs extends JFrame {
      * @param events Ignored.
      */
     private void run(ActionEvent...events) {
+        if (menu.booleanSettings.get(Setting.SHOW_COORDS).isSelected()) {
+            menu.booleanSettings.get(Setting.SHOW_COORDS).doClick();
+        }
         status.setText("Clustering...");
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -192,12 +198,19 @@ public class GrowingGlyphs extends JFrame {
                     view.setChangeListener(new ChangeListener() {
                         @Override
                         public void stateChanged(ChangeEvent e) {
+                            if (!menu.booleanSettings.get(Setting.DRAW_MAP).isSelected()) {
+                                menu.booleanSettings.get(Setting.DRAW_CELLS).doClick();
+                                menu.booleanSettings.get(Setting.DRAW_CENTERS).doClick();
+                                menu.booleanSettings.get(Setting.DRAW_MAP).doClick();
+                            }
                             drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
                         }
                     });
                     view.next(); // show first step that has actual glyphs
                 }
-                status.setText("Clustering... done!");
+                status.setText("Clustering... done!" + (TIMERS_ENABLED ?
+                        String.format(" Took %.2f seconds.", Timers.in(
+                        Timers.elapsed("clustering"), Units.SECONDS)) : ""));
             }
         });
     }
@@ -257,7 +270,7 @@ public class GrowingGlyphs extends JFrame {
                         + "only execute the algorithm and quit");
             }
         }
-        GrowFunction g = new LinearlyGrowingSquares();
+        GrowFunction g = GrowFunction.getAll().get(GrowFunction.DEFAULT);
         if (background) {
             GrowingGlyphsDaemon d = new GrowingGlyphsDaemon(w, h, g);
             if (toOpen != null) {
@@ -395,6 +408,20 @@ public class GrowingGlyphs extends JFrame {
                 }
             }
             optionsMenu.addSeparator();
+            JMenu growFunctionMenu = new JMenu("Grow function");
+            ButtonGroup growFunctionGroup = new ButtonGroup();
+            for (String growFunctionName : GrowFunction.getAll().keySet()) {
+                JRadioButtonMenuItem item = new JRadioButtonMenuItem(
+                        growFunctionName,
+                        (growFunctionName == GrowFunction.DEFAULT));
+                growFunctionGroup.add(item);
+                growFunctionMenu.add(item);
+                item.addActionListener((ActionEvent e) ->
+                        frame.daemon.setGrowFunction(
+                            GrowFunction.getAll().get(e.getActionCommand()))
+                    );
+            }
+            optionsMenu.add(growFunctionMenu);
             optionsMenu.add(new MenuItem("Cluster", frame::run));
             add(optionsMenu);
 

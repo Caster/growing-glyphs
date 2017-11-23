@@ -67,7 +67,6 @@ public class AgglomerativeClustering {
      * Tree with {@link Glyph glyphs} that need clustering.
      */
     private QuadTree tree;
-    private GrowFunction g;
     /**
      * Single object that is used to easily find merge events to be added.
      */
@@ -82,11 +81,9 @@ public class AgglomerativeClustering {
      * Initialize algorithm for clustering growing glyphs on the given QuadTree.
      *
      * @param tree Tree with glyphs to be clustered.
-     * @param g Function to use for determining the size of glyphs.
      */
-    public AgglomerativeClustering(QuadTree tree, GrowFunction g) {
+    public AgglomerativeClustering(QuadTree tree) {
         this.tree = tree;
-        this.g = g;
         this.rec = null;
         this.result = null;
     }
@@ -105,13 +102,14 @@ public class AgglomerativeClustering {
     /**
      * Run clustering algorithm on the QuadTree provided at construction time.
      *
+     * @param g GrowFunction to use for deciding when glyphs touch.
      * @param includeOutOfCell Whether events caused by a glyph growing out of
      *            a cell should be included in the resulting clustering.
      * @param step Whether processing should be paused after every event.
      * @return A reference to the clustering instance, for chaining.
      */
-    public AgglomerativeClustering cluster(boolean includeOutOfCell,
-            boolean step) {
+    public AgglomerativeClustering cluster(GrowFunction g,
+            boolean includeOutOfCell, boolean step) {
         if (GrowingGlyphs.LOGGING_ENABLED) {
             LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
             LOGGER.log(Level.FINE, "clustering using {0} strategy", Utils.join(" + ",
@@ -272,7 +270,7 @@ public class AgglomerativeClustering {
                             }
                         }
                     }
-                } while (findOverlap(merged, mergedAt, nestedMerges));
+                } while (findOverlap(g, merged, mergedAt, nestedMerges));
                 // add new glyph to QuadTree cell(s)
                 tree.insert(merged, mergedAt, g);
                 // create events with remaining glyphs
@@ -329,7 +327,7 @@ public class AgglomerativeClustering {
             case OUT_OF_CELL:
                 if (GrowingGlyphs.TIMERS_ENABLED)
                     Timers.start("out of cell event processing");
-                handleOutOfCell((OutOfCell) e, map, includeOutOfCell, q);
+                handleOutOfCell(g, (OutOfCell) e, map, includeOutOfCell, q);
                 if (GrowingGlyphs.TIMERS_ENABLED)
                     Timers.stop("out of cell event processing");
                 break;
@@ -375,12 +373,14 @@ public class AgglomerativeClustering {
      * is, the `merged` glyph changes (the object), even though the conceptual
      * glyph does not. Representing with {@code null} fixes that problem.
      *
+     * @param g GrowFunction to use for deciding when glyphs touch.
      * @param with Glyph to check overlap with.
      * @param at Timestamp/zoom level at which overlap must be checked.
      * @param addTo Queue to add merge events to.
      * @return Whether any overlap was found at all.
      */
-    private boolean findOverlap(Glyph with, double at, PriorityQueue<GlyphMerge> addTo) {
+    private boolean findOverlap(GrowFunction g, Glyph with, double at,
+            PriorityQueue<GlyphMerge> addTo) {
         boolean foundOverlap = false;
         double bAt; // before `at`, used to store time/zoom level of found merges
         for (QuadTree cell : tree.getLeaves(with, at, g)) {
@@ -394,8 +394,9 @@ public class AgglomerativeClustering {
         return foundOverlap;
     }
 
-    private void handleOutOfCell(OutOfCell o, Map<Glyph, HierarchicalClustering> map,
-            boolean includeOutOfCell, PriorityQueue<Event> q) {
+    private void handleOutOfCell(GrowFunction g, OutOfCell o,
+            Map<Glyph, HierarchicalClustering> map, boolean includeOutOfCell,
+            PriorityQueue<Event> q) {
         Glyph glyph = o.getGlyphs()[0];
         // possibly include the event
         if (includeOutOfCell &&
@@ -467,7 +468,7 @@ public class AgglomerativeClustering {
                 //    → not strictly needed; this may result in having multiple
                 //      merge events for the same pair of glyphs, but once the
                 //      first one is handled, the others are discarded
-                // TODO: check if this makes things more efficient in some form
+                // this step is currently not implemented
                 // 4. continue with making events in appropriate cells instead
                 //    of `neighbor` or all glyphs associated with `neighbor`
                 grownInto = neighbor.getLeaves(glyph, oAt, g);
