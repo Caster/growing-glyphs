@@ -16,22 +16,22 @@ public class LinearlyGrowingSquares extends GrowFunction {
         @Override
         public double intersectAt(Glyph a, Glyph b) {
             double d = Utils.chebyshev(a.getX(), a.getY(), b.getX(), b.getY());
-            return d / (a.getN() + b.getN());
+            return d / (w(a) + w(b));
         }
 
         @Override
         public double intersectAt(Rectangle2D r, Glyph s) {
             double d = Utils.chebyshev(r, s.getX(), s.getY());
-            return d / s.getN();
+            return d / w(s);
         }
 
         @Override
-        public Rectangle2D sizeAt(Glyph glyph, double at) {
-            int n = glyph.getN();
+        public Rectangle2D sizeAt(Glyph s, double at) {
+            double weight = w(s);
             return new Rectangle2D.Double(
-                    glyph.getX() - at * n,
-                    glyph.getY() - at * n,
-                    2 * at * n, 2 * at * n
+                    s.getX() - at * weight,
+                    s.getY() - at * weight,
+                    2 * at * weight, 2 * at * weight
                 );
         }
 

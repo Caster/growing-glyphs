@@ -18,18 +18,18 @@ public class LinearlyGrowingCircles extends GrowFunction {
     @Override
     public double intersectAt(Glyph a, Glyph b) {
         double d = Utils.euclidean(a.getX(), a.getY(), b.getX(), b.getY());
-        return d / (a.getN() + b.getN());
+        return d / (w(a) + w(b));
     }
 
     @Override
     public double intersectAt(Rectangle2D r, Glyph c) {
         double d = Utils.euclidean(r, c.getX(), c.getY());
-        return d / c.getN();
+        return d / w(c);
     }
 
     @Override
     public Shape sizeAt(Glyph c, double at) {
-        double r = at * c.getN();
+        double r = at * w(c);
         return new Ellipse2D.Double(
                 c.getX() - r,
                 c.getY() - r,

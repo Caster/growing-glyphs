@@ -42,6 +42,12 @@ public abstract class GrowFunction {
 
 
     /**
+     * Thresholds that apply to this grow function.
+     */
+    public final CompressionThreshold thresholds = new CompressionThreshold();
+
+
+    /**
      * Returns at which zoom level a glyph touches the given side of the given
      * cell. The glyph is scaled using this {@link GrowFunction}.
      *
@@ -104,6 +110,14 @@ public abstract class GrowFunction {
 
     public Shape[] sizesAt(double at, List<Glyph> glyphs) {
         return this.sizesAt(at, glyphs.toArray(new Glyph[0]));
+    }
+
+
+    /**
+     * Returns the actual weight of a glyph.
+     */
+    protected double w(Glyph glyph) {
+        return thresholds.getN(glyph);
     }
 
 }
