@@ -1,5 +1,8 @@
 package utils;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Stat {
 
     private int n;
@@ -32,6 +35,17 @@ public class Stat {
 
     public double getSum() {
         return sum;
+    }
+
+    public void log(Logger logger, String name) {
+        logger.log(Level.FINE, "{0} was {1} on average and always between "
+                + "{2} and {3}, over {4} measurement{5}", new Object[] {name,
+                String.format("%,9.2f", average), min, max, n, (n == 1 ? "" : "s")});
+    }
+
+    public void logCount(Logger logger, String name) {
+        logger.log(Level.FINE, "{0} occurred {1}", new Object[] {name,
+                (n == 1 ? "once" : n + " times")});
     }
 
     public void record(double value) {

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * A collection of static utility functions.
@@ -200,10 +201,10 @@ public class Utils {
          * retrieved using {@link #get()}, for example.
          */
         public static Locale pop() {
-            Locale prev = get();
-            if (STACK.size() > 1) {
-                STACK.pop();
+            if (STACK.size() == 1) {
+                return get();
             }
+            Locale prev = STACK.pop();
             set(STACK.peek());
             return prev;
         }
@@ -232,6 +233,9 @@ public class Utils {
      */
     public static class Stats {
 
+        private static final Pattern TAG_REGEX = Pattern.compile("^\\[[a-z]+\\]\\s+");
+
+
         /**
          * Map of stat names to objects recording full stat information.
          */
@@ -249,11 +253,26 @@ public class Utils {
             if (!stats.containsKey(name)) {
                 return;
             }
-            Stat s = stats.get(name);
-            logger.log(Level.FINE, "{0} was {1} on average and always between "
-                + "{2} and {3}, over {4} measurement{5}", new Object[] {name,
-                s.getAverage(), s.getMin(), s.getMax(), s.getN(),
-                (s.getN() == 1 ? "" : "s")});
+            stats.get(name).log(logger, name);
+        }
+
+        public static void logAll(Logger logger) {
+            logger.log(Level.FINE, "");
+            logger.log(Level.FINE, "STATS");
+            int padTo = stats.keySet().stream()
+                    .map((n) -> TAG_REGEX.matcher(n).replaceAll(""))
+                    .max(Comparator.comparingInt(String::length)).get().length();
+            String f = "%1$-" + padTo + "s";
+            stats.entrySet().stream()
+                .sorted((a, b) -> a.getKey().compareTo(b.getKey()))
+                .forEach((e) -> {
+                    if (TAG_REGEX.matcher(e.getKey()).find()) {
+                        e.getValue().logCount(logger, String.format(f,
+                                TAG_REGEX.matcher(e.getKey()).replaceAll("")));
+                    } else {
+                        e.getValue().log(logger, String.format(f, e.getKey()));
+                    }
+                });
         }
 
         public static void record(String name, double value) {
@@ -263,6 +282,10 @@ public class Utils {
                 Stat stat = new Stat(value);
                 stats.put(name, stat);
             }
+        }
+
+        public static void remove(String name) {
+            stats.remove(name);
         }
 
     }
@@ -345,6 +368,8 @@ public class Utils {
          * @param logger Logger to log to.
          */
         public static void logAll(Logger logger) {
+            logger.log(Level.FINE, "");
+            logger.log(Level.FINE, "TIMERS");
             int padTo = timers.keySet().stream().max(
                     Comparator.comparingInt(String::length)).get().length();
             String f = "%1$-" + padTo + "s";

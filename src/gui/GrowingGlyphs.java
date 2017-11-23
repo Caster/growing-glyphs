@@ -7,7 +7,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -36,7 +35,6 @@ import datastructure.growfunction.LinearlyGrowingSquares;
 import gui.Settings.Setting;
 import gui.Settings.SettingSection;
 import io.PointIO;
-import utils.Utils.Locales;
 
 /**
  * A debug view of {@link QuadTree QuadTrees} and growing {@link Glyph glyphs}.
@@ -218,7 +216,10 @@ public class GrowingGlyphs extends JFrame {
 
 
     public static void main(String[] args) {
-        Locales.push(Locale.GERMAN);
+        // Uncomment below to change all logging output to have dots for
+        // thousands separators, and commas for decimal separators. Parsing
+        // and outputting to files will be unaffected.
+        //Locales.push(Locale.GERMAN);
 
         int w = 512 + DrawPanel.PADDING * 2;
         int h = w;

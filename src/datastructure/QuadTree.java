@@ -19,6 +19,7 @@ import algorithm.AgglomerativeClustering;
 import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
 import utils.Utils;
+import utils.Utils.Stats;
 
 /**
  * A QuadTree implementation that can track growing glyphs.
@@ -32,7 +33,7 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     public static final int MAX_GLYPHS_PER_CELL = (
             AgglomerativeClustering.ROBUST ? 50 : (
-            AgglomerativeClustering.TRACK  ? 150 : 1500));
+            AgglomerativeClustering.TRACK  ? 100 : 1500));
     /**
      * Minimum width/height of a cell.
      */
@@ -595,6 +596,19 @@ public class QuadTree implements Iterable<QuadTree> {
             child.glyphs.clear();
         }
         children = null;
+
+        // temporary: check if parent could join now
+        if (parent != null) {
+            s = 0;
+            for (QuadTree child : parent.children) {
+                if (!child.isLeaf()) {
+                    return true;
+                }
+                s += child.glyphs.size();
+            }
+            Stats.record("[count] parent can" + (s > MAX_GLYPHS_PER_CELL ? " not" : "") + " join", 1);
+        }
+
         return true;
     }
 

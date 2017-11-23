@@ -152,10 +152,10 @@ public class AgglomerativeClustering {
                 // add events for when two glyphs in the same cell touch
                 rec.from(glyphs[i]);
                 if (GrowingGlyphs.TIMERS_ENABLED)
-                    Timers.start("first merge recording");
+                    Timers.start("first merge recording 1");
                 rec.record(glyphs, i + 1, glyphs.length);
                 if (GrowingGlyphs.TIMERS_ENABLED)
-                    Timers.stop("first merge recording");
+                    Timers.stop("first merge recording 1");
                 rec.addEventsTo(q);
 
                 // add events for when a glyph grows out of its cell
@@ -238,8 +238,10 @@ public class AgglomerativeClustering {
                             // ConcurrentModificationExceptions...
                             for (QuadTree cell : new HashSet<>(glyph.getCells())) {
                                 if (cell.removeGlyph(glyph)) {
-                                    // handle merge events
-                                    rec.recordAllPairs(cell, q, LOGGER);
+                                    // handle merge events; because cell has
+                                    // merged, we need to consider its parent
+                                    Stats.record("[count] record all pairs", 1);
+                                    rec.recordAllPairs(cell.getParent(), q, LOGGER);
                                     // out of cell events are handled when they
                                     // occur, see #handleOutOfCell
                                 }
@@ -247,18 +249,22 @@ public class AgglomerativeClustering {
                             // update merge events of glyphs that tracked merged glyphs
                             if (TRACK && !ROBUST) {
                                 Iterator<Glyph> it = glyph.trackedBy.iterator();
+                                Stats.record("tracked by", glyph.trackedBy.size());
                                 while (it.hasNext()) {
                                     Glyph orphan = it.next();
                                     if (orphan.alive) {
-                                        rec.from(orphan);
-                                        if (GrowingGlyphs.TIMERS_ENABLED)
-                                            Timers.start("first merge recording");
-                                        for (QuadTree cell : orphan.getCells()) {
-                                            rec.record(cell.getGlyphs());
+                                        Stats.record("orphan cells", orphan.getCells().size());
+                                        if (!orphan.popMergeInto(q, LOGGER)) {
+                                            rec.from(orphan);
+                                            if (GrowingGlyphs.TIMERS_ENABLED)
+                                                Timers.start("first merge recording 2");
+                                            for (QuadTree cell : orphan.getCells()) {
+                                                rec.record(cell.getGlyphs());
+                                            }
+                                            if (GrowingGlyphs.TIMERS_ENABLED)
+                                                Timers.stop("first merge recording 2");
+                                            rec.addEventsTo(q, LOGGER);
                                         }
-                                        if (GrowingGlyphs.TIMERS_ENABLED)
-                                            Timers.stop("first merge recording");
-                                        rec.addEventsTo(q, LOGGER);
                                     } else {
                                         it.remove();
                                     }
@@ -270,13 +276,16 @@ public class AgglomerativeClustering {
                 // add new glyph to QuadTree cell(s)
                 tree.insert(merged, mergedAt, g);
                 // create events with remaining glyphs
+                // (we always have to loop over cells here, `merged` has just
+                //  been created and thus hasn't recorded merge events yet)
                 rec.from(merged);
+                Stats.record("merged cells", merged.getCells().size());
                 for (QuadTree cell : merged.getCells()) {
                     if (GrowingGlyphs.TIMERS_ENABLED)
-                        Timers.start("first merge recording");
+                        Timers.start("first merge recording 3");
                     rec.record(cell.getGlyphs());
                     if (GrowingGlyphs.TIMERS_ENABLED)
-                        Timers.stop("first merge recording");
+                        Timers.stop("first merge recording 3");
                     // create out of cell events
                     for (Side side : Side.values()) {
                         // only create an event when at least one neighbor on
@@ -339,12 +348,14 @@ public class AgglomerativeClustering {
                 LOGGER.log(Level.FINE, "→ {1} {0}s ({2} handled, {3} discarded)", new Object[] {
                     tn, s.getSum(), Stats.get(tn + " handled").getSum(),
                     Stats.get(tn + " discarded").getSum()});
+                Stats.remove(tn);
+                Stats.remove(tn + " handled");
+                Stats.remove(tn + " discarded");
             }
             LOGGER.log(Level.FINE, "events were stored in {0} queue(s)", q.getNumQueues());
             LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1} now",
                     new Object[] {tree.getSize(), tree.getTreeHeight()});
-            Stats.log("queue size", LOGGER);
-            Stats.log("glyphs per cell", LOGGER);
+            Stats.logAll(LOGGER);
         }
         if (GrowingGlyphs.TIMERS_ENABLED)
             Timers.logAll(LOGGER);
@@ -477,12 +488,11 @@ public class AgglomerativeClustering {
 
             rec.from(glyph);
             for (QuadTree in : grownInto) {
-                // create merge events with other glyphs in the cells the glyph
-                // grows into, even when they happen before the current one
-                // (those events will immediately be handled after this one)
-                Timers.start("first merge recording");
+                // create merge events with glyphs in the cells the glyph grows
+                // into - we must do this to get correctness
+                Timers.start("first merge recording 4");
                 rec.record(in.getGlyphs());
-                Timers.stop("first merge recording");
+                Timers.stop("first merge recording 4");
 
                 // create out of cell events for the cells the glyph grows into,
                 // but only when they happen after the current event

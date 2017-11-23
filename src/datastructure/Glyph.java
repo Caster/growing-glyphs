@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import algorithm.AgglomerativeClustering;
 import algorithm.FirstMergeRecorder;
@@ -23,6 +25,9 @@ public class Glyph {
      * Number of merge events that a glyph will record at most. This is not
      * strictly enforced by the glyph itself, but should be respected by the
      * {@link FirstMergeRecorder} and other code that records merges.
+     *
+     * More merges can be recorded with a glyph when many merges occur at the
+     * exact same time.
      */
     public static final int MAX_MERGES_TO_RECORD = 3;
 
@@ -218,11 +223,24 @@ public class Glyph {
      * {@link #record(GlyphMerge) recorded} event to the given queue.
      *
      * @param q Event queue to add {@link GlyphMerge} to.
+     * @param l Logger to log events to. Can be {@code null}.
+     * @return Whether an event was popped into the queue.
      */
-    public void popMergeInto(Queue<Event> q) {
+    public boolean popMergeInto(Queue<Event> q, Logger l) {
         if (!mergeEvents.isEmpty()) {
-            q.add(mergeEvents.poll());
+            GlyphMerge merge = mergeEvents.poll();
+            q.add(merge);
+            Glyph with = merge.getOther(this);
+            if (AgglomerativeClustering.TRACK) {
+                with.trackedBy.add(this);
+            }
+            if (l != null) {
+                l.log(Level.FINEST, "-> merge at {0} with {1}",
+                        new Object[] {merge.getAt(), with});
+            }
+            return true;
         }
+        return false;
     }
 
     /**
@@ -230,11 +248,14 @@ public class Glyph {
      * {@link #record(OutOfCell) recorded} event to the given queue.
      *
      * @param q Event queue to add {@link OutOfCell} to.
+     * @return Whether an event was popped into the queue.
      */
-    public void popOutOfCellInto(Queue<Event> q) {
+    public boolean popOutOfCellInto(Queue<Event> q) {
         if (!outOfCellEvents.isEmpty()) {
             q.add(outOfCellEvents.poll());
+            return true;
         }
+        return false;
     }
 
     /**

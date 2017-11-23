@@ -58,7 +58,7 @@ public class Timer {
         stop();
         if (logger != null) {
             logger.log(Level.FINE, "{0} took {1} seconds (wall clock time{2})",
-                new Object[] {name, String.format("%5.3f", Timers.in(
+                new Object[] {name, String.format("%5.2f", Timers.in(
                         totalElapsed, Units.SECONDS)),
                 (count == 1 ? "" : String.format(", %s timings",
                 NumberFormat.getIntegerInstance().format(count)))});
