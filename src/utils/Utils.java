@@ -242,6 +242,10 @@ public class Utils {
         private static Map<String, Stat> stats = new HashMap<>();
 
 
+        public static void count(String name) {
+            record("[count] " + name, 1);
+        }
+
         public static Stat get(String name) {
             if (!stats.containsKey(name)) {
                 stats.put(name, new Stat(0));

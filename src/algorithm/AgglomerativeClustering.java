@@ -240,8 +240,8 @@ public class AgglomerativeClustering {
                                 if (cell.removeGlyph(glyph)) {
                                     // handle merge events; because cell has
                                     // merged, we need to consider its parent
-                                    Stats.record("[count] record all pairs", 1);
-                                    rec.recordAllPairs(cell.getParent(), q, LOGGER);
+                                    Stats.count("record all pairs");
+                                    rec.recordAllPairs(cell.getNonOrphanAncestor(), q, LOGGER);
                                     // out of cell events are handled when they
                                     // occur, see #handleOutOfCell
                                 }
@@ -405,12 +405,8 @@ public class AgglomerativeClustering {
             map.put(glyph, hc);
         }
         // handle orphaned cells
-        QuadTree cell = o.getCell();
-        if (cell.isOrphan()) {
-            // find first non-orphan cell (actual leaf cell)
-            do {
-                cell = cell.getParent();
-            } while (cell.isOrphan());
+        QuadTree cell = o.getCell().getNonOrphanAncestor();
+        if (o.getCell() != cell) {
             // if the event was for an internal border of this non-orphan cell,
             // we don't have to add merge events anymore
             if (!Utils.onBorderOf(o.getCell().getSide(o.getSide()),

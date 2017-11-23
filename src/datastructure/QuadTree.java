@@ -19,7 +19,6 @@ import algorithm.AgglomerativeClustering;
 import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
 import utils.Utils;
-import utils.Utils.Stats;
 
 /**
  * A QuadTree implementation that can track growing glyphs.
@@ -242,6 +241,19 @@ public class QuadTree implements Iterable<QuadTree> {
         getNeighbors(side, result);
         neighbors.set(side.ordinal(), result);
         return result;
+    }
+
+    /**
+     * Returns the first ancestor (parent, grandparent, ...) that is <i>not</i>
+     * an {@link #isOrphan() orphan}. In case this node is not an orphan, this
+     * will return a self reference.
+     */
+    public QuadTree getNonOrphanAncestor() {
+        QuadTree node = this;
+        while (node.isOrphan()) {
+            node = node.parent;
+        }
+        return node;
     }
 
     public QuadTree getParent() {
@@ -597,18 +609,12 @@ public class QuadTree implements Iterable<QuadTree> {
         }
         children = null;
 
-        // temporary: check if parent could join now
+        // recursively check if parent could join now
         if (parent != null) {
-            s = 0;
-            for (QuadTree child : parent.children) {
-                if (!child.isLeaf()) {
-                    return true;
-                }
-                s += child.glyphs.size();
-            }
-            Stats.record("[count] parent can" + (s > MAX_GLYPHS_PER_CELL ? " not" : "") + " join", 1);
+            parent.joinMaybe();
         }
 
+        // since we joined, return `true` independent of whether parent joined
         return true;
     }
 
