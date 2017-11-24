@@ -38,6 +38,8 @@ public abstract class GrowFunction {
     public static Map<String, GrowFunction> getAll() {
         if (ALL.isEmpty()) {
             for (GrowFunction g : Arrays.asList(
+                    new LevelGrowingCircles(),
+                    new LevelGrowingSquares(),
                     new LinearlyGrowingCircles(),
                     new LinearlyGrowingSquares(),
                     new LogarithmicallyGrowingCircles(),
