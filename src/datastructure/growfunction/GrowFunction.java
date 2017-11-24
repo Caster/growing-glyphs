@@ -2,9 +2,12 @@ package datastructure.growfunction;
 
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import datastructure.Glyph;
 import datastructure.QuadTree;
@@ -34,12 +37,13 @@ public abstract class GrowFunction {
      */
     public static Map<String, GrowFunction> getAll() {
         if (ALL.isEmpty()) {
-            ALL.put("Linearly Growing Circles", new LinearlyGrowingCircles());
-            ALL.put(DEFAULT, new LinearlyGrowingSquares());
-            ALL.put("Logarithmically Growing Circles",
-                    new LogarithmicallyGrowingCircles());
-            ALL.put("Logarithmically Growing Squares",
-                    new LogarithmicallyGrowingSquares());
+            for (GrowFunction g : Arrays.asList(
+                    new LinearlyGrowingCircles(),
+                    new LinearlyGrowingSquares(),
+                    new LogarithmicallyGrowingCircles(),
+                    new LogarithmicallyGrowingSquares())) {
+                ALL.put(g.getName(), g);
+            }
         }
         return ALL;
     }
@@ -49,6 +53,13 @@ public abstract class GrowFunction {
      * Thresholds that apply to this grow function.
      */
     public final CompressionThreshold thresholds = new CompressionThreshold();
+
+
+    /**
+     * Human readable name of this grow function. Created by {@link #getName()},
+     * which uses this field as a cache.
+     */
+    protected String name = null;
 
 
     /**
@@ -64,6 +75,32 @@ public abstract class GrowFunction {
      */
     public double exitAt(Glyph glyph, QuadTree cell, Side side) {
         return intersectAt(cell.getSide(side), glyph);
+    }
+
+    /**
+     * Returns the human readable name of this function. This method guarantees
+     * to always return the same exact instance of {@link String}.
+     */
+    public String getName() {
+        if (this.name == null) {
+            String name = getClass().getName();
+            Matcher m = Pattern.compile("[A-Z][a-z]+")
+                    .matcher(name.substring(name.lastIndexOf('.') + 1));
+            if (m.find()) {
+                StringBuilder result = new StringBuilder(m.group(0));
+                while (m.find()) {
+                    result.append(" ");
+                    result.append(m.group(0));
+                }
+                this.name = result.toString();
+                if (this.name.equals(DEFAULT)) {
+                    this.name = DEFAULT;
+                }
+            } else {
+                this.name = "unknown grow function";
+            }
+        }
+        return this.name;
     }
 
     /**

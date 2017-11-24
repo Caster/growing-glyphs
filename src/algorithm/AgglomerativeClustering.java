@@ -115,6 +115,7 @@ public class AgglomerativeClustering {
                     (ROBUST ? "ROBUST" : ""), (TRACK ? "TRACK" : ""),
                     (!ROBUST && !TRACK ? "FIRST MERGE ONLY" : ""),
                     QUEUE_BUCKETING.toString()));
+            LOGGER.log(Level.FINE, "using the {0} grow function", g.getName());
             LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1}, having "
                     + "at most {2} glyphs per cell and cell size at least {3}",
                     new Object[] {tree.getSize(), tree.getTreeHeight(),
