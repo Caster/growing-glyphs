@@ -1,7 +1,6 @@
 package datastructure.growfunction;
 
 import java.awt.Shape;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 
 import datastructure.Glyph;
@@ -52,7 +51,7 @@ public class LogarithmicallyGrowingSquares extends GrowFunction {
     @Override
     public Shape sizeAt(Glyph c, double at) {
         double r = (Math.log1p(at * w(c)) / LOG_DIV) * fA;
-        return new Ellipse2D.Double(
+        return new Rectangle2D.Double(
                 c.getX() - r,
                 c.getY() - r,
                 2 * r, 2 * r);
