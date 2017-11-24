@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -138,9 +137,12 @@ public class AgglomerativeClustering {
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
         // then create a single object that is used to find first merges
         rec = new FirstMergeRecorder(g);
-        // we have a queue for nested merges, and a temporary array that is reused
+        // we have a queue for nested merges, and a temporary array that is reused,
+        // and two sets that are reused somewhere deep in the algorithm
         PriorityQueue<GlyphMerge> nestedMerges = new PriorityQueue<>();
         HierarchicalClustering[] createdFromTmp = new HierarchicalClustering[2];
+        Set<Glyph> trackersNeedingUpdate = new HashSet<>();
+        Set<QuadTree> orphanedCells = new HashSet<>();
         // finally, create an indication of which glyphs still participate
         int numAlive = 0;
         Rectangle2D rect = tree.getRectangle();
@@ -244,39 +246,50 @@ public class AgglomerativeClustering {
                                 if (cell.removeGlyph(glyph)) {
                                     // handle merge events; because cell has
                                     // merged, we need to consider its parent
-                                    Stats.count("record all pairs");
-                                    rec.recordAllPairs(cell.getNonOrphanAncestor(), q, LOGGER);
+                                    orphanedCells.add(cell);
                                     // out of cell events are handled when they
                                     // occur, see #handleOutOfCell
                                 }
                             }
                             // update merge events of glyphs that tracked merged glyphs
                             if (TRACK && !ROBUST) {
-                                Iterator<Glyph> it = glyph.trackedBy.iterator();
-                                Stats.record("tracked by", glyph.trackedBy.size());
-                                while (it.hasNext()) {
-                                    Glyph orphan = it.next();
-                                    if (orphan.alive) {
-                                        Stats.record("orphan cells", orphan.getCells().size());
-                                        if (!orphan.popMergeInto(q, LOGGER)) {
-                                            rec.from(orphan);
-                                            if (GrowingGlyphs.TIMERS_ENABLED)
-                                                Timers.start("first merge recording 2");
-                                            for (QuadTree cell : orphan.getCells()) {
-                                                rec.record(cell.getGlyphs());
-                                            }
-                                            if (GrowingGlyphs.TIMERS_ENABLED)
-                                                Timers.stop("first merge recording 2");
-                                            rec.addEventsTo(q, LOGGER);
-                                        }
-                                    } else {
-                                        it.remove();
-                                    }
-                                }
+                                trackersNeedingUpdate.addAll(glyph.trackedBy);
                             }
                         }
                     }
                 } while (findOverlap(g, merged, mergedAt, nestedMerges));
+                // handle adding merge events in joined cells
+                orphanedCells.stream()
+                        .map((cell) -> cell.getNonOrphanAncestor())
+                        .distinct()
+                        .forEach((cell) -> {
+                            if (GrowingGlyphs.TIMERS_ENABLED)
+                                Timers.start("record all pairs");
+                            rec.recordAllPairs(cell.getNonOrphanAncestor(), q, LOGGER);
+                            if (GrowingGlyphs.TIMERS_ENABLED)
+                                Timers.stop("record all pairs");
+                        });
+                orphanedCells.clear();
+                // update merge events of glyphs that tracked merged glyphs
+                if (TRACK && !ROBUST) {
+                    for (Glyph orphan : trackersNeedingUpdate) {
+                        if (orphan.alive) {
+                            Stats.record("orphan cells", orphan.getCells().size());
+                            if (!orphan.popMergeInto(q, LOGGER)) {
+                                rec.from(orphan);
+                                if (GrowingGlyphs.TIMERS_ENABLED)
+                                    Timers.start("first merge recording 2");
+                                for (QuadTree cell : orphan.getCells()) {
+                                    rec.record(cell.getGlyphs());
+                                }
+                                if (GrowingGlyphs.TIMERS_ENABLED)
+                                    Timers.stop("first merge recording 2");
+                                rec.addEventsTo(q, LOGGER);
+                            }
+                        }
+                    }
+                    trackersNeedingUpdate.clear();
+                }
                 // add new glyph to QuadTree cell(s)
                 tree.insert(merged, mergedAt, g);
                 // create events with remaining glyphs
