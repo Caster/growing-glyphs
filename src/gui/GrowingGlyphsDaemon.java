@@ -71,7 +71,6 @@ public class GrowingGlyphsDaemon {
             return;
         }
         g.thresholds.defaultFor(dataSet);
-        System.out.println(g.thresholds.size());
         clusterer.cluster(g, includeOutOfCell, step);
         clustered = true;
     }
