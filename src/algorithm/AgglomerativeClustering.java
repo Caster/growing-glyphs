@@ -227,8 +227,14 @@ public class AgglomerativeClustering {
 
                         // mark merged glyphs as dead
                         for (Glyph glyph : m.getGlyphs()) {
-                            if (glyph == null) {
-                                continue; // we skip the `merged` glyph, see `#findOverlap`
+                            // We skip the `merged` glyph, see `#findOverlap`.
+                            // We also skip repeated events - it may happen that a glyph
+                            // is detected as overlapping the merged glyph, some other
+                            // overlap is handled and then it is detected again. This
+                            // would result in the event being handled more than once,
+                            // which leads to issues. Hence the `!glyph.alive` check.
+                            if (glyph == null || !glyph.alive) {
+                                continue;
                             }
                             glyph.alive = false; numAlive--;
                             // copy the set of cells the glyph is in currently, because we
