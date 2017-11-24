@@ -21,6 +21,7 @@ public class GrowingGlyphsDaemon {
     private boolean clustered;
     private GrowFunction g;
     private String dataSet;
+    private int n;
     private QuadTree tree;
 
     public GrowingGlyphsDaemon(int w, int h, GrowFunction g) {
@@ -35,6 +36,7 @@ public class GrowingGlyphsDaemon {
         this.clusterer = new AgglomerativeClustering(this.tree);
         this.clustered = false;
         this.dataSet = null;
+        this.n = 0;
     }
 
     public GrowFunction getGrowFunction() {
@@ -70,7 +72,8 @@ public class GrowingGlyphsDaemon {
         if (clustered) {
             return;
         }
-        g.thresholds.defaultFor(dataSet);
+        g.thresholds.defaultFor(dataSet); // TODO: allow to change this via GUI/CLI?
+        g.initialize(n, 256); // TODO: allow to change this via GUI/CLI?
         clusterer.cluster(g, includeOutOfCell, step);
         clustered = true;
     }
@@ -92,10 +95,10 @@ public class GrowingGlyphsDaemon {
         tree.clear();
         if (file.getName().endsWith(".csv") || file.getName().endsWith(".tsv")) {
             dataSet = file.getName().substring(0, file.getName().length() - 4);
-            CsvIO.read(file, tree);
+            n = CsvIO.read(file, tree);
         } else {
             dataSet = file.getName();
-            PointIO.read(file, tree);
+            n = PointIO.read(file, tree);
         }
         clustered = false;
     }

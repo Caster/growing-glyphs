@@ -410,7 +410,8 @@ public class GrowingGlyphs extends JFrame {
             optionsMenu.addSeparator();
             JMenu growFunctionMenu = new JMenu("Grow function");
             ButtonGroup growFunctionGroup = new ButtonGroup();
-            for (String growFunctionName : GrowFunction.getAll().keySet()) {
+            for (String growFunctionName : GrowFunction.getAll().keySet()
+                    .stream().sorted().toArray(String[]::new)) {
                 JRadioButtonMenuItem item = new JRadioButtonMenuItem(
                         growFunctionName,
                         (growFunctionName == GrowFunction.DEFAULT));

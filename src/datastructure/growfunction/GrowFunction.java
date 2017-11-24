@@ -36,6 +36,10 @@ public abstract class GrowFunction {
         if (ALL.isEmpty()) {
             ALL.put("Linearly Growing Circles", new LinearlyGrowingCircles());
             ALL.put(DEFAULT, new LinearlyGrowingSquares());
+            ALL.put("Logarithmically Growing Circles",
+                    new LogarithmicallyGrowingCircles());
+            ALL.put("Logarithmically Growing Squares",
+                    new LogarithmicallyGrowingSquares());
         }
         return ALL;
     }
@@ -60,6 +64,20 @@ public abstract class GrowFunction {
      */
     public double exitAt(Glyph glyph, QuadTree cell, Side side) {
         return intersectAt(cell.getSide(side), glyph);
+    }
+
+    /**
+     * Initialize a grow function to fit the specific data set that is to be
+     * clustered. The default implementation of this function does nothing, but
+     * specific grow function implementations may use this method to set
+     * parameters and fit better on the data set.
+     *
+     * @param numGlyphs The number of glyphs that is present initially.
+     * @param maxRadius The maximum radius of glyphs. The minimum radius of glyphs
+     *            is always 0 because of restrictions in the clustering algorithm.
+     */
+    public void initialize(int numGlyphs, double maxRadius) {
+        // default implementation does nothing
     }
 
     /**

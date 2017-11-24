@@ -22,7 +22,7 @@ public class CsvIO {
             Logger.getLogger(CsvIO.class.getName());
 
 
-    public static void read(File file, QuadTree tree) {
+    public static int read(File file, QuadTree tree) {
         LOGGER.log(Level.FINE, "ENTRY into CsvIO#read()");
         Locales.push(Locale.US);
         Utils.Timers.start("reading file");
@@ -30,7 +30,7 @@ public class CsvIO {
         try (Scanner reader = new Scanner(file)) {
             // read title line
             if (!reader.hasNextLine()) {
-                return;
+                return -1;
             }
             String titleLine = reader.nextLine();
             String splitOn = (titleLine.indexOf('\t') > 0 ? "\t" : "\\s*,\\s*");
@@ -72,8 +72,7 @@ public class CsvIO {
                 tree.insertCenterOf(new Glyph(p.getX() - 256, p.getY() - 256,
                         read.get(ll), true));
             }
-            LOGGER.log(Level.INFO, "loaded {0} locations", new Object[] {
-                    read.size()});
+            LOGGER.log(Level.INFO, "loaded {0} locations", read.size());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -82,6 +81,7 @@ public class CsvIO {
                 new Object[] {ignoredRead[1], ignoredRead[0]});
         Locales.pop();
         LOGGER.log(Level.FINE, "RETURN from CsvIO#read()");
+        return ignoredRead[1];
     }
 
 }

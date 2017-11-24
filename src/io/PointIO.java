@@ -14,17 +14,22 @@ import utils.Utils.Locales;
 
 public class PointIO {
 
-    public static void read(File file, QuadTree tree) {
+    public static int read(File file, QuadTree tree) {
+        int sum = 0;
         Locales.push(Locale.US);
         try (Scanner reader = new Scanner(new FileInputStream(file))) {
             while (reader.hasNextDouble()) {
-                tree.insertCenterOf(new Glyph(reader.nextDouble(),
-                        reader.nextDouble(), reader.nextInt(10), true));
+                double x = reader.nextDouble();
+                double y = reader.nextDouble();
+                int n = reader.nextInt(10);
+                tree.insertCenterOf(new Glyph(x, y, n, true));
+                sum += n;
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         Locales.pop();
+        return sum;
     }
 
     public static void write(QuadTree tree, File file) {
