@@ -244,7 +244,7 @@ public class AgglomerativeClustering {
                             // are about to change that set and don't want to deal with
                             // ConcurrentModificationExceptions...
                             for (QuadTree cell : new HashSet<>(glyph.getCells())) {
-                                if (cell.removeGlyph(glyph)) {
+                                if (cell.removeGlyph(glyph, mergedAt)) {
                                     // handle merge events; because cell has
                                     // merged, we need to consider its parent
                                     orphanedCells.add(cell);

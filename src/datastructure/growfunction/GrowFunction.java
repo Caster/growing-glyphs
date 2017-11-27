@@ -21,7 +21,7 @@ public abstract class GrowFunction {
     /**
      * Name of the grow function that is used by default.
      */
-    public static final String DEFAULT = "Linearly Growing Squares";
+    public static final String DEFAULT = "Level Growing Squares";
 
 
     /**

@@ -359,7 +359,24 @@ public class Utils {
          * @see #in(long, Units)
          */
         public static long elapsed(String name) {
+            if (!timers.containsKey(name)) {
+                return -1;
+            }
             return timers.get(name).getElapsedTotal();
+        }
+
+        /**
+         * Returns how much time has passed since the given timer was last
+         * started.
+         *
+         * @param name Name of the timer.
+         * @see #in(long, Units)
+         */
+        public static long elapsing(String name) {
+            if (!timers.containsKey(name)) {
+                return -1;
+            }
+            return timers.get(name).getElapsed();
         }
 
         /**

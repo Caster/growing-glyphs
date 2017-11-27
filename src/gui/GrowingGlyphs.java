@@ -31,6 +31,7 @@ import algorithm.glyphgenerator.PopulationSim;
 import algorithm.glyphgenerator.UniformRandom;
 import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
+import datastructure.HistoricQuadTree;
 import datastructure.QuadTree;
 import datastructure.growfunction.GrowFunction;
 import gui.Settings.Setting;
@@ -54,6 +55,7 @@ public class GrowingGlyphs extends JFrame {
 
 
     private GrowingGlyphsDaemon daemon;
+    private HistoricQuadTree historicTree;
     private HierarchicalClustering.View view;
 
     private DrawPanel drawPanel;
@@ -69,8 +71,9 @@ public class GrowingGlyphs extends JFrame {
         setLayout(new BorderLayout());
 
         this.daemon = new GrowingGlyphsDaemon(w, h, g);
+        this.historicTree = new HistoricQuadTree(this.daemon.getTree());
         this.view = null;
-        this.drawPanel = new DrawPanel(this.daemon.getTree(), this);
+        this.drawPanel = new DrawPanel(this.historicTree, this);
         add(drawPanel, BorderLayout.CENTER);
 
         randomGlyphs(NUM_POINTS_INITIALLY, GENERATORS[0]);
@@ -193,17 +196,30 @@ public class GrowingGlyphs extends JFrame {
                 daemon.cluster(SETTINGS.getBoolean(Setting.DEBUG),
                         SETTINGS.getBoolean(Setting.STEP));
                 if (daemon.getClustering() != null) {
+                    if (!menu.booleanSettings.get(Setting.DRAW_MAP).isSelected()) {
+                        menu.booleanSettings.get(Setting.DRAW_CELLS).doClick();
+                        menu.booleanSettings.get(Setting.DRAW_CENTERS).doClick();
+                        menu.booleanSettings.get(Setting.DRAW_MAP).doClick();
+                    }
                     view = new HierarchicalClustering.View(daemon.getClustering());
                     view.syncWith(viewNav);
                     view.setChangeListener(new ChangeListener() {
                         @Override
                         public void stateChanged(ChangeEvent e) {
-                            if (!menu.booleanSettings.get(Setting.DRAW_MAP).isSelected()) {
-                                menu.booleanSettings.get(Setting.DRAW_CELLS).doClick();
-                                menu.booleanSettings.get(Setting.DRAW_CENTERS).doClick();
-                                menu.booleanSettings.get(Setting.DRAW_MAP).doClick();
+                            // check time since last change, rate limit
+                            long sinceLastChange = Timers.elapsing("view changed");
+                            if (sinceLastChange != -1 && Timers.in(
+                                    sinceLastChange, Units.MILLISECONDS) < 20) {
+                                return;
                             }
+                            // actual update: repaint
+                            historicTree.at(view.getAt());
                             drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
+                            // (re)start timer
+                            if (sinceLastChange != -1) {
+                                Timers.stop("view changed");
+                            }
+                            Timers.start("view changed");
                         }
                     });
                     view.next(); // show first step that has actual glyphs

@@ -28,6 +28,7 @@ import java.util.Set;
 import javax.swing.JPanel;
 
 import datastructure.Glyph;
+import datastructure.HistoricQuadTree;
 import datastructure.QuadTree;
 import datastructure.events.OutOfCell.Side;
 import gui.Settings.Setting;
@@ -50,7 +51,7 @@ public class DrawPanel extends JPanel implements
     /**
      * QuadTree that is shown.
      */
-    private QuadTree tree;
+    private HistoricQuadTree tree;
     /**
      * Cache for map tiles.
      */
@@ -78,7 +79,7 @@ public class DrawPanel extends JPanel implements
     private double zoom;
 
 
-    public DrawPanel(QuadTree tree, GrowingGlyphs parent) {
+    public DrawPanel(HistoricQuadTree tree, GrowingGlyphs parent) {
         this.parent = parent;
         this.tree = tree;
         this.cache = new TileImageCache();
@@ -165,11 +166,11 @@ public class DrawPanel extends JPanel implements
         // QuadTree
         if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CELLS) ||
                 GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CENTERS)) {
-            Queue<QuadTree> toDraw = new ArrayDeque<>();
+            Queue<HistoricQuadTree> toDraw = new ArrayDeque<>();
             toDraw.add(tree);
             double r = MARK_RADIUS / zoom;
             while (!toDraw.isEmpty()) {
-                QuadTree cell = toDraw.poll();
+                HistoricQuadTree cell = toDraw.poll();
                 // cell outlines
                 if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CELLS)) {
                     g2.setColor(Color.GRAY);
@@ -286,18 +287,18 @@ public class DrawPanel extends JPanel implements
             Point p = e.getPoint();
             toViewSpace(p);
             // find closest glyph
-            QuadTree leaf = tree.findLeafAt(p.getX(), p.getY());
+            HistoricQuadTree leaf = tree.findLeafAt(p.getX(), p.getY());
             String extra = "";
             if (leaf != null) {
                 Glyph closest = null;
                 double minDist = Double.MAX_VALUE;
                 // also search neighboring cells of leaf, nearest point may be there
-                Set<QuadTree> nodes = new HashSet<>();
+                Set<HistoricQuadTree> nodes = new HashSet<>();
                 nodes.add(leaf);
                 for (Side side : Side.values()) {
                     nodes.addAll(leaf.getNeighbors(side));
                 }
-                for (QuadTree node : nodes) {
+                for (HistoricQuadTree node : nodes) {
                     for (Glyph glyph : node.getGlyphs()) {
                         double d;
                         if ((d = p.distanceSq(glyph.getX(), glyph.getY())) < minDist) {

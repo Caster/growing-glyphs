@@ -28,6 +28,10 @@ import utils.Utils;
 public class QuadTree implements Iterable<QuadTree> {
 
     /**
+     * Whether listeners are accepted and notified of events.
+     */
+    public static final boolean ENABLE_LISTENERS = true;
+    /**
      * The maximum number of glyphs that should intersect any leaf cell.
      */
     public static final int MAX_GLYPHS_PER_CELL = (
@@ -60,6 +64,10 @@ public class QuadTree implements Iterable<QuadTree> {
      * Glyphs intersecting the cell.
      */
     private Set<Glyph> glyphs;
+    /**
+     * Listeners listening to events.
+     */
+    private Set<QuadTreeChangeListener> listeners;
     /**
      * Cache {@link #getNeighbors(Side)} for every side.
      */
@@ -104,10 +112,26 @@ public class QuadTree implements Iterable<QuadTree> {
         this.children = null;
         this.g = g;
         this.glyphs = new HashSet<>(MAX_GLYPHS_PER_CELL);
+        if (ENABLE_LISTENERS) {
+            this.listeners = new HashSet<>(1);
+        } else {
+            this.listeners = null;
+        }
         this.neighbors = new ArrayList<>(
                 Collections.nCopies(Side.values().length, null));
     }
 
+
+    /**
+     * Attach a listener to this QuadTree cell and notify it of events.
+     *
+     * @param listener Listener to be added.
+     */
+    public void addListener(QuadTreeChangeListener listener) {
+        if (ENABLE_LISTENERS) {
+            this.listeners.add(listener);
+        }
+    }
 
     /**
      * Reset to being a cell without glyphs nor children.
@@ -409,15 +433,17 @@ public class QuadTree implements Iterable<QuadTree> {
      * This method does <i>not</i> remove the cell from the glyph.
      *
      * @param glyph Glyph to be removed.
+     * @param at Time/zoom level at which glyph is removed. Used only to
+     *           record when a join took place, if a join is triggered.
      * @return Whether removing the glyph caused this cell to merge with its
      *         siblings into its parent, making this cell an
      *         {@link #isOrphan() orphan}. If this happens, merge events may
      *         need to be updated and out of cell events may be outdated.
      */
-    public boolean removeGlyph(Glyph glyph) {
+    public boolean removeGlyph(Glyph glyph, double at) {
         glyphs.remove(glyph);
         if (parent != null) {
-            return parent.joinMaybe();
+            return parent.joinMaybe(at);
         }
         return false;
     }
@@ -440,6 +466,12 @@ public class QuadTree implements Iterable<QuadTree> {
             }
             // only maintain glyphs in leaves
             glyphs.clear();
+        }
+        // notify listeners
+        if (ENABLE_LISTENERS) {
+            for (QuadTreeChangeListener listener : listeners) {
+                listener.split(0);
+            }
         }
     }
 
@@ -471,6 +503,12 @@ public class QuadTree implements Iterable<QuadTree> {
                 if (child.glyphs.size() > MAX_GLYPHS_PER_CELL) {
                     child.split(at, g);
                 }
+            }
+        }
+        // notify listeners
+        if (ENABLE_LISTENERS) {
+            for (QuadTreeChangeListener listener : listeners) {
+                listener.split(at);
             }
         }
     }
@@ -581,9 +619,11 @@ public class QuadTree implements Iterable<QuadTree> {
      * children (thus making this cell a leaf), and adopt the glyphs of the
      * deleted children in this cell.
      *
+     * @param at Time/zoom level at which join takes place. Used only to record
+     *           when a join happened, if one is triggered.
      * @return Whether a join was performed.
      */
-    private boolean joinMaybe() {
+    private boolean joinMaybe(double at) {
         if (isLeaf()) {
             return false;
         }
@@ -592,7 +632,7 @@ public class QuadTree implements Iterable<QuadTree> {
             if (!child.isLeaf()) {
                 return false;
             }
-            s += child.glyphs.size();
+            s += child.getGlyphsAlive().size();
         }
         if (s > MAX_GLYPHS_PER_CELL) {
             return false;
@@ -600,7 +640,7 @@ public class QuadTree implements Iterable<QuadTree> {
 
         // do a join, become a leaf, adopt glyphs of children
         for (QuadTree child : children) {
-            for (Glyph glyph : child.glyphs) {
+            for (Glyph glyph : child.getGlyphsAlive()) {
                 glyphs.add(glyph);
                 glyph.addCell(this);
                 glyph.removeCell(child);
@@ -611,7 +651,14 @@ public class QuadTree implements Iterable<QuadTree> {
 
         // recursively check if parent could join now
         if (parent != null) {
-            parent.joinMaybe();
+            parent.joinMaybe(at);
+        }
+
+        // notify listeners
+        if (ENABLE_LISTENERS) {
+            for (QuadTreeChangeListener listener : listeners) {
+                listener.joined(at);
+            }
         }
 
         // since we joined, return `true` independent of whether parent joined

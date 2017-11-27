@@ -143,6 +143,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
          */
         private boolean halfStep;
         private boolean countingSteps;
+        private boolean ignoreSteps;
         private int c; // current step
         private int n; // total number of steps
         private boolean logging;
@@ -188,6 +189,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             start();
             this.countingSteps = false;
             this.c = 1;
+            this.ignoreSteps = false;
 
             // log current state
             this.logging = true;
@@ -210,6 +212,20 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
 
         public int getStep() {
             return c;
+        }
+
+        public double getAt() {
+            double maxAt = Double.NEGATIVE_INFINITY;
+            if (halfStep) {
+                maxAt = next.peek().at;
+            } else {
+                for (HierarchicalClustering node : curr) {
+                    if (node.at > maxAt) {
+                        maxAt = node.at;
+                    }
+                }
+            }
+            return maxAt;
         }
 
         public Shape[] getGlyphs(GrowFunction g) {
@@ -373,7 +389,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
          */
         private void step(int delta) {
             c += delta;
-            if (syncWith != null) {
+            if (!ignoreSteps && syncWith != null) {
                 syncWith.setValue(c);
             }
             if (countingSteps) {
@@ -391,6 +407,8 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
          * @param step Step index to move towards.
          */
         private void stepTo(int step) {
+            ignoreSteps = true;
+            int lastC = c;
             while (c != step) {
                 if (c < step) {
                     next();
@@ -403,10 +421,20 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
                         break;
                     }
                 }
+                if (c == lastC) {
+                    if (c < step) {
+                        c = n;
+                    } else {
+                        c = 1;
+                    }
+                    break;
+                }
+                lastC = c;
             }
             if (cl != null) {
                 cl.stateChanged(new ChangeEvent(this));
             }
+            ignoreSteps = false;
         }
 
     }
