@@ -326,7 +326,7 @@ public class AgglomerativeClustering {
                         // now, actually create an OUT_OF_CELL event, but only
                         // if the event is still about to happen
                         OutOfCell ooe = new OutOfCell(merged, g, cell, side);
-                        if (ooe.getAt() <= mergedAt) {
+                        if (ooe.getAt() > mergedAt) {
                             merged.record(ooe);
                             if (GrowingGlyphs.LOGGING_ENABLED)
                                 LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
