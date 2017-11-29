@@ -245,9 +245,7 @@ public class QuadTree implements Iterable<QuadTree> {
             Queue<Entry<QuadTree, QuadTree>> toSwap = new ArrayDeque<>();
             for (QuadTree cell : result) {
                 QuadTree startCell = cell;
-                while (cell.isOrphan()) {
-                    cell = cell.parent;
-                }
+                cell = cell.getNonOrphanAncestor();
                 if (startCell != cell) {
                     toSwap.add(new SimpleImmutableEntry<>(startCell, cell));
                 }
