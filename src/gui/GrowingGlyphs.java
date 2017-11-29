@@ -78,7 +78,7 @@ public class GrowingGlyphs extends JFrame {
 
         randomGlyphs(NUM_POINTS_INITIALLY, GENERATORS[0]);
 
-        add(viewNav = new JSlider(), BorderLayout.NORTH);
+        add(viewNav = new ScrollableSlider(), BorderLayout.NORTH);
         viewNav.setEnabled(false);
         viewNav.setFocusable(false); // we handle keyboard input ourselves
         add(status = new JLabel("Ready. Press 'h' for help."), BorderLayout.SOUTH);
