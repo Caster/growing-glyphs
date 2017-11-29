@@ -86,6 +86,10 @@ public class GrowingGlyphsDaemon {
         return clusterer.getClustering();
     }
 
+    public boolean isClustered() {
+        return clustered;
+    }
+
     /**
      * Read weighted point set from given file.
      *

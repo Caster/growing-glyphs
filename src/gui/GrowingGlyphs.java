@@ -189,6 +189,11 @@ public class GrowingGlyphs extends JFrame {
         if (menu.booleanSettings.get(Setting.SHOW_COORDS).isSelected()) {
             menu.booleanSettings.get(Setting.SHOW_COORDS).doClick();
         }
+        if (daemon.isClustered()) {
+            status.setText("Already clustered. Please reopen the data to cluster "
+                    + "with different parameters.");
+            return;
+        }
         status.setText("Clustering...");
         SwingUtilities.invokeLater(new Runnable() {
             @Override
