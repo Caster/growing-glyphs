@@ -28,8 +28,12 @@ public class Glyph {
      *
      * More merges can be recorded with a glyph when many merges occur at the
      * exact same time.
+     *
+     * Implementor's note: setting this parameter to a value greater than 1 will
+     * improve performance, but comes at the cost of accuracy. Overlap may occur
+     * in these cases, as outdated information is used.
      */
-    public static final int MAX_MERGES_TO_RECORD = 3;
+    public static final int MAX_MERGES_TO_RECORD = 1;
 
 
     /**
