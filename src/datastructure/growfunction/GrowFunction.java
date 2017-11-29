@@ -43,7 +43,9 @@ public abstract class GrowFunction {
                     new LinearlyGrowingCircles(),
                     new LinearlyGrowingSquares(),
                     new LogarithmicallyGrowingCircles(),
-                    new LogarithmicallyGrowingSquares())) {
+                    new LogarithmicallyGrowingSquares(),
+                    new LogarithmicallyGrowingCirclesBounded(),
+                    new LogarithmicallyGrowingSquaresBounded())) {
                 ALL.put(g.getName(), g);
             }
         }
