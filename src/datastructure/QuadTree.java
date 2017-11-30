@@ -398,7 +398,8 @@ public class QuadTree implements Iterable<QuadTree> {
      * joined and forgot about its children.
      */
     public boolean isOrphan() {
-        return (this.parent != null && this.parent.children == null);
+        return (this.parent != null && (this.parent.children == null ||
+                Utils.indexOf(this.parent.children, this) < 0));
     }
 
     /**
