@@ -28,12 +28,8 @@ public class Glyph {
      *
      * More merges can be recorded with a glyph when many merges occur at the
      * exact same time.
-     *
-     * Implementor's note: setting this parameter to a value greater than 1 will
-     * improve performance, but comes at the cost of accuracy. Overlap may occur
-     * in these cases, as outdated information is used.
      */
-    public static final int MAX_MERGES_TO_RECORD = 1;
+    public static final int MAX_MERGES_TO_RECORD = 5;
 
 
     /**
@@ -231,10 +227,16 @@ public class Glyph {
      * @return Whether an event was popped into the queue.
      */
     public boolean popMergeInto(Queue<Event> q, Logger l) {
-        if (!mergeEvents.isEmpty()) {
+        // try to pop a merge event into the queue as long as the previously
+        // recorded merge is with a glyph that is still alive... give up as
+        // soon as no recorded events remain
+        while (!mergeEvents.isEmpty()) {
             GlyphMerge merge = mergeEvents.poll();
-            q.add(merge);
             Glyph with = merge.getOther(this);
+            if (!with.alive) {
+                continue; // try the next event
+            }
+            q.add(merge);
             if (AgglomerativeClustering.TRACK) {
                 with.trackedBy.add(this);
             }
@@ -242,8 +244,10 @@ public class Glyph {
                 l.log(Level.FINEST, "-> merge at {0} with {1}",
                         new Object[] {merge.getAt(), with});
             }
+            // we found an event and added it to the queue, return
             return true;
         }
+        // no recorded events remain, we cannot add an event
         return false;
     }
 
