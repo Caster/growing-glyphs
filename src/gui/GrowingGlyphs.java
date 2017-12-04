@@ -1,10 +1,12 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.awt.geom.Area;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -128,6 +130,26 @@ public class GrowingGlyphs extends JFrame {
             }
             drawPanel.setGlyphs(view.getGlyphs(daemon.getGrowFunction()));
         }
+    }
+
+    private void checkOverlap() {
+        view.end();
+        do {
+            Shape[] shapes = view.getGlyphs(daemon.getGrowFunction());
+            for (int i = 0; i < shapes.length; ++i) {
+                for (int j = i + 1; j < shapes.length; ++j) {
+                    Area a = new Area(shapes[i]);
+                    a.intersect(new Area(shapes[j]));
+                    if (!a.isEmpty() && !(a.isRectangular() &&
+                            (a.getBounds2D().getWidth() <= 1 ||
+                             a.getBounds2D().getHeight() <= 1))) {
+                        drawPanel.setGlyphs(new Shape[] {
+                            shapes[i], shapes[j]});
+                        return;
+                    }
+                }
+            }
+        } while (view.previousIfPossible());
     }
 
     private JFileChooser getFC() {
@@ -317,6 +339,9 @@ public class GrowingGlyphs extends JFrame {
             switch (e.getKeyCode()) {
             case KeyEvent.VK_A:
                 run();
+                break;
+            case KeyEvent.VK_C:
+                checkOverlap();
                 break;
             case KeyEvent.VK_H:
                 JOptionPane.showMessageDialog(GrowingGlyphs.this,

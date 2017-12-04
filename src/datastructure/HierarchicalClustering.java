@@ -288,6 +288,18 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
         }
 
         /**
+         * {@link #next() Move the view to the next step}, if there is a next
+         * step. Returns whether a step was performed.
+         */
+        public boolean nextIfPossible() {
+            int currC = c;
+            if (c < n) {
+                next();
+            }
+            return (currC != c);
+        }
+
+        /**
          * Move the view to the previous step, undoing one merge.
          */
         public void previous() {
@@ -315,6 +327,18 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             }
             halfStep = true;
             step(-1);
+        }
+
+        /**
+         * {@link #previous() Move the view to the previous step}, if there is a
+         * previous step. Returns whether a step was performed.
+         */
+        public boolean previousIfPossible() {
+            int currC = c;
+            if (c > 1) {
+                previous();
+            }
+            return (currC != c);
         }
 
         public void setChangeListener(ChangeListener listener) {
