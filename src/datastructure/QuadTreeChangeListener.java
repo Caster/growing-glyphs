@@ -6,6 +6,12 @@ package datastructure;
 public interface QuadTreeChangeListener {
 
     /**
+     * Triggered when a QuadTree cell is instructed to
+     * {@link QuadTree#clear() clear} itself.
+     */
+    public void clear();
+
+    /**
      * Triggered when a QuadTree cell joined its children into itself.
      *
      * @param at When the join happened.

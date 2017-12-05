@@ -21,42 +21,18 @@ import datastructure.events.GlyphMerge;
 import datastructure.events.OutOfCell;
 import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
-import datastructure.queues.BucketingStrategy;
 import datastructure.queues.MultiQueue;
 import gui.GrowingGlyphs;
+import utils.Constants.B;
+import utils.Constants.D;
+import utils.Constants.E;
+import utils.Constants.I;
 import utils.Stat;
 import utils.Utils;
 import utils.Utils.Stats;
 import utils.Utils.Timers;
 
 public class AgglomerativeClustering {
-
-    /**
-     * Whether merge events are to be created for all pairs of glyphs, or only
-     * the first one. In practice, creating only the first merge event appears
-     * to result in clusterings free of overlap, but in theory overlap can
-     * occur. Setting this to {@code true} implies a performance hit.
-     *
-     * Please note that {@link QuadTree#MAX_GLYPHS_PER_CELL} cannot be set to
-     * high values when setting this to {@code true}, or you need to allocate
-     * more memory to the clustering process for large data sets.
-     */
-    public static final boolean ROBUST = false;
-    /**
-     * When {@link #ROBUST} is {@code false}, this flag toggles behavior where
-     * glyphs track which glyphs think they'll merge with them first. Merge
-     * events are then updated for tracking glyphs, as glyphs merge.
-     *
-     * Same concern about {@link QuadTree#MAX_GLYPHS_PER_CELL} holds as for
-     * {@link #ROBUST}, except for CPU time instead of memory.
-     */
-    public static final boolean TRACK = true;
-    /**
-     * Whether the event queue should be split into multiple queues, and when.
-     */
-    public static final BucketingStrategy QUEUE_BUCKETING =
-            BucketingStrategy.NO_BUCKETING;
-
 
     private static final Logger LOGGER = (GrowingGlyphs.LOGGING_ENABLED ?
             Logger.getLogger(AgglomerativeClustering.class.getName()) : null);
@@ -112,14 +88,14 @@ public class AgglomerativeClustering {
         if (GrowingGlyphs.LOGGING_ENABLED) {
             LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
             LOGGER.log(Level.FINE, "clustering using {0} strategy", Utils.join(" + ",
-                    (ROBUST ? "ROBUST" : ""), (TRACK ? "TRACK" : ""),
-                    (!ROBUST && !TRACK ? "FIRST MERGE ONLY" : ""),
-                    QUEUE_BUCKETING.toString()));
+                    (B.ROBUST.get() ? "ROBUST" : ""), (B.TRACK.get() ? "TRACK" : ""),
+                    (!B.ROBUST.get() && !B.TRACK.get() ? "FIRST MERGE ONLY" : ""),
+                    E.QUEUE_BUCKETING.get().toString()));
             LOGGER.log(Level.FINE, "using the {0} grow function", g.getName());
             LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1}, having "
                     + "at most {2} glyphs per cell and cell size at least {3}",
                     new Object[] {tree.getSize(), tree.getTreeHeight(),
-                    QuadTree.MAX_GLYPHS_PER_CELL, QuadTree.MIN_CELL_SIZE});
+                    I.MAX_GLYPHS_PER_CELL.get(), D.MIN_CELL_SIZE.get()});
             if (LOGGER.isLoggable(Level.FINE)) {
                 for (QuadTree leaf : tree.getLeaves()) {
                     Stats.record("glyphs per cell", leaf.getGlyphs().size());
@@ -131,8 +107,8 @@ public class AgglomerativeClustering {
         }
         // construct a queue, put everything in there - 10x number of glyphs
         // appears to be a good estimate for needed capacity without bucketing
-        MultiQueue q = new MultiQueue(QUEUE_BUCKETING, 10 * tree.getLeaves()
-                .parallelStream().collect(
+        MultiQueue q = new MultiQueue(E.QUEUE_BUCKETING.get(),
+                10 * tree.getLeaves().parallelStream().collect(
                         Collectors.summingInt((cell) -> cell.getGlyphs().size())));
         // also create a result for each glyph, and a map to find them
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
@@ -253,7 +229,7 @@ public class AgglomerativeClustering {
                                 }
                             }
                             // update merge events of glyphs that tracked merged glyphs
-                            if (TRACK && !ROBUST) {
+                            if (B.TRACK.get() && !B.ROBUST.get()) {
                                 trackersNeedingUpdate.addAll(glyph.trackedBy);
                             }
                         }
@@ -272,7 +248,7 @@ public class AgglomerativeClustering {
                         });
                 orphanedCells.clear();
                 // update merge events of glyphs that tracked merged glyphs
-                if (TRACK && !ROBUST) {
+                if (B.TRACK.get() && !B.ROBUST.get()) {
                     for (Glyph orphan : trackersNeedingUpdate) {
                         if (orphan.alive) {
                             Stats.record("orphan cells", orphan.getCells().size());
@@ -382,6 +358,10 @@ public class AgglomerativeClustering {
         return this;
     }
 
+    public void reset() {
+        result = null;
+    }
+
 
     /**
      * Find glyphs that overlap the given glyph at the given timestamp/zoom level,
@@ -477,7 +457,7 @@ public class AgglomerativeClustering {
 
             // split cell if necessary, to maintain maximum glyphs per cell
             Set<QuadTree> grownInto;
-            if (neighbor.getGlyphs().size() > QuadTree.MAX_GLYPHS_PER_CELL) {
+            if (neighbor.getGlyphs().size() > I.MAX_GLYPHS_PER_CELL.get()) {
                 // 1. split and move glyphs in cell to appropriate leaf cells
                 //    (this may split the cell more than once!)
                 neighbor.split(oAt, g);

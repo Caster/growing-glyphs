@@ -12,6 +12,10 @@ public class Stat {
     private double sum;
 
 
+    public Stat() {
+        this.n = 0;
+    }
+
     public Stat(double value) {
         this.n = 1;
         this.average = this.min = this.max = this.sum = value;
@@ -49,6 +53,11 @@ public class Stat {
     }
 
     public void record(double value) {
+        if (n == 0) {
+            this.n = 1;
+            this.average = this.min = this.max = this.sum = value;
+            return;
+        }
         average += (value - average) / ++n;
         sum += value;
         if (value > max) {

@@ -9,28 +9,17 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import algorithm.AgglomerativeClustering;
-import algorithm.FirstMergeRecorder;
 import datastructure.events.Event;
 import datastructure.events.GlyphMerge;
 import datastructure.events.OutOfCell;
 import datastructure.growfunction.GrowFunction;
+import utils.Constants.B;
+import utils.Constants.I;
 
 /**
  * A glyph starts as a point and then grows at a given speed.
  */
 public class Glyph {
-
-    /**
-     * Number of merge events that a glyph will record at most. This is not
-     * strictly enforced by the glyph itself, but should be respected by the
-     * {@link FirstMergeRecorder} and other code that records merges.
-     *
-     * More merges can be recorded with a glyph when many merges occur at the
-     * exact same time.
-     */
-    public static final int MAX_MERGES_TO_RECORD = 5;
-
 
     /**
      * Used by clustering algorithm to track which glyphs are still of interest.
@@ -97,7 +86,7 @@ public class Glyph {
             throw new IllegalArgumentException("n must be at least 1");
         }
         this.alive = alive;
-        if (AgglomerativeClustering.TRACK) {
+        if (B.TRACK.get()) {
             this.trackedBy = new HashSet<>(16);
         } else {
             this.trackedBy = null;
@@ -106,7 +95,7 @@ public class Glyph {
         this.y = y;
         this.n = n;
         this.cells = new HashSet<>();
-        this.mergeEvents = new PriorityQueue<>(MAX_MERGES_TO_RECORD);
+        this.mergeEvents = new PriorityQueue<>(I.MAX_MERGES_TO_RECORD.get());
         this.outOfCellEvents = new PriorityQueue<>();
     }
 
@@ -237,7 +226,7 @@ public class Glyph {
                 continue; // try the next event
             }
             q.add(merge);
-            if (AgglomerativeClustering.TRACK) {
+            if (B.TRACK.get()) {
                 with.trackedBy.add(this);
             }
             if (l != null) {

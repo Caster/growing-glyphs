@@ -18,6 +18,8 @@ import datastructure.QuadTree;
 import datastructure.events.Event;
 import datastructure.events.GlyphMerge;
 import datastructure.growfunction.GrowFunction;
+import utils.Constants.B;
+import utils.Constants.I;
 import utils.Utils.Timers;
 
 /**
@@ -145,7 +147,7 @@ public class FirstMergeRecorder {
      * @param glyphs Stream of glyphs to record.
      */
     public void record(Stream<Glyph> glyphs) {
-        if (AgglomerativeClustering.ROBUST) {
+        if (B.ROBUST.get()) {
             merge.getGlyphs().addAll(glyphs.parallel()
                 .filter((glyph) -> glyph.alive && glyph != from)
                 .collect(Collectors.toSet()));
@@ -197,9 +199,9 @@ public class FirstMergeRecorder {
 
         public FirstMerge() {
             this.at = new ArrayList<>(Collections.nCopies(
-                    Glyph.MAX_MERGES_TO_RECORD, Double.POSITIVE_INFINITY));
-            this.glyphs = new ArrayList<>(Glyph.MAX_MERGES_TO_RECORD);
-            for (int i = 0; i < Glyph.MAX_MERGES_TO_RECORD; ++i) {
+                    I.MAX_MERGES_TO_RECORD.get(), Double.POSITIVE_INFINITY));
+            this.glyphs = new ArrayList<>(I.MAX_MERGES_TO_RECORD.get());
+            for (int i = 0; i < I.MAX_MERGES_TO_RECORD.get(); ++i) {
                 this.glyphs.add(new HashSet<>(1));
             }
             this.size = 0;
@@ -207,13 +209,13 @@ public class FirstMergeRecorder {
 
         public void accept(Glyph candidate) {
             double at = g.intersectAt(from, candidate);
-            for (int i = 0; i < Glyph.MAX_MERGES_TO_RECORD; ++i) {
+            for (int i = 0; i < I.MAX_MERGES_TO_RECORD.get(); ++i) {
                 if (at < this.at.get(i)) {
                     if (this.at.get(i).isInfinite()) {
                         size++;
                     }
                     // make room to shift, if needed
-                    if (this.at.size() == Glyph.MAX_MERGES_TO_RECORD) {
+                    if (this.at.size() == I.MAX_MERGES_TO_RECORD.get()) {
                         this.at.remove(this.at.size() - 1);
                         this.glyphs.add(i, this.glyphs.remove(this.glyphs.size() - 1));
                     }
@@ -233,7 +235,7 @@ public class FirstMergeRecorder {
             int thisInd = 0;
             int thatInd = 0;
             FirstMerge result = new FirstMerge();
-            for (int i = 0; i < Glyph.MAX_MERGES_TO_RECORD; ++i) {
+            for (int i = 0; i < I.MAX_MERGES_TO_RECORD.get(); ++i) {
                 if (that.at.get(thatInd) < this.at.get(thisInd)) {
                     result.at.set(i, that.at.get(thatInd));
                     result.glyphs.set(i, that.glyphs.get(thatInd));
@@ -262,7 +264,7 @@ public class FirstMergeRecorder {
         }
 
         public void reset() {
-            for (int i = 0; i < Glyph.MAX_MERGES_TO_RECORD; ++i) {
+            for (int i = 0; i < I.MAX_MERGES_TO_RECORD.get(); ++i) {
                 at.set(i, Double.POSITIVE_INFINITY);
                 glyphs.get(i).clear();
             }
@@ -283,7 +285,7 @@ public class FirstMergeRecorder {
             int i = 0;
             for (Glyph with : glyphs) {
                 result[i++] = new GlyphMerge(from, with,
-                    (AgglomerativeClustering.ROBUST ? g.intersectAt(from, with) : at));
+                    (B.ROBUST.get() ? g.intersectAt(from, with) : at));
             }
             return result;
         }

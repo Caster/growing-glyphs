@@ -21,21 +21,17 @@ public class GrowingGlyphsDaemon {
     private boolean clustered;
     private GrowFunction g;
     private String dataSet;
+    private File lastOpened;
     private int n;
     private QuadTree tree;
 
     public GrowingGlyphsDaemon(int w, int h, GrowFunction g) {
         this.g = g;
-        this.tree = new QuadTree(
-                DrawPanel.PADDING - w / 2,
-                DrawPanel.PADDING - h / 2,
-                w - DrawPanel.PADDING * 2,
-                h - DrawPanel.PADDING * 2,
-                g
-            );
+        this.tree = new QuadTree(-w / 2, -h / 2, w, h, g);
         this.clusterer = new AgglomerativeClustering(this.tree);
         this.clustered = false;
         this.dataSet = null;
+        this.lastOpened = null;
         this.n = 0;
     }
 
@@ -86,6 +82,10 @@ public class GrowingGlyphsDaemon {
         return clusterer.getClustering();
     }
 
+    public String getDataSet() {
+        return dataSet;
+    }
+
     public boolean isClustered() {
         return clustered;
     }
@@ -105,6 +105,14 @@ public class GrowingGlyphsDaemon {
             n = PointIO.read(file, tree);
         }
         clustered = false;
+        clusterer.reset();
+        lastOpened = file;
+    }
+
+    public void reopen() {
+        if (lastOpened != null) {
+            openFile(lastOpened);
+        }
     }
 
     public void setGrowFunction(GrowFunction g) {

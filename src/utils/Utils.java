@@ -316,6 +316,10 @@ public class Utils {
             stats.remove(name);
         }
 
+        public static void reset() {
+            stats.clear();
+        }
+
     }
 
 
@@ -455,6 +459,10 @@ public class Utils {
          */
         public static void stop(String name) {
             timers.get(name).stop();
+        }
+
+        public static void reset() {
+            timers.clear();
         }
 
     }

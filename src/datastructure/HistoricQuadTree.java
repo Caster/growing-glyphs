@@ -30,6 +30,13 @@ public class HistoricQuadTree {
 
         track.addListener(new QuadTreeChangeListener() {
             @Override
+            public void clear() {
+                at = 0;
+                changes.clear();
+                changes.add(initial);
+            }
+
+            @Override
             public void split(double at) {
                 if (at == 0) {
                     changes.remove(initial);

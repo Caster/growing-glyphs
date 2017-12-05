@@ -39,6 +39,7 @@ import datastructure.growfunction.GrowFunction;
 import gui.Settings.Setting;
 import gui.Settings.SettingSection;
 import io.PointIO;
+import utils.Constants.I;
 import utils.Utils.Timers;
 import utils.Utils.Timers.Units;
 
@@ -180,7 +181,7 @@ public class GrowingGlyphs extends JFrame {
         daemon.openFile(file);
         drawPanel.setGlyphs(null);
         if (status != null) {
-            status.setText("Loaded '" + file.getName() + "'.");
+            status.setText("Loaded '" + daemon.getDataSet() + "'.");
         }
     }
 
@@ -200,6 +201,21 @@ public class GrowingGlyphs extends JFrame {
             // Silly user, not typing integers when they should be.
             // We ignore them. That'll teach them. Maybe.
         }
+    }
+
+    /**
+     * Open the last opened file, if any file has been opened.
+     *
+     * @param events Ignored.
+     */
+    private void reopen(ActionEvent...events) {
+        daemon.reopen();
+        drawPanel.setGlyphs(null);
+        if (status != null) {
+            status.setText("Loaded '" + daemon.getDataSet() + "'.");
+        }
+        view = null;
+        viewNav.setEnabled(false);
     }
 
     /**
@@ -277,7 +293,7 @@ public class GrowingGlyphs extends JFrame {
         // and outputting to files will be unaffected.
         //Locales.push(Locale.GERMAN);
 
-        int w = 512 + DrawPanel.PADDING * 2;
+        int w = I.DEFAULT_SIZE.get();
         int h = w;
         File toOpen = null;
         boolean background = false;
@@ -424,6 +440,7 @@ public class GrowingGlyphs extends JFrame {
         public Menu(GrowingGlyphs frame) {
             JMenu fileMenu = new JMenu("File");
             fileMenu.add(new MenuItem("Open", frame::open));
+            fileMenu.add(new MenuItem("Reopen", frame::reopen));
             fileMenu.add(new MenuItem("Save", frame::save));
             fileMenu.add(new MenuItem("Quit", (ActionEvent e) -> {
                 frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));

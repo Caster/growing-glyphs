@@ -15,9 +15,11 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import algorithm.AgglomerativeClustering;
 import datastructure.events.OutOfCell.Side;
 import datastructure.growfunction.GrowFunction;
+import utils.Constants.B;
+import utils.Constants.D;
+import utils.Constants.I;
 import utils.Utils;
 
 /**
@@ -26,22 +28,6 @@ import utils.Utils;
  * @see Glyph
  */
 public class QuadTree implements Iterable<QuadTree> {
-
-    /**
-     * Whether listeners are accepted and notified of events.
-     */
-    public static final boolean ENABLE_LISTENERS = true;
-    /**
-     * The maximum number of glyphs that should intersect any leaf cell.
-     */
-    public static final int MAX_GLYPHS_PER_CELL = (
-            AgglomerativeClustering.ROBUST ? 50 : (
-            AgglomerativeClustering.TRACK  ? 35 : 1500));
-    /**
-     * Minimum width/height of a cell.
-     */
-    public static final double MIN_CELL_SIZE = 0.001;
-
 
     /**
      * Rectangle describing this cell.
@@ -111,8 +97,8 @@ public class QuadTree implements Iterable<QuadTree> {
         this.parent = null;
         this.children = null;
         this.g = g;
-        this.glyphs = new HashSet<>(MAX_GLYPHS_PER_CELL);
-        if (ENABLE_LISTENERS) {
+        this.glyphs = new HashSet<>(I.MAX_GLYPHS_PER_CELL.get());
+        if (B.ENABLE_LISTENERS.get()) {
             this.listeners = new HashSet<>(1);
         } else {
             this.listeners = null;
@@ -128,7 +114,7 @@ public class QuadTree implements Iterable<QuadTree> {
      * @param listener Listener to be added.
      */
     public void addListener(QuadTreeChangeListener listener) {
-        if (ENABLE_LISTENERS) {
+        if (B.ENABLE_LISTENERS.get()) {
             this.listeners.add(listener);
         }
     }
@@ -142,6 +128,14 @@ public class QuadTree implements Iterable<QuadTree> {
             glyph.removeCell(this);
         }
         this.glyphs.clear();
+        for (int i = 0; i < Side.values().length; ++i) {
+            this.neighbors.set(i, null);
+        }
+        if (B.ENABLE_LISTENERS.get()) {
+            for (QuadTreeChangeListener listener : listeners) {
+                listener.clear();
+            }
+        }
     }
 
     /**
@@ -375,7 +369,7 @@ public class QuadTree implements Iterable<QuadTree> {
             return false;
         }
         // can we insert here?
-        if (isLeaf() && glyphs.size() < MAX_GLYPHS_PER_CELL) {
+        if (isLeaf() && glyphs.size() < I.MAX_GLYPHS_PER_CELL.get()) {
             glyphs.add(glyph);
             glyph.addCell(this);
             return true;
@@ -467,7 +461,7 @@ public class QuadTree implements Iterable<QuadTree> {
             glyphs.clear();
         }
         // notify listeners
-        if (ENABLE_LISTENERS) {
+        if (B.ENABLE_LISTENERS.get()) {
             for (QuadTreeChangeListener listener : listeners) {
                 listener.split(0);
             }
@@ -499,13 +493,13 @@ public class QuadTree implements Iterable<QuadTree> {
             glyphs.clear();
             // ensure that split did in fact have an effect
             for (QuadTree child : children) {
-                if (child.glyphs.size() > MAX_GLYPHS_PER_CELL) {
+                if (child.glyphs.size() > I.MAX_GLYPHS_PER_CELL.get()) {
                     child.split(at, g);
                 }
             }
         }
         // notify listeners
-        if (ENABLE_LISTENERS) {
+        if (B.ENABLE_LISTENERS.get()) {
             for (QuadTreeChangeListener listener : listeners) {
                 listener.split(at);
             }
@@ -633,7 +627,7 @@ public class QuadTree implements Iterable<QuadTree> {
             }
             s += child.getGlyphsAlive().size();
         }
-        if (s > MAX_GLYPHS_PER_CELL) {
+        if (s > I.MAX_GLYPHS_PER_CELL.get()) {
             return false;
         }
 
@@ -654,7 +648,7 @@ public class QuadTree implements Iterable<QuadTree> {
         }
 
         // notify listeners
-        if (ENABLE_LISTENERS) {
+        if (B.ENABLE_LISTENERS.get()) {
             for (QuadTreeChangeListener listener : listeners) {
                 listener.joined(at);
             }
@@ -683,7 +677,7 @@ public class QuadTree implements Iterable<QuadTree> {
         double y = getY();
         double w = getWidth();
         double h = getHeight();
-        if (w / 2 < MIN_CELL_SIZE || h / 2 < MIN_CELL_SIZE) {
+        if (w / 2 < D.MIN_CELL_SIZE.get() || h / 2 < D.MIN_CELL_SIZE.get()) {
             throw new RuntimeException("cannot split a tiny cell");
         }
         for (int i = 0; i < 4; ++i) {
