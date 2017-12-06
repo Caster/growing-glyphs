@@ -372,9 +372,26 @@ public class FirstMergeRecorder {
         }
 
         public void reset() {
+            resizeIfNeeded();
             for (int i = 0; i < I.MAX_MERGES_TO_RECORD.get(); ++i) {
                 at.set(i, Double.POSITIVE_INFINITY);
                 glyphs.get(i).clear();
+            }
+        }
+
+        public void resizeIfNeeded() {
+            int ws = I.MAX_MERGES_TO_RECORD.get();
+            int cs = at.size();
+            if (cs < ws) {
+                for (int i = cs; i < ws; ++i) {
+                    at.add(Double.POSITIVE_INFINITY);
+                    glyphs.add(new HashSet<>(1));
+                }
+            } else if (cs > ws) {
+                for (int i = cs - 1; i >= ws; --i) {
+                    at.remove(i);
+                    glyphs.remove(i);
+                }
             }
         }
 

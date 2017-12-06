@@ -167,7 +167,7 @@ public final class Constants {
          * this constant is about to be violated, and will join when a glyph
          * is removed from a cell and joining would not violate this.
          */
-        MAX_GLYPHS_PER_CELL(32),
+        MAX_GLYPHS_PER_CELL(48),
 
         /**
          * Number of merge events that a glyph will record at most. This is not
@@ -223,8 +223,17 @@ public final class Constants {
         GrowFunction g = GrowFunction.getAll().get(GrowFunction.DEFAULT);
         GrowingGlyphsDaemon daemon = new GrowingGlyphsDaemon(
                 I.DEFAULT_SIZE.get(), I.DEFAULT_SIZE.get(), g);
-        search(I.MAX_GLYPHS_PER_CELL, daemon, toOpen);
-        //search(I.MAX_MERGES_TO_RECORD, daemon, toOpen);
+
+        System.out.print("warming up: ");
+        run(daemon, toOpen, true);
+        if (args.length > 1 && args[1].equals("repeat")) {
+            for (int i = 0; i < 5; ++i) {
+                run(daemon, toOpen);
+            }
+        } else {
+            search(I.MAX_GLYPHS_PER_CELL, 32, daemon, toOpen);
+            search(I.MAX_MERGES_TO_RECORD, 4, daemon, toOpen);
+        }
     }
 
 
@@ -264,10 +273,8 @@ public final class Constants {
     /**
      * Searches for a sweet spot that optimizes average running time.
      */
-    private static void search(I constant, GrowingGlyphsDaemon daemon, File toOpen) {
-        System.out.print("warming up: ");
-        run(daemon, toOpen, true);
-
+    private static void search(I constant, int initial, GrowingGlyphsDaemon daemon, File toOpen) {
+        constant.value = initial;
         double curr = run(daemon, toOpen);
         double last;
         int direction = 1;
