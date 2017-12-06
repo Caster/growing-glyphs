@@ -92,4 +92,22 @@ public abstract class Event implements Comparable<Event> {
      */
     public abstract Type getType();
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(getType().toString());
+        sb.append(" at ");
+        sb.append(at);
+        sb.append(" involving [");
+        boolean first = true;
+        for (Glyph glyph : glyphs) {
+            if (!first) {
+                sb.append(", ");
+            }
+            sb.append(glyph.toString());
+            first = false;
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
 }
