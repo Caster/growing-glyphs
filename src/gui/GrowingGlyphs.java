@@ -183,6 +183,8 @@ public class GrowingGlyphs extends JFrame {
         if (status != null) {
             status.setText("Loaded '" + daemon.getDataSet() + "'.");
         }
+        view = null;
+        viewNav.setEnabled(false);
     }
 
     /**
