@@ -112,7 +112,7 @@ public class AgglomerativeClustering {
         // also create a result for each glyph, and a map to find them
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
         // then create a single object that is used to find first merges
-        rec = new FirstMergeRecorder(g);
+        rec = FirstMergeRecorder.getInstance(g);
         // we have a queue for nested merges, and a temporary array that is reused,
         // and two sets that are reused somewhere deep in the algorithm
         PriorityQueue<GlyphMerge> nestedMerges = new PriorityQueue<>();

@@ -51,9 +51,41 @@ public class FirstMergeRecorder {
 
 
     /**
+     * Return a reference to the singleton instance of this class, creating an
+     * instance when not done before. The instance will use the given
+     * {@link GrowFunction}, and when an instance was created before then the
+     * grow function being used by that instance is changed before a reference
+     * to it is returned. <b>Note</b> that that will change the grow function
+     * being used for all users of the singleton instance!
+     *
+     * The reason that this class has a singleton instance is that it internally
+     * uses the Stream API with instances of a private inner class. Other
+     * instances of {@link FirstMergeRecorder} may, via the Stream API, use
+     * instances of the private inner class that have a different parent. This
+     * goes, as one might expect, horribly wrong. Using a singleton instance is
+     * a quick and easy way around this problem.
+     *
+     * @param g Grow function to use when determining which merges occur first.
+     * @return A reference to the singleton instance of this class.
+     */
+    public static FirstMergeRecorder getInstance(GrowFunction g) {
+        if (instance == null) {
+            instance = new FirstMergeRecorder(g);
+        } else {
+            instance.g = g;
+        }
+        return instance;
+    }
+
+
+    /**
      * Collector for stream operations.
      */
     private static Collector<Glyph, FirstMerge, FirstMerge> collector;
+    /**
+     * Singleton instance.
+     */
+    private static FirstMergeRecorder instance;
 
 
     /**
@@ -75,7 +107,7 @@ public class FirstMergeRecorder {
      * Construct a recorder that will use the given {@link GrowFunction} to
      * determine when glyphs should merge.
      */
-    public FirstMergeRecorder(GrowFunction g) {
+    private FirstMergeRecorder(GrowFunction g) {
         this.from = null;
         this.g = g;
         this.merge = new FirstMerge();
@@ -326,7 +358,10 @@ public class FirstMergeRecorder {
                         this.hashCode(), that.hashCode()
                     });
             }
-            return result;
+            this.at = result.at;
+            this.glyphs = result.glyphs;
+            this.size = result.size;
+            return this;
         }
 
         public Set<Glyph> getGlyphs() {
