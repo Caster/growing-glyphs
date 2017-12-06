@@ -42,7 +42,7 @@ public class FirstMergeRecorder {
     static {
         Logger l;
         if (B.LOGGING_ENABLED.get() && (l = Logger.getLogger(
-                FirstMergeRecorder.class.getName())).isLoggable(Level.FINE)) {
+                FirstMergeRecorder.class.getName())).isLoggable(Level.FINER)) {
             LOGGER = l;
         } else {
             LOGGER = null;
@@ -135,6 +135,9 @@ public class FirstMergeRecorder {
         GlyphMerge[] merges;
         while ((merges = merge.pop()) != null) {
             for (GlyphMerge merge : merges) {
+                if (LOGGER != null) {
+                    LOGGER.log(Level.FINE, "recorded {0}", merge);
+                }
                 from.record(merge);
             }
         }
@@ -261,14 +264,14 @@ public class FirstMergeRecorder {
             }
             this.size = 0;
             if (LOGGER != null) {
-                LOGGER.log(Level.FINE, "constructed an empty FirstMerge #{0}",
+                LOGGER.log(Level.FINER, "constructed an empty FirstMerge #{0}",
                         hashCode());
             }
         }
 
         public void accept(Glyph candidate) {
             if (LOGGER != null) {
-                LOGGER.log(Level.FINE, "accepting {0} into #{1}",
+                LOGGER.log(Level.FINER, "accepting {0} into #{1}",
                         new Object[] {candidate, hashCode()});
             }
             double at = g.intersectAt(from, candidate);
@@ -293,7 +296,7 @@ public class FirstMergeRecorder {
                 // if at > this.at.get(i), try next i...
             }
             if (LOGGER != null) {
-                LOGGER.log(Level.FINE, "#{0} now has glyphs {1} at {2}",
+                LOGGER.log(Level.FINER, "#{0} now has glyphs {1} at {2}",
                     new Object[] {
                         hashCode(),
                         "[" + glyphs.stream().map((glyphSet) ->
@@ -308,7 +311,7 @@ public class FirstMergeRecorder {
 
         public FirstMerge combine(FirstMerge that) {
             if (LOGGER != null) {
-                LOGGER.log(Level.FINE, "combining #{0} and #{1};\n#{0} has glyphs {2} at {3};\n#{1} has glyphs {4} at {5}",
+                LOGGER.log(Level.FINER, "combining #{0} and #{1};\n#{0} has glyphs {2} at {3};\n#{1} has glyphs {4} at {5}",
                         new Object[] {hashCode(), that.hashCode(),
                             "[" + this.glyphs.stream().map((glyphSet) ->
                                 glyphSet.stream().map(Glyph::toString).collect(
@@ -346,7 +349,7 @@ public class FirstMergeRecorder {
                 result.size++;
             }
             if (LOGGER != null) {
-                LOGGER.log(Level.FINE, "result #{0} of merging #{3} and #{4} has glyphs {1} at {2}",
+                LOGGER.log(Level.FINER, "result #{0} of merging #{3} and #{4} has glyphs {1} at {2} (storing in #{3} now)",
                     new Object[] {
                         result.hashCode(),
                         "[" + result.glyphs.stream().map((glyphSet) ->
