@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
@@ -29,6 +30,25 @@ import utils.Utils.Timers;
  * to them. This class respects {@link Glyph#MAX_MERGES_TO_RECORD}.
  */
 public class FirstMergeRecorder {
+
+    /**
+     * The logger of this class, that is instantiated only when logging is
+     * enabled and {@link Level#FINE} messages are loggable. This is done because
+     * there are some heavy-to-construct logging parameters, which are guarded by
+     * cheap {@code LOGGER != null} checks. This is more efficient than checking
+     * repeatedly whether the message is loggable.
+     */
+    private static final Logger LOGGER;
+    static {
+        Logger l;
+        if (B.LOGGING_ENABLED.get() && (l = Logger.getLogger(
+                FirstMergeRecorder.class.getName())).isLoggable(Level.FINE)) {
+            LOGGER = l;
+        } else {
+            LOGGER = null;
+        }
+    }
+
 
     /**
      * Collector for stream operations.
@@ -107,6 +127,9 @@ public class FirstMergeRecorder {
      * @param from Glyph with which merges should be recorded starting now.
      */
     public void from(Glyph from) {
+        if (LOGGER != null) {
+            LOGGER.log(Level.FINE, "recording merges from {0}", from);
+        }
         this.from = from;
         this.merge.reset();
     }
@@ -205,9 +228,17 @@ public class FirstMergeRecorder {
                 this.glyphs.add(new HashSet<>(1));
             }
             this.size = 0;
+            if (LOGGER != null) {
+                LOGGER.log(Level.FINE, "constructed an empty FirstMerge #{0}",
+                        hashCode());
+            }
         }
 
         public void accept(Glyph candidate) {
+            if (LOGGER != null) {
+                LOGGER.log(Level.FINE, "accepting {0} into #{1}",
+                        new Object[] {candidate, hashCode()});
+            }
             double at = g.intersectAt(from, candidate);
             for (int i = 0; i < I.MAX_MERGES_TO_RECORD.get(); ++i) {
                 if (at < this.at.get(i)) {
@@ -229,9 +260,38 @@ public class FirstMergeRecorder {
                 }
                 // if at > this.at.get(i), try next i...
             }
+            if (LOGGER != null) {
+                LOGGER.log(Level.FINE, "#{0} now has glyphs {1} at {2}",
+                    new Object[] {
+                        hashCode(),
+                        "[" + glyphs.stream().map((glyphSet) ->
+                            glyphSet.stream().map(Glyph::toString).collect(
+                                Collectors.joining(", "))
+                        ).collect(Collectors.joining("], [")) + "]",
+                        "[" + this.at.stream().map(Object::toString).collect(
+                                Collectors.joining(", ")) + "]"
+                    });
+            }
         }
 
         public FirstMerge combine(FirstMerge that) {
+            if (LOGGER != null) {
+                LOGGER.log(Level.FINE, "combining #{0} and #{1};\n#{0} has glyphs {2} at {3};\n#{1} has glyphs {4} at {5}",
+                        new Object[] {hashCode(), that.hashCode(),
+                            "[" + this.glyphs.stream().map((glyphSet) ->
+                                glyphSet.stream().map(Glyph::toString).collect(
+                                    Collectors.joining(", "))
+                            ).collect(Collectors.joining("], [")) + "]",
+                            "[" + this.at.stream().map(Object::toString).collect(
+                                    Collectors.joining(", ")) + "]",
+                            "[" + that.glyphs.stream().map((glyphSet) ->
+                                glyphSet.stream().map(Glyph::toString).collect(
+                                    Collectors.joining(", "))
+                            ).collect(Collectors.joining("], [")) + "]",
+                            "[" + that.at.stream().map(Object::toString).collect(
+                                    Collectors.joining(", ")) + "]"
+                        });
+            }
             int thisInd = 0;
             int thatInd = 0;
             FirstMerge result = new FirstMerge();
@@ -253,10 +313,20 @@ public class FirstMergeRecorder {
                 }
                 result.size++;
             }
-            this.at = result.at;
-            this.glyphs = result.glyphs;
-            this.size = result.size;
-            return this;
+            if (LOGGER != null) {
+                LOGGER.log(Level.FINE, "result #{0} of merging #{3} and #{4} has glyphs {1} at {2}",
+                    new Object[] {
+                        result.hashCode(),
+                        "[" + result.glyphs.stream().map((glyphSet) ->
+                            glyphSet.stream().map(Glyph::toString).collect(
+                                Collectors.joining(", "))
+                        ).collect(Collectors.joining("], [")) + "]",
+                        "[" + result.at.stream().map(Object::toString).collect(
+                                Collectors.joining(", ")) + "]",
+                        this.hashCode(), that.hashCode()
+                    });
+            }
+            return result;
         }
 
         public Set<Glyph> getGlyphs() {

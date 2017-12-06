@@ -39,6 +39,7 @@ import datastructure.growfunction.GrowFunction;
 import gui.Settings.Setting;
 import gui.Settings.SettingSection;
 import io.PointIO;
+import utils.Constants.B;
 import utils.Constants.I;
 import utils.Utils.Timers;
 import utils.Utils.Timers.Units;
@@ -48,8 +49,6 @@ import utils.Utils.Timers.Units;
  */
 public class GrowingGlyphs extends JFrame {
 
-    public static final boolean LOGGING_ENABLED = true;
-    public static final boolean TIMERS_ENABLED = true;
     public static final GlyphGenerator[] GENERATORS = new GlyphGenerator[] {
             new UniformRandom(), new Perlin(), new PopulationSim()
         };
@@ -269,7 +268,7 @@ public class GrowingGlyphs extends JFrame {
                     });
                     view.next(); // show first step that has actual glyphs
                 }
-                status.setText("Clustering... done!" + (TIMERS_ENABLED ?
+                status.setText("Clustering... done!" + (B.TIMERS_ENABLED.get() ?
                         String.format(" Took %.2f seconds.", Timers.in(
                         Timers.elapsed("clustering"), Units.SECONDS)) : ""));
             }

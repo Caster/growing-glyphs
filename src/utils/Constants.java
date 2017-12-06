@@ -35,6 +35,12 @@ public final class Constants {
         ENABLE_LISTENERS(true),
 
         /**
+         * Whether messages should be logged at all. This overrides logging
+         * configuration from {@code logging.properties}.
+         */
+        LOGGING_ENABLED(true),
+
+        /**
          * Whether merge events are to be created for all pairs of glyphs, or only
          * the first one. In practice, creating only the first merge event appears
          * to result in clusterings free of overlap, but in theory overlap can
@@ -45,6 +51,11 @@ public final class Constants {
          * more memory to the clustering process for large data sets.
          */
         ROBUST(false),
+
+        /**
+         * Whether timers should be used.
+         */
+        TIMERS_ENABLED(true),
 
         /**
          * When {@link #ROBUST} is {@code false}, this flag toggles behavior where
