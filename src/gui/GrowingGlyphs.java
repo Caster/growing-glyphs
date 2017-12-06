@@ -39,6 +39,7 @@ import datastructure.growfunction.GrowFunction;
 import gui.Settings.Setting;
 import gui.Settings.SettingSection;
 import io.PointIO;
+import ui.GrowingGlyphsDaemon;
 import utils.Constants.B;
 import utils.Constants.I;
 import utils.Utils.Timers;

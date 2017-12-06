@@ -1,4 +1,4 @@
-package gui;
+package ui;
 
 import java.io.File;
 
@@ -6,6 +6,7 @@ import algorithm.AgglomerativeClustering;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
 import datastructure.growfunction.GrowFunction;
+import gui.GrowingGlyphs;
 import io.CsvIO;
 import io.PointIO;
 

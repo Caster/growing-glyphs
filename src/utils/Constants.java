@@ -7,7 +7,7 @@ import datastructure.QuadTree;
 import datastructure.QuadTreeChangeListener;
 import datastructure.growfunction.GrowFunction;
 import datastructure.queues.BucketingStrategy;
-import gui.GrowingGlyphsDaemon;
+import ui.GrowingGlyphsDaemon;
 import utils.Utils.Stats;
 import utils.Utils.Timers;
 import utils.Utils.Timers.Units;
