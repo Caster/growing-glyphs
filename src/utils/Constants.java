@@ -167,7 +167,7 @@ public final class Constants {
          * this constant is about to be violated, and will join when a glyph
          * is removed from a cell and joining would not violate this.
          */
-        MAX_GLYPHS_PER_CELL(35),
+        MAX_GLYPHS_PER_CELL(32),
 
         /**
          * Number of merge events that a glyph will record at most. This is not
@@ -177,7 +177,7 @@ public final class Constants {
          * More merges can be recorded with a glyph when many merges occur at the
          * exact same time.
          */
-        MAX_MERGES_TO_RECORD(5);
+        MAX_MERGES_TO_RECORD(4);
 
 
         /**
@@ -223,10 +223,29 @@ public final class Constants {
         GrowFunction g = GrowFunction.getAll().get(GrowFunction.DEFAULT);
         GrowingGlyphsDaemon daemon = new GrowingGlyphsDaemon(
                 I.DEFAULT_SIZE.get(), I.DEFAULT_SIZE.get(), g);
+        search(I.MAX_GLYPHS_PER_CELL, daemon, toOpen);
+        //search(I.MAX_MERGES_TO_RECORD, daemon, toOpen);
+    }
+
+
+    private static double run(GrowingGlyphsDaemon daemon, File toOpen) {
+        return run(daemon, toOpen, false);
+    }
+
+    /**
+     * Perform clustering a number of times, return the average running time.
+     */
+    private static double run(GrowingGlyphsDaemon daemon, File toOpen, boolean warmingUp) {
+        if (!warmingUp) {
+            System.out.print(String.format(
+                    "%4d / %3d: ",
+                    I.MAX_GLYPHS_PER_CELL.value,
+                    I.MAX_MERGES_TO_RECORD.value));
+        }
+
         Stat runTime = new Stat();
         for (int i = 0; i < 10; ++i) {
             daemon.openFile(toOpen);
-            System.out.println(daemon.getTree().getTreeHeight());
             daemon.cluster();
             runTime.record(Timers.in(Timers.elapsed("clustering"), Units.SECONDS));
             System.out.print(".");
@@ -234,8 +253,34 @@ public final class Constants {
             Stats.reset();
             Timers.reset();
         }
-        System.out.println();
-        System.out.println(runTime.getAverage());
+        if (warmingUp) {
+            System.out.println();
+        } else {
+            System.out.println(String.format("%6.2f", runTime.getAverage()));
+        }
+        return runTime.getAverage();
+    }
+
+    /**
+     * Searches for a sweet spot that optimizes average running time.
+     */
+    private static void search(I constant, GrowingGlyphsDaemon daemon, File toOpen) {
+        System.out.print("warming up: ");
+        run(daemon, toOpen, true);
+
+        double curr = run(daemon, toOpen);
+        double last;
+        int direction = 1;
+        int step = constant.value / 2;
+        do {
+            constant.value += direction * step;
+            last = curr;
+            curr = run(daemon, toOpen);
+            if (curr >= last) {
+                direction *= -1;
+                step /= 2;
+            }
+        } while (step > 0 && (curr >= last || curr <= last - 0.01));
     }
 
 }
