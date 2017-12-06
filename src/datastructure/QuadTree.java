@@ -123,13 +123,18 @@ public class QuadTree implements Iterable<QuadTree> {
      * Reset to being a cell without glyphs nor children.
      */
     public void clear() {
-        this.children = null;
-        for (Glyph glyph : this.glyphs) {
+        if (children != null) {
+            for (QuadTree child : children) {
+                child.clear();
+            }
+            children = null;
+        }
+        for (Glyph glyph : glyphs) {
             glyph.removeCell(this);
         }
-        this.glyphs.clear();
+        glyphs.clear();
         for (int i = 0; i < Side.values().length; ++i) {
-            this.neighbors.set(i, null);
+            neighbors.set(i, null);
         }
         if (B.ENABLE_LISTENERS.get()) {
             for (QuadTreeChangeListener listener : listeners) {
