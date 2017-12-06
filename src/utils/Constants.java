@@ -167,7 +167,7 @@ public final class Constants {
          * this constant is about to be violated, and will join when a glyph
          * is removed from a cell and joining would not violate this.
          */
-        MAX_GLYPHS_PER_CELL(48),
+        MAX_GLYPHS_PER_CELL(150),
 
         /**
          * Number of merge events that a glyph will record at most. This is not
@@ -220,7 +220,7 @@ public final class Constants {
             return;
         }
 
-        GrowFunction g = GrowFunction.getAll().get(GrowFunction.DEFAULT);
+        GrowFunction g = GrowFunction.getAll().get("Linearly Growing Squares");//GrowFunction.DEFAULT);
         GrowingGlyphsDaemon daemon = new GrowingGlyphsDaemon(
                 I.DEFAULT_SIZE.get(), I.DEFAULT_SIZE.get(), g);
 
@@ -279,15 +279,22 @@ public final class Constants {
         double last;
         int direction = 1;
         int step = constant.value / 2;
+        int minValue = constant.value;
+        double minTime = Double.POSITIVE_INFINITY;
         do {
             constant.value += direction * step;
             last = curr;
             curr = run(daemon, toOpen);
+            if (curr < minTime) {
+                minTime = curr;
+                minValue = constant.value;
+            }
             if (curr >= last) {
                 direction *= -1;
                 step /= 2;
             }
         } while (step > 0 && (curr >= last || curr <= last - 0.01));
+        constant.value = minValue;
     }
 
 }
