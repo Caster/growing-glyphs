@@ -61,6 +61,19 @@ public class CompressionThreshold {
     }
 
     /**
+     * Given a glyph, return the compression factor to be used on that glyph.
+     *
+     * @param glyph Glyph to find compression factor for.
+     */
+    public double getCompression(Glyph glyph) {
+        Threshold toUse = thresholds.floor(new Threshold(glyph.getN()));
+        if (toUse == null) {
+            return 1d;
+        }
+        return toUse.compression;
+    }
+
+    /**
      * Given a glyph, return the weight of that glyph. This will normally be the
      * number of entities represented by the glyph, but it may be multiplied by
      * a compression factor if thresholds have been added and apply.

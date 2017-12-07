@@ -21,7 +21,7 @@ public abstract class GrowFunction {
     /**
      * Name of the grow function that is used by default.
      */
-    public static final String DEFAULT = "Logarithmically Growing Squares";
+    public static final String DEFAULT = "Linear Area Growing Squares";
 
 
     /**
@@ -40,6 +40,8 @@ public abstract class GrowFunction {
             for (GrowFunction g : Arrays.asList(
                     new LevelGrowingCircles(),
                     new LevelGrowingSquares(),
+                    new LinearAreaGrowingCircles(),
+                    new LinearAreaGrowingSquares(),
                     new LinearlyGrowingCircles(),
                     new LinearlyGrowingSquares(),
                     new LogarithmicallyGrowingCircles(),
