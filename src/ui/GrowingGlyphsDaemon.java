@@ -9,6 +9,8 @@ import datastructure.growfunction.GrowFunction;
 import gui.GrowingGlyphs;
 import io.CsvIO;
 import io.PointIO;
+import utils.Utils.Stats;
+import utils.Utils.Timers;
 
 /**
  * Thin wrapper around {@link AgglomerativeClustering} and the {@link QuadTree}
@@ -108,6 +110,8 @@ public class GrowingGlyphsDaemon {
         clustered = false;
         clusterer.reset();
         lastOpened = file;
+        Stats.reset();
+        Timers.reset();
     }
 
     public void reopen() {

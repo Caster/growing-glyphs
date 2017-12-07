@@ -8,7 +8,6 @@ import datastructure.QuadTreeChangeListener;
 import datastructure.growfunction.GrowFunction;
 import datastructure.queues.BucketingStrategy;
 import ui.GrowingGlyphsDaemon;
-import utils.Utils.Stats;
 import utils.Utils.Timers;
 import utils.Utils.Timers.Units;
 
@@ -258,9 +257,6 @@ public final class Constants {
             daemon.cluster();
             runTime.record(Timers.in(Timers.elapsed("clustering"), Units.SECONDS));
             System.out.print(".");
-
-            Stats.reset();
-            Timers.reset();
         }
         if (warmingUp) {
             System.out.println();
