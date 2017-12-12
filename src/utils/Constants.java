@@ -222,6 +222,7 @@ public final class Constants {
         GrowFunction g = GrowFunction.getAll().get("Linearly Growing Squares");//GrowFunction.DEFAULT);
         GrowingGlyphsDaemon daemon = new GrowingGlyphsDaemon(
                 I.DEFAULT_SIZE.get(), I.DEFAULT_SIZE.get(), g);
+        System.out.println("using " + g.getName());
 
         System.out.print("warming up: ");
         run(daemon, toOpen, true);
