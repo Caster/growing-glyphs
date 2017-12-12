@@ -1,10 +1,9 @@
 package datastructure.events;
 
-import datastructure.QuadTree;
-
 import java.awt.geom.Rectangle2D;
 
 import datastructure.Glyph;
+import datastructure.QuadTree;
 import datastructure.growfunction.GrowFunction;
 
 /**
@@ -89,6 +88,15 @@ public class OutOfCell extends Event {
                 }
             }
             return descriptor;
+        }
+
+        /**
+         * Given a cell and a point in that cell, return the index of the quadrant
+         * (order as per {@link #quadrant(int)}) that the point is in.
+         */
+        public static int quadrant(Rectangle2D cell, double x, double y) {
+            return (y <= cell.getCenterY() ? 0 : 2) +
+                    (x <= cell.getCenterX() ? 0 : 1);
         }
 
         /**

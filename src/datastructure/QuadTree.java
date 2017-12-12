@@ -151,7 +151,8 @@ public class QuadTree implements Iterable<QuadTree> {
      * @param y Y-coordinate of query point.
      */
     public QuadTree findLeafAt(double x, double y) {
-        if (!cell.contains(x, y)) {
+        if (x < cell.getMinX() || x > cell.getMaxX() ||
+                y < cell.getMinY() || y > cell.getMaxY()) {
             return null;
         }
         // already a match?
@@ -159,13 +160,7 @@ public class QuadTree implements Iterable<QuadTree> {
             return this;
         }
         // find correct child
-        QuadTree result;
-        for (QuadTree child : children) {
-            if ((result = child.findLeafAt(x, y)) != null) {
-                return result;
-            }
-        }
-        return null;
+        return children[Side.quadrant(cell, x, y)].findLeafAt(x, y);
     }
 
     public QuadTree[] getChildren() {
@@ -354,9 +349,8 @@ public class QuadTree implements Iterable<QuadTree> {
             glyphs.add(glyph);
             glyph.addCell(this);
         } else {
-            for (QuadTree child : children) {
-                child.insert(glyph, at, g);
-            }
+            children[Side.quadrant(cell, glyph.getX(), glyph.getY())]
+                    .insert(glyph, at, g);
         }
     }
 
@@ -370,7 +364,8 @@ public class QuadTree implements Iterable<QuadTree> {
      * @return Whether center has been inserted.
      */
     public boolean insertCenterOf(Glyph glyph) {
-        if (!cell.contains(glyph.getX(), glyph.getY())) {
+        if (glyph.getX() < cell.getMinX() || glyph.getX() > cell.getMaxX() ||
+                glyph.getY() < cell.getMinY() || glyph.getY() > cell.getMaxY()) {
             return false;
         }
         // can we insert here?
@@ -383,12 +378,9 @@ public class QuadTree implements Iterable<QuadTree> {
         if (isLeaf()) {
             split();
         }
-        // insert into one child, only one insertion will succeed
-        for (QuadTree child : children) {
-            if (child.insertCenterOf(glyph)) {
-                break;
-            }
-        }
+        // insert into correct child
+        children[Side.quadrant(cell, glyph.getX(), glyph.getY())]
+                .insertCenterOf(glyph);
         return true;
     }
 
@@ -458,9 +450,8 @@ public class QuadTree implements Iterable<QuadTree> {
         // possibly distribute glyphs
         if (!glyphs.isEmpty()) {
             for (Glyph glyph : glyphs) {
-                for (QuadTree child : children) {
-                    child.insertCenterOf(glyph);
-                }
+                children[Side.quadrant(cell, glyph.getX(), glyph.getY())]
+                        .insertCenterOf(glyph);
             }
             // only maintain glyphs in leaves
             glyphs.clear();
@@ -531,9 +522,8 @@ public class QuadTree implements Iterable<QuadTree> {
         if (isLeaf()) {
             result.add(this);
         } else {
-            for (QuadTree child : children) {
-                child.getLeaves(glyph, at, g, result);
-            }
+            children[Side.quadrant(cell, glyph.getX(), glyph.getY())]
+                    .getLeaves(glyph, at, g, result);
         }
     }
 
