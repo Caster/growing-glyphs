@@ -349,8 +349,9 @@ public class QuadTree implements Iterable<QuadTree> {
             glyphs.add(glyph);
             glyph.addCell(this);
         } else {
-            children[Side.quadrant(cell, glyph.getX(), glyph.getY())]
-                    .insert(glyph, at, g);
+            for (QuadTree child : children) {
+                child.insert(glyph, at, g);
+            }
         }
     }
 
@@ -522,8 +523,9 @@ public class QuadTree implements Iterable<QuadTree> {
         if (isLeaf()) {
             result.add(this);
         } else {
-            children[Side.quadrant(cell, glyph.getX(), glyph.getY())]
-                    .getLeaves(glyph, at, g, result);
+            for (QuadTree child : children) {
+               child.getLeaves(glyph, at, g, result);
+           }
         }
     }
 
