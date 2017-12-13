@@ -208,18 +208,26 @@ public final class Constants {
      */
     public static void main(String[] args) {
         File toOpen;
+        String gName = GrowFunction.DEFAULT;
         if (args.length > 0) {
             toOpen = new File(args[0]);
             if (!toOpen.isFile() || !toOpen.canRead()) {
                 System.err.println("Cannot open file for reading.");
                 return;
             }
+            if (args.length > 1) {
+                gName = args[1].replaceAll("_", " ");
+            }
         } else {
             System.err.println("Pass path to file to test on as only argument.");
             return;
         }
 
-        GrowFunction g = GrowFunction.getAll().get("Linearly Growing Squares");//GrowFunction.DEFAULT);
+        GrowFunction g = GrowFunction.getAll().get(gName);
+        if (g == null) {
+            System.err.println("Uknown grow function '" + gName + "'");
+            return;
+        }
         GrowingGlyphsDaemon daemon = new GrowingGlyphsDaemon(
                 I.DEFAULT_SIZE.get(), I.DEFAULT_SIZE.get(), g);
         System.out.println("using " + g.getName());
