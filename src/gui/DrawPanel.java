@@ -7,7 +7,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
-import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -59,7 +58,7 @@ public class DrawPanel extends JPanel implements
     /**
      * Glyphs that are shown on top of the QuadTree.
      */
-    private Shape[] glyphs;
+    private GlyphShape[] glyphs;
     /**
      * Glyph that is to be highlighted. Can be {@code null} when no glyph is
      * highlighted at the moment.
@@ -214,8 +213,16 @@ public class DrawPanel extends JPanel implements
         if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_GLYPHS) &&
                 glyphs != null) {
             g2.setColor(Color.BLACK);
-            for (Shape glyph : glyphs) {
-                g2.draw(glyph);
+            for (GlyphShape glyph : glyphs) {
+                g2.setStroke(new BasicStroke((float) (glyph.compressionLevel / zoom)));
+                g2.draw(glyph.shape);
+//                AffineTransform t = new AffineTransform();
+//                AffineTransform to = g2.getTransform();
+//                for (int i = 1; i < glyph.compressionLevel; ++i) {
+//                    t.setToIdentity();
+//                    t.concatenate(to);
+//                    t.translate(tx, ty);
+//                }
             }
         }
     }
@@ -229,7 +236,7 @@ public class DrawPanel extends JPanel implements
         repaint();
     }
 
-    public void setGlyphs(Shape[] glyphs) {
+    public void setGlyphs(GlyphShape[] glyphs) {
         this.glyphs = glyphs;
         repaint();
     }

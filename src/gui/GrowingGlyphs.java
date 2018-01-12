@@ -1,7 +1,6 @@
 package gui;
 
 import java.awt.BorderLayout;
-import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -136,15 +135,15 @@ public class GrowingGlyphs extends JFrame {
     private void checkOverlap() {
         view.end();
         do {
-            Shape[] shapes = view.getGlyphs(daemon.getGrowFunction());
+            GlyphShape[] shapes = view.getGlyphs(daemon.getGrowFunction());
             for (int i = 0; i < shapes.length; ++i) {
                 for (int j = i + 1; j < shapes.length; ++j) {
-                    Area a = new Area(shapes[i]);
-                    a.intersect(new Area(shapes[j]));
+                    Area a = new Area(shapes[i].shape);
+                    a.intersect(new Area(shapes[j].shape));
                     if (!a.isEmpty() && !(a.isRectangular() &&
                             (a.getBounds2D().getWidth() <= 1 ||
                              a.getBounds2D().getHeight() <= 1))) {
-                        drawPanel.setGlyphs(new Shape[] {
+                        drawPanel.setGlyphs(new GlyphShape[] {
                             shapes[i], shapes[j]});
                         return;
                     }

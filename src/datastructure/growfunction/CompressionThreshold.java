@@ -29,7 +29,8 @@ public class CompressionThreshold {
      */
     public void add(int threshold, double compression) {
         if (Double.isFinite(compression)) {
-            thresholds.add(new Threshold(threshold, compression));
+            thresholds.add(new Threshold(
+                    thresholds.size() + 1, threshold, compression));
         }
     }
 
@@ -53,8 +54,13 @@ public class CompressionThreshold {
         switch (dataSet) {
         case "trove":
             clear();
-            add( 1_000_000, 25d / 39d); // about 0.64
-            add(10_000_000, 4d / 9d); // about 0.44
+            // Jasper used 25/39 from 1_000_000 and 4/9 from 10_000_000
+            // according to his thesis (approx. 0.64 and 0.44). We tweaked this
+            // to the below values, that appear to work well with the Linear
+            // Area Squares grow function.
+            add( 1_000_000, 0.3);
+            add( 5_000_000, 0.2);
+            add(10_000_000, 0.1);
             return true;
         }
         return false;
@@ -71,6 +77,20 @@ public class CompressionThreshold {
             return 1d;
         }
         return toUse.compression;
+    }
+
+    /**
+     * Given a glyph, return the index of the threshold that applies to it.
+     *
+     * @param glyph Glyph to find compression level of.
+     * @see #getCompression(Glyph)
+     */
+    public int getCompressionLevel(Glyph glyph) {
+        Threshold toUse = thresholds.ceiling(new Threshold(glyph.getN()));
+        if (toUse == null) {
+            return thresholds.size() + 1;
+        }
+        return toUse.level;
     }
 
     /**
@@ -98,14 +118,20 @@ public class CompressionThreshold {
 
     private static class Threshold implements Comparable<Threshold> {
 
+        public final int level;
         public final double compression;
         public final int threshold;
 
         public Threshold(int threshold) {
-            this(threshold, Double.POSITIVE_INFINITY);
+            this(-1, threshold);
         }
 
-        public Threshold(int threshold, double compression) {
+        public Threshold(int level, int threshold) {
+            this(level, threshold, Double.POSITIVE_INFINITY);
+        }
+
+        public Threshold(int level, int threshold, double compression) {
+            this.level = level;
             this.compression = compression;
             this.threshold = threshold;
         }

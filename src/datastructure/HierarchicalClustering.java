@@ -1,6 +1,5 @@
 package datastructure;
 
-import java.awt.Shape;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -15,6 +14,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import datastructure.growfunction.GrowFunction;
+import gui.GlyphShape;
 
 public class HierarchicalClustering implements Comparable<HierarchicalClustering> {
 
@@ -228,8 +228,8 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             return maxAt;
         }
 
-        public Shape[] getGlyphs(GrowFunction g) {
-            Shape[] result = new Shape[curr.size()];
+        public GlyphShape[] getGlyphs(GrowFunction g) {
+            GlyphShape[] result = new GlyphShape[curr.size()];
             int i = 0;
             double maxAt = Double.NEGATIVE_INFINITY;
             if (halfStep) {
@@ -242,7 +242,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
                 }
             }
             for (HierarchicalClustering node : curr) {
-                result[i++] = g.sizeAt(node.glyph, maxAt);
+                result[i++] = new GlyphShape(node.glyph, maxAt, g);
             }
             return result;
         }
