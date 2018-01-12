@@ -229,14 +229,15 @@ public final class Constants {
     public static void main(String[] args) {
         File toOpen;
         String gName = GrowFunction.DEFAULT;
-        if (args.length > 0) {
-            toOpen = new File(args[0]);
+        int argI = 0;
+        if (args.length > argI) {
+            toOpen = new File(args[argI++]);
             if (!toOpen.isFile() || !toOpen.canRead()) {
                 System.err.println("Cannot open file for reading.");
                 return;
             }
-            if (args.length > 1) {
-                gName = args[1].replaceAll("_", " ");
+            if (args.length > argI) {
+                gName = args[argI++].replaceAll("_", " ");
             }
         } else {
             System.err.println("Pass path to file to test on as only argument.");
@@ -254,8 +255,12 @@ public final class Constants {
 
         System.out.print("warming up: ");
         run(daemon, toOpen, true);
-        if (args.length > 1 && args[1].equals("repeat")) {
-            for (int i = 0; i < 5; ++i) {
+        if (args.length > argI && args[argI++].equals("repeat")) {
+            int numRepeats = 5;
+            if (args.length > argI && args[argI++].matches("^\\d+$")) {
+                numRepeats = Integer.parseInt(args[argI - 1]);
+            }
+            for (int i = 0; i < numRepeats; ++i) {
                 run(daemon, toOpen);
             }
         } else {
