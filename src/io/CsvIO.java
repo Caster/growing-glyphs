@@ -14,18 +14,23 @@ import datastructure.Glyph;
 import datastructure.LatLng;
 import datastructure.QuadTree;
 import utils.Utils;
+import utils.Constants.B;
 import utils.Utils.Locales;
 
 public class CsvIO {
 
-    private static final Logger LOGGER =
-            Logger.getLogger(CsvIO.class.getName());
+    private static final Logger LOGGER = (B.LOGGING_ENABLED.get() ?
+            Logger.getLogger(CsvIO.class.getName()) : null);
 
 
     public static int read(File file, QuadTree tree) {
-        LOGGER.log(Level.FINE, "ENTRY into CsvIO#read()");
+        if (B.LOGGING_ENABLED.get()) {
+            LOGGER.log(Level.FINE, "ENTRY into CsvIO#read()");
+        }
         Locales.push(Locale.US);
-        Utils.Timers.start("reading file");
+        if (B.TIMERS_ENABLED.get()) {
+            Utils.Timers.start("reading file");
+        }
         final int[] ignoredRead = new int[] {0, 0};
         try (Scanner reader = new Scanner(file)) {
             // read title line
@@ -72,15 +77,22 @@ public class CsvIO {
                 tree.insertCenterOf(new Glyph(p.getX() - 256, p.getY() - 256,
                         read.get(ll), true));
             }
-            LOGGER.log(Level.INFO, "loaded {0} locations", read.size());
+            if (B.LOGGING_ENABLED.get()) {
+                LOGGER.log(Level.INFO, "loaded {0} locations", read.size());
+            }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        Utils.Timers.log("reading file", LOGGER);
-        LOGGER.log(Level.INFO, "read {0} entries and ignored {1}",
-                new Object[] {ignoredRead[1], ignoredRead[0]});
+        if (B.TIMERS_ENABLED.get()) {
+            Utils.Timers.log("reading file", LOGGER);
+        }
+        if (B.LOGGING_ENABLED.get()) {
+            LOGGER.log(Level.INFO, "read {0} entries and ignored {1}",
+                    new Object[] {ignoredRead[1], ignoredRead[0]});
+        }
         Locales.pop();
-        LOGGER.log(Level.FINE, "RETURN from CsvIO#read()");
+        if (B.LOGGING_ENABLED.get())
+            LOGGER.log(Level.FINE, "RETURN from CsvIO#read()");
         return ignoredRead[1];
     }
 

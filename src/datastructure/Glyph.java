@@ -26,6 +26,10 @@ public class Glyph {
      */
     public boolean alive;
     /**
+     * Whether this glyph is of special interest. Used for debugging.
+     */
+    public boolean track;
+    /**
      * Used by the clustering algorithm to track which glyphs think they'll merge
      * with {@code this} glyph before merging with any other glyph.
      */
@@ -86,6 +90,7 @@ public class Glyph {
             throw new IllegalArgumentException("n must be at least 1");
         }
         this.alive = alive;
+        this.track = false;
         if (B.TRACK.get()) {
             this.trackedBy = new HashSet<>(16);
         } else {
@@ -112,6 +117,7 @@ public class Glyph {
             this.x += glyph.x * glyph.n;
             this.y += glyph.y * glyph.n;
             this.n += glyph.n;
+            this.track = (this.track || glyph.track);
         }
         this.x /= this.n;
         this.y /= this.n;

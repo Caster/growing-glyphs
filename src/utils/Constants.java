@@ -3,10 +3,12 @@ package utils;
 import java.io.File;
 
 import algorithm.FirstMergeRecorder;
+import datastructure.Glyph;
 import datastructure.QuadTree;
 import datastructure.QuadTreeChangeListener;
 import datastructure.growfunction.GrowFunction;
 import datastructure.queues.BucketingStrategy;
+import io.PointIO;
 import ui.GrowingGlyphsDaemon;
 import utils.Utils.Timers;
 import utils.Utils.Timers.Units;
@@ -95,7 +97,14 @@ public final class Constants {
         /**
          * Minimum width/height of a {@link QuadTree cell}.
          */
-        MIN_CELL_SIZE(0.001);
+        MIN_CELL_SIZE(0.0001),
+
+        /**
+         * How often the number of merge events processed so far should be
+         * logged (if logging is {@link B#LOGGING_ENABLED enabled}). To
+         * disable this logging, a value of 0 or smaller can be set.
+         */
+        TIME_MERGE_EVENT_AGGLOMERATIVE(0);
 
 
         /**
@@ -161,12 +170,23 @@ public final class Constants {
         DEFAULT_SIZE(512),
 
         /**
+         * Number of large squares to track throughout program execution.
+         * This affects {@link PointIO} marking {@link Glyph glyphs} that it
+         * reads from a file to be interesting to {@link Glyph#track track}. The
+         * {@link #LARGE_SQUARES_TRACK} biggest glyphs will be tracked.
+         *
+         * This behavior can be fully disabled by setting the number of squares
+         * to track to 0 or smaller.
+         */
+        LARGE_SQUARES_TRACK(5),
+
+        /**
          * The maximum number of glyphs that should intersect any leaf
          * {@link QuadTree cell} at any point in time. Cells will split when
          * this constant is about to be violated, and will join when a glyph
          * is removed from a cell and joining would not violate this.
          */
-        MAX_GLYPHS_PER_CELL(150),
+        MAX_GLYPHS_PER_CELL(10),
 
         /**
          * Number of merge events that a glyph will record at most. This is not

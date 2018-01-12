@@ -21,6 +21,7 @@ import utils.Constants.B;
 import utils.Constants.D;
 import utils.Constants.I;
 import utils.Utils;
+import utils.Utils.Timers;
 
 /**
  * A QuadTree implementation that can track growing glyphs.
@@ -182,6 +183,7 @@ public class QuadTree implements Iterable<QuadTree> {
     }
 
     public List<QuadTree> getLeaves() {
+        Timers.start("[QuadTree] getLeaves");
         List<QuadTree> leaves = new ArrayList<>();
         Queue<QuadTree> considering = new ArrayDeque<>();
         considering.add(this);
@@ -193,6 +195,7 @@ public class QuadTree implements Iterable<QuadTree> {
                 considering.addAll(Arrays.asList(cell.children));
             }
         }
+        Timers.stop("[QuadTree] getLeaves");
         return leaves;
     }
 
@@ -204,8 +207,10 @@ public class QuadTree implements Iterable<QuadTree> {
      * @param side Side of cell to find leaves on.
      */
     public Set<QuadTree> getLeaves(Side side) {
+        Timers.start("[QuadTree] getLeaves");
         Set<QuadTree> result = new HashSet<>();
         getLeaves(side, result);
+        Timers.stop("[QuadTree] getLeaves");
         return result;
     }
 
@@ -220,8 +225,10 @@ public class QuadTree implements Iterable<QuadTree> {
      * @see #insert(Glyph, double, GrowFunction)
      */
     public Set<QuadTree> getLeaves(Glyph glyph, double at, GrowFunction g) {
+        Timers.start("[QuadTree] getLeaves");
         Set<QuadTree> result = new HashSet<>();
         getLeaves(glyph, at, g, result);
+        Timers.stop("[QuadTree] getLeaves");
         return result;
     }
 
@@ -231,6 +238,7 @@ public class QuadTree implements Iterable<QuadTree> {
      * @param side Side of cell to find neighbors on.
      */
     public Set<QuadTree> getNeighbors(Side side) {
+        Timers.start("[QuadTree] getNeighbors");
         if (neighbors.get(side.ordinal()) != null) {
             Set<QuadTree> result = neighbors.get(side.ordinal());
             // we cached the result, but we may need to update it...
@@ -256,6 +264,7 @@ public class QuadTree implements Iterable<QuadTree> {
         Set<QuadTree> result = new HashSet<>();
         getNeighbors(side, result);
         neighbors.set(side.ordinal(), result);
+        Timers.stop("[QuadTree] getNeighbors");
         return result;
     }
 
@@ -345,6 +354,7 @@ public class QuadTree implements Iterable<QuadTree> {
         if (g.intersectAt(glyph, cell) > at + Utils.EPS) {
             return;
         }
+        Timers.start("[QuadTree] insert");
         if (isLeaf()) {
             glyphs.add(glyph);
             glyph.addCell(this);
@@ -353,6 +363,7 @@ public class QuadTree implements Iterable<QuadTree> {
                 child.insert(glyph, at, g);
             }
         }
+        Timers.stop("[QuadTree] insert");
     }
 
     /**
@@ -370,6 +381,7 @@ public class QuadTree implements Iterable<QuadTree> {
             return false;
         }
         // can we insert here?
+        Timers.start("[QuadTree] insert");
         if (isLeaf() && glyphs.size() < I.MAX_GLYPHS_PER_CELL.get()) {
             glyphs.add(glyph);
             glyph.addCell(this);
@@ -382,6 +394,7 @@ public class QuadTree implements Iterable<QuadTree> {
         // insert into correct child
         children[Side.quadrant(cell, glyph.getX(), glyph.getY())]
                 .insertCenterOf(glyph);
+        Timers.stop("[QuadTree] insert");
         return true;
     }
 
@@ -391,7 +404,7 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     public boolean isOrphan() {
         return (this.parent != null && (this.parent.children == null ||
-                Utils.indexOf(this.parent.children, this) < 0));
+                quadrantOfParent() < 0));
     }
 
     /**
@@ -447,6 +460,7 @@ public class QuadTree implements Iterable<QuadTree> {
      * @see #split(double, GrowFunction)
      */
     public void split() {
+        Timers.start("[QuadTree] split");
         splitCell();
         // possibly distribute glyphs
         if (!glyphs.isEmpty()) {
@@ -463,6 +477,7 @@ public class QuadTree implements Iterable<QuadTree> {
                 listener.split(0);
             }
         }
+        Timers.stop("[QuadTree] split");
     }
 
     /**
@@ -475,6 +490,7 @@ public class QuadTree implements Iterable<QuadTree> {
      * @see #split()
      */
     public void split(double at, GrowFunction g) {
+        Timers.start("[QuadTree] split");
         splitCell();
         // possibly distribute glyphs
         if (!glyphs.isEmpty()) {
@@ -501,6 +517,7 @@ public class QuadTree implements Iterable<QuadTree> {
                 listener.split(at);
             }
         }
+        Timers.stop("[QuadTree] split");
     }
 
     @Override
@@ -586,7 +603,7 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     private void getNeighbors(Side side, Set<QuadTree> result) {
         if (!isRoot()) {
-            int quadrant = Utils.indexOf(parent.children, this);
+            int quadrant = quadrantOfParent();
             Side[] desc = Side.quadrant(quadrant);
             Side[] neighbors = Side.neighborQuadrants(desc);
             if (neighbors[0] == side || neighbors[1] == side) {
@@ -688,6 +705,17 @@ public class QuadTree implements Iterable<QuadTree> {
     }
 
     /**
+     * Returns the quadrant that this child is of its parent.
+     *
+     * If this cell was orphaned, returns -1.
+     */
+    private int quadrantOfParent() {
+        int quadrant = (cell.getX() == parent.cell.getX() ? 0 : 1) +
+                (cell.getY() == parent.cell.getY() ? 0 : 2);
+        return (parent.children[quadrant] == this ? quadrant : -1);
+    }
+
+    /**
      * Move up the tree to the parent, until a cell is found that has a neighbor
      * on the given side, as a sibling. Returns that neighbor.
      *
@@ -699,7 +727,7 @@ public class QuadTree implements Iterable<QuadTree> {
         if (isRoot()) {
             return null;
         }
-        int quadrant = Utils.indexOf(parent.children, this);
+        int quadrant = quadrantOfParent();
         Side[] desc = Side.quadrant(quadrant);
         Side[] neighbors = Side.neighborQuadrants(desc);
         if (neighbors[0] == side || neighbors[1] == side) {

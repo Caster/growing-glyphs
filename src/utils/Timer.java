@@ -49,15 +49,28 @@ public class Timer {
 
     /**
      * {@link #stop() Stop} this timer and log the {@link #getElapsedTotal()
-     * total elapsed time} to the given logger instance.
+     * total elapsed time} to the given logger instance, at level
+     * {@link Level#FINE}.
      *
      * @param logger Logger to log to.
      * @param name Name of event that was timed.
      */
     public void log(Logger logger, String name) {
+        log(logger, name, Level.FINE);
+    }
+
+    /**
+     * {@link #stop() Stop} this timer and log the {@link #getElapsedTotal()
+     * total elapsed time} to the given logger instance.
+     *
+     * @param logger Logger to log to.
+     * @param name Name of event that was timed.
+     * @param level Level to log at.
+     */
+    public void log(Logger logger, String name, Level level) {
         stop();
         if (logger != null) {
-            logger.log(Level.FINE, "{0} took {1} seconds (wall clock time{2})",
+            logger.log(level, "{0} took {1} seconds (wall clock time{2})",
                 new Object[] {name, String.format("%5.2f", Timers.in(
                         totalElapsed, Units.SECONDS)),
                 (count == 1 ? "" : String.format(", %s timings",

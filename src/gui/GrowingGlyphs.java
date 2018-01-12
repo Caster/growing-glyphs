@@ -330,6 +330,7 @@ public class GrowingGlyphs extends JFrame {
                         + "only execute the algorithm and quit");
             }
         }
+        // GrowFunction.getAll().get("Linearly Growing Squares");//
         GrowFunction g = GrowFunction.getAll().get(GrowFunction.DEFAULT);
         if (background) {
             GrowingGlyphsDaemon d = new GrowingGlyphsDaemon(w, h, g);

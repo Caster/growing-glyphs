@@ -30,6 +30,7 @@ import utils.Stat;
 import utils.Utils;
 import utils.Utils.Stats;
 import utils.Utils.Timers;
+import utils.Utils.Timers.Units;
 
 public class AgglomerativeClustering {
 
@@ -119,6 +120,8 @@ public class AgglomerativeClustering {
         HierarchicalClustering[] createdFromTmp = new HierarchicalClustering[2];
         Set<Glyph> trackersNeedingUpdate = new HashSet<>();
         Set<QuadTree> orphanedCells = new HashSet<>();
+        // see Constants.D#TIME_MERGE_EVENT_AGGLOMERATIVE
+        double lastDumpedMerges = Timers.in(Timers.elapsed("clustering"), Units.SECONDS);
         // finally, create an indication of which glyphs still participate
         int numAlive = 0;
         Rectangle2D rect = tree.getRectangle();
@@ -180,8 +183,16 @@ public class AgglomerativeClustering {
             // depending on the type of event, handle it appropriately
             switch (e.getType()) {
             case MERGE:
-                if (B.TIMERS_ENABLED.get())
+                boolean track = false;
+                if (B.TIMERS_ENABLED.get()) {
                     Timers.start("merge event processing");
+                    for (Glyph glyph : ((GlyphMerge) e).getGlyphs()) {
+                        track = track || glyph.track;
+                    }
+                    if (track) {
+                        Timers.start("merge event processing (large)");
+                    }
+                }
                 nestedMerges.add((GlyphMerge) e);
                 // create a merged glyph and ensure that the merged glyph does not
                 // overlap other glyphs at this time - repeat until no more overlap
@@ -317,8 +328,32 @@ public class AgglomerativeClustering {
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;
-                if (B.TIMERS_ENABLED.get())
+                if (B.TIMERS_ENABLED.get()) {
                     Timers.stop("merge event processing");
+                    if (track) {
+                        Timers.stop("merge event processing (large)");
+                    }
+                }
+                if (D.TIME_MERGE_EVENT_AGGLOMERATIVE.get() > 0 &&
+                        B.LOGGING_ENABLED.get()) {
+                    Stats.count("merge event handling");
+                    double elapsed = Timers.in(Timers.elapsing("clustering"),
+                            Units.SECONDS);
+                    if (elapsed - lastDumpedMerges >=
+                            D.TIME_MERGE_EVENT_AGGLOMERATIVE.get()) {
+                        lastDumpedMerges = elapsed;
+                        LOGGER.log(Level.FINE, "processed {0} merge events after "
+                                + "{1} seconds", new Object[] {
+                                Stats.get("[count] merge event handling").getN(),
+                                elapsed});
+                        LOGGER.log(Level.FINER, "inserted {0} events",
+                                q.getInsertions());
+                        LOGGER.log(Level.FINER, "discarded {0} events",
+                                q.getDiscarded());
+                        LOGGER.log(Level.FINER, "deleted {0} events",
+                                q.getDeletions());
+                    }
+                }
                 break;
             case OUT_OF_CELL:
                 if (B.TIMERS_ENABLED.get())

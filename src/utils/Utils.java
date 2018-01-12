@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Locale.Category;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -398,15 +399,31 @@ public class Utils {
          * {@link Timer#stop() stop} the timer and log its {@link
          * Timer#getElapsedTotal() total elapsed time}.
          *
+         * This will log at level {@link Level#FINE}.
+         *
          * @param name Name of the timer.
          * @param logger Logger to log to.
          * @see Utils.Timers#start(String)
          */
         public static void log(String name, Logger logger) {
+            log(name, logger, Level.FINE);
+        }
+
+        /**
+         * Log the time that elapsed to the given logger. This will
+         * {@link Timer#stop() stop} the timer and log its {@link
+         * Timer#getElapsedTotal() total elapsed time}.
+         *
+         * @param name Name of the timer.
+         * @param logger Logger to log to.
+         * @param level Level to log at.
+         * @see Utils.Timers#start(String)
+         */
+        public static void log(String name, Logger logger, Level level) {
             if (!timers.containsKey(name)) {
                 return;
             }
-            timers.get(name).log(logger, name);;
+            timers.get(name).log(logger, name, level);
         }
 
         /**
@@ -422,10 +439,31 @@ public class Utils {
             int padTo = timers.keySet().stream().max(
                     Comparator.comparingInt(String::length)).get().length();
             String f = "%1$-" + padTo + "s";
+            // log entries without section
             timers.entrySet().stream()
+                .filter((e) -> !e.getKey().startsWith("["))
                 .sorted((a, b) -> a.getKey().compareTo(b.getKey()))
                 .forEach((e) ->
                     e.getValue().log(logger, String.format(f, e.getKey())));
+            // log entries in a section
+            Object[] timersInSections = timers.entrySet().stream()
+                .filter((e) -> e.getKey().startsWith("["))
+                .sorted((a, b) -> a.getKey().compareTo(b.getKey()))
+                .toArray();
+            String lastSection = "";
+            for (int i = 0; i < timersInSections.length; ++i) {
+                @SuppressWarnings("unchecked")
+                Entry<String, Timer> e = (Entry<String, Timer>) timersInSections[i];
+                int offset = e.getKey().indexOf(']') + 1;
+                String section = e.getKey().substring(0, offset);
+                if (!section.equals(lastSection)) {
+                    lastSection = section;
+                    logger.log(Level.FINE, "");
+                    logger.log(Level.FINE, lastSection);
+                }
+                e.getValue().log(logger, String.format(f,
+                        e.getKey().substring(offset + 1)));
+            }
         }
 
         /**
