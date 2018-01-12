@@ -710,6 +710,10 @@ public class QuadTree implements Iterable<QuadTree> {
      * If this cell was orphaned, returns -1.
      */
     private int quadrantOfParent() {
+        // Tested lookup in array (first option below) versus calculating
+        // position; the latter appears to be slightly faster. Test results are
+        // not very conclusive though, difference is very small.
+        // return Utils.indexOf(parent.children, this);
         int quadrant = (cell.getX() == parent.cell.getX() ? 0 : 1) +
                 (cell.getY() == parent.cell.getY() ? 0 : 2);
         return (parent.children[quadrant] == this ? quadrant : -1);
