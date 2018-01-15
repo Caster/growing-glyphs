@@ -1,16 +1,13 @@
 package datastructure;
 
 import java.awt.geom.Rectangle2D;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -61,7 +58,7 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     private Set<QuadTreeChangeListener> listeners;
     /**
-     * Cache {@link #getNeighbors(Side)} for every side.
+     * Cache {@link #getNeighbors(Side)} for every side, but only for leaves.
      */
     private List<Set<QuadTree>> neighbors;
 
@@ -110,8 +107,10 @@ public class QuadTree implements Iterable<QuadTree> {
         } else {
             this.listeners = null;
         }
-        this.neighbors = new ArrayList<>(
-                Collections.nCopies(Side.values().length, null));
+        this.neighbors = new ArrayList<>(Side.values().length);
+        for (@SuppressWarnings("unused") Side side : Side.values()) {
+            this.neighbors.add(new HashSet<>());
+        }
     }
 
 
@@ -140,8 +139,8 @@ public class QuadTree implements Iterable<QuadTree> {
             glyph.removeCell(this);
         }
         glyphs.clear();
-        for (int i = 0; i < Side.values().length; ++i) {
-            neighbors.set(i, null);
+        for (Set<QuadTree> neighborsOnSide : neighbors) {
+            neighborsOnSide.clear();
         }
         if (B.ENABLE_LISTENERS.get()) {
             for (QuadTreeChangeListener listener : listeners) {
@@ -244,34 +243,7 @@ public class QuadTree implements Iterable<QuadTree> {
      * @param side Side of cell to find neighbors on.
      */
     public Set<QuadTree> getNeighbors(Side side) {
-        Timers.start("[QuadTree] getNeighbors");
-        if (neighbors.get(side.ordinal()) != null) {
-            Set<QuadTree> result = neighbors.get(side.ordinal());
-            // we cached the result, but we may need to update it...
-            // handle orphaned cells: remove orphans, replace by closest leaves
-            // set takes care of having each leaf at most once
-            Queue<Entry<QuadTree, QuadTree>> toSwap = new ArrayDeque<>();
-            for (QuadTree cell : result) {
-                QuadTree startCell = cell;
-                cell = cell.getNonOrphanAncestor();
-                if (startCell != cell) {
-                    toSwap.add(new SimpleImmutableEntry<>(startCell, cell));
-                }
-            }
-            while (!toSwap.isEmpty()) {
-                Entry<QuadTree, QuadTree> swap = toSwap.poll();
-                result.remove(swap.getKey());
-                result.add(swap.getValue());
-            }
-            // all of the above is still cheaper than finding the neighbors
-            // from scratch, it turns out: approximately twice as fast
-            return result;
-        }
-        Set<QuadTree> result = new HashSet<>();
-        getNeighbors(side, result);
-        neighbors.set(side.ordinal(), result);
-        Timers.stop("[QuadTree] getNeighbors");
-        return result;
+        return neighbors.get(side.ordinal());
     }
 
     /**
@@ -601,31 +573,6 @@ public class QuadTree implements Iterable<QuadTree> {
     }
 
     /**
-     * Actual implementation of {@link #getNeighbors(Side)}.
-     *
-     * @param side Side of cell to look for neighbors.
-     * @param result Set to add neighbors to.
-     */
-    private void getNeighbors(Side side, Set<QuadTree> result) {
-        if (!isRoot()) {
-            int quadrant = quadrantOfParent();
-            Side[] desc = Side.quadrant(quadrant);
-            Side[] neighbors = Side.neighborQuadrants(desc);
-            if (neighbors[0] == side || neighbors[1] == side) {
-                parent.children[Side.quadrantNeighbor(quadrant, side)]
-                        .getLeaves(side.opposite(), result);
-                return;
-            }
-            // need to walk up the tree, go to side, go down the tree
-            QuadTree neighbor = parent.upUntil(side);
-            if (neighbor == null) {
-                return;
-            }
-            neighbor.getLeaves(side.opposite(), cell, result);
-        }
-    }
-
-    /**
      * If the total number of glyphs of all children is at most
      * {@link #MAX_GLYPHS_PER_CELL} and those children are leaves, delete the
      * children (thus making this cell a leaf), and adopt the glyphs of the
@@ -650,8 +597,9 @@ public class QuadTree implements Iterable<QuadTree> {
             return false;
         }
 
-        // do a join, become a leaf, adopt glyphs of children
-        for (QuadTree child : children) {
+        // do a join, become a leaf, adopt glyphs and neighbors of children
+        for (int quadrant = 0; quadrant < children.length; ++quadrant) {
+            QuadTree child = children[quadrant];
             for (Glyph glyph : child.getGlyphsAlive()) {
                 glyphs.add(glyph);
                 glyph.addCell(this);
@@ -659,7 +607,28 @@ public class QuadTree implements Iterable<QuadTree> {
             }
             child.glyphs.clear();
             child.isOrphan = true;
+            // adopt neighbors, keep neighbors of orphan intact
+            // only adopt neighbors outside of the joined cell
+            for (Side side : Side.quadrant(quadrant)) {
+                neighbors.get(side.ordinal()).addAll(
+                    child.neighbors.get(side.ordinal()));
+            }
         }
+        // update neighbor pointers of neighbors; point to this instead of
+        // any of what previously were our children, but are now orphans
+        for (Side side : Side.values()) {
+            for (QuadTree neighbor : neighbors.get(side.ordinal())) {
+                Set<QuadTree> neighborNeighbors = neighbor.neighbors.get(
+                    side.opposite().ordinal());
+                for (QuadTree child : children) {
+                    neighborNeighbors.remove(child);
+                }
+                // the below does not need an "interval overlaps" check; if the
+                // child interval overlapped, then our interval will also
+                neighborNeighbors.add(this);
+            }
+        }
+        // we become a leaf now, sorry kids
         children = null;
 
         // recursively check if parent could join now
@@ -683,6 +652,10 @@ public class QuadTree implements Iterable<QuadTree> {
      * as being their parent. This method does <em>not</em> reassign any glyphs
      * associated with this cell to children.
      *
+     * The {@link #neighbors} of the newly created child cells will be
+     * initialized correctly. The {@link #neighbors} of this cell will be
+     * cleared - only leaf cells maintain who their neighbors are.
+     *
      * @see #split()
      * @see #split(double, GrowFunction)
      */
@@ -691,6 +664,7 @@ public class QuadTree implements Iterable<QuadTree> {
         if (!isLeaf()) {
             throw new RuntimeException("cannot split cell that is already split");
         }
+
         // do the split
         this.children = new QuadTree[4];
         double x = getX();
@@ -708,44 +682,48 @@ public class QuadTree implements Iterable<QuadTree> {
                 );
             this.children[i].parent = this;
         }
-    }
 
-    /**
-     * Returns the quadrant that this child is of its parent.
-     *
-     * If this cell was orphaned, returns -1.
-     */
-    private int quadrantOfParent() {
-        if (isOrphan) {
-            return -1;
+        // update neighbors of neighbors; we split now
+        for (Side side : Side.values()) {
+            for (QuadTree neighbor : neighbors.get(side.ordinal())) {
+                Set<QuadTree> neighborsOnOurSide = neighbor.neighbors.get(
+                    side.opposite().ordinal());
+                neighborsOnOurSide.remove(this);
+                for (int quadrant : side.quadrants()) {
+                    // only add as neighbors when they actualy neighbor our
+                    // newly created children
+                    if (Utils.openIntervalsOverlap(
+                            Side.interval(children[quadrant].cell, side),
+                            Side.interval(neighbor.cell, side))) {
+                        neighborsOnOurSide.add(children[quadrant]);
+                    }
+                }
+            }
         }
-        // Tested lookup in array (first option below) versus calculating
-        // position; the latter appears to be slightly faster. Test results are
-        // not very conclusive though, difference is very small.
-        //return Utils.indexOf(parent.children, this);
-        return (cell.getX() == parent.cell.getX() ? 0 : 1) +
-                (cell.getY() == parent.cell.getY() ? 0 : 2);
-    }
 
-    /**
-     * Move up the tree to the parent, until a cell is found that has a neighbor
-     * on the given side, as a sibling. Returns that neighbor.
-     *
-     * @param side Side to check for siblings.
-     * @return Cell that matches criteria, or {@code null} if no such cell
-     *         exists on the path to the root of the tree.
-     */
-    private QuadTree upUntil(Side side) {
-        if (isRoot()) {
-            return null;
+        // update neighbors
+        for (Side side : Side.values()) {
+            Set<QuadTree> neighborsOnSide = neighbors.get(side.ordinal());
+            for (int quadrant : side.quadrants()) {
+                double[] qi = Side.interval(children[quadrant].cell, side);
+                // distribute own neighbors over children
+                children[quadrant].neighbors.get(side.ordinal()).addAll(
+                    neighborsOnSide.stream()
+                        // ensure that the neighbor is "in range" of the child
+                        // cell; technically, we would need to consider the
+                        // side.opposite() of the neighbor, but since it reduces
+                        // to a 1D comparison with the exact same interval, we
+                        // save ourselves some calculation and do it like this
+                        .filter((neighbor) -> Utils.openIntervalsOverlap(qi,
+                            Side.interval(neighbor.cell, side)))
+                        .collect(Collectors.toSet())
+                );
+                // the children are neighbors of each other; record this
+                children[quadrant].neighbors.get(side.opposite().ordinal()).add(
+                    children[Side.quadrantNeighbor(quadrant, side.opposite())]);
+            }
+            neighborsOnSide.clear();
         }
-        int quadrant = quadrantOfParent();
-        Side[] desc = Side.quadrant(quadrant);
-        Side[] neighbors = Side.neighborQuadrants(desc);
-        if (neighbors[0] == side || neighbors[1] == side) {
-            return parent.children[Side.quadrantNeighbor(quadrant, side)];
-        }
-        return parent.upUntil(side);
     }
 
 

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -465,7 +466,11 @@ public class AgglomerativeClustering {
         double[] sideInterval = Side.interval(g.sizeAt(glyph, oAt).getBounds2D(), o.getSide());
         if (LOGGER != null)
             LOGGER.log(Level.FINER, "size at border is {0}", Arrays.toString(sideInterval));
-        Set<QuadTree> neighbors = cell.getNeighbors(o.getSide());
+        // Copy the set of neighbors returned, as the neighbors may in fact change
+        // while the out of cell event is being handled; inserting the glyph into
+        // the neighboring cells can cause a split to occur and the neighbors to
+        // update. All of that is avoided by making a copy now.
+        Set<QuadTree> neighbors = new HashSet<>(cell.getNeighbors(o.getSide()));
         if (LOGGER != null)
             LOGGER.log(Level.FINEST, "growing into");
         for (QuadTree neighbor : neighbors) {
@@ -514,8 +519,9 @@ public class AgglomerativeClustering {
                     }
                 }
             } else {
-                grownInto = new HashSet<>(1);
-                grownInto.add(neighbor);
+                List<QuadTree> into = neighbor.getLeaves();
+                grownInto = new HashSet<>(into.size());
+                grownInto.addAll(into);
             }
 
             rec.from(glyph);
