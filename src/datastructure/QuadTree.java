@@ -39,6 +39,11 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     private QuadTree parent;
     /**
+     * Whether {@link #parent} thinks {@code this} is a child of it. The root
+     * cell can never be an orphan, because it does not have a parent.
+     */
+    private boolean isOrphan;
+    /**
      * Child cells, in the order: top left, top right, bottom left, bottom right.
      * Will be {@code null} for leaf cells.
      */
@@ -96,6 +101,7 @@ public class QuadTree implements Iterable<QuadTree> {
         this.cell = new Rectangle2D.Double(x, y, w, h);
 
         this.parent = null;
+        this.isOrphan = false;
         this.children = null;
         this.g = g;
         this.glyphs = new HashSet<>(I.MAX_GLYPHS_PER_CELL.get());
@@ -403,8 +409,7 @@ public class QuadTree implements Iterable<QuadTree> {
      * joined and forgot about its children.
      */
     public boolean isOrphan() {
-        return (this.parent != null && (this.parent.children == null ||
-                quadrantOfParent() < 0));
+        return isOrphan;
     }
 
     /**
@@ -653,6 +658,7 @@ public class QuadTree implements Iterable<QuadTree> {
                 glyph.removeCell(child);
             }
             child.glyphs.clear();
+            child.isOrphan = true;
         }
         children = null;
 
@@ -710,13 +716,15 @@ public class QuadTree implements Iterable<QuadTree> {
      * If this cell was orphaned, returns -1.
      */
     private int quadrantOfParent() {
+        if (isOrphan) {
+            return -1;
+        }
         // Tested lookup in array (first option below) versus calculating
         // position; the latter appears to be slightly faster. Test results are
         // not very conclusive though, difference is very small.
-        // return Utils.indexOf(parent.children, this);
-        int quadrant = (cell.getX() == parent.cell.getX() ? 0 : 1) +
+        //return Utils.indexOf(parent.children, this);
+        return (cell.getX() == parent.cell.getX() ? 0 : 1) +
                 (cell.getY() == parent.cell.getY() ? 0 : 2);
-        return (parent.children[quadrant] == this ? quadrant : -1);
     }
 
     /**
