@@ -583,17 +583,21 @@ public class QuadTree implements Iterable<QuadTree> {
      * @return Whether a join was performed.
      */
     private boolean joinMaybe(double at) {
+        Timers.start("[QuadTree] join");
         if (isLeaf()) {
+            Timers.stop("[QuadTree] join");
             return false;
         }
         int s = 0;
         for (QuadTree child : children) {
             if (!child.isLeaf()) {
+                Timers.stop("[QuadTree] join");
                 return false;
             }
             s += child.getGlyphsAlive().size();
         }
         if (s > I.MAX_GLYPHS_PER_CELL.get()) {
+            Timers.stop("[QuadTree] join");
             return false;
         }
 
@@ -630,6 +634,7 @@ public class QuadTree implements Iterable<QuadTree> {
         }
         // we become a leaf now, sorry kids
         children = null;
+        Timers.stop("[QuadTree] join");
 
         // recursively check if parent could join now
         if (parent != null) {
