@@ -3,10 +3,8 @@ package algorithm;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
@@ -192,8 +190,10 @@ public class FirstMergeRecorder {
      *
      * @param glyphs Set of glyphs to record.
      */
-    public void record(Set<Glyph> glyphs) {
-        record(glyphs.parallelStream());
+    public void record(List<Glyph> glyphs) {
+        if (glyphs != null) {
+            record(glyphs.parallelStream());
+        }
     }
 
     /**
@@ -248,7 +248,7 @@ public class FirstMergeRecorder {
          * single glyph. Similarly to {@link #at}, this is a list that tracks
          * the set for the first, second, ... merge events.
          */
-        private List<Set<Glyph>> glyphs;
+        private List<List<Glyph>> glyphs;
         /**
          * Number of merges that have been recorded.
          */
@@ -260,7 +260,7 @@ public class FirstMergeRecorder {
                     I.MAX_MERGES_TO_RECORD.get(), Double.POSITIVE_INFINITY));
             this.glyphs = new ArrayList<>(I.MAX_MERGES_TO_RECORD.get());
             for (int i = 0; i < I.MAX_MERGES_TO_RECORD.get(); ++i) {
-                this.glyphs.add(new HashSet<>(1));
+                this.glyphs.add(new ArrayList<>(1));
             }
             this.size = 0;
             if (LOGGER != null) {
@@ -367,7 +367,7 @@ public class FirstMergeRecorder {
             return this;
         }
 
-        public Set<Glyph> getGlyphs() {
+        public List<Glyph> getGlyphs() {
             return glyphs.get(0);
         }
 
@@ -385,7 +385,7 @@ public class FirstMergeRecorder {
             if (cs < ws) {
                 for (int i = cs; i < ws; ++i) {
                     at.add(Double.POSITIVE_INFINITY);
-                    glyphs.add(new HashSet<>(1));
+                    glyphs.add(new ArrayList<>(1));
                 }
             } else if (cs > ws) {
                 for (int i = cs - 1; i >= ws; --i) {
@@ -402,7 +402,7 @@ public class FirstMergeRecorder {
 
             double at = this.at.get(0);
             Collections.rotate(this.at, -1);
-            Set<Glyph> glyphs = this.glyphs.get(0);
+            List<Glyph> glyphs = this.glyphs.get(0);
             Collections.rotate(this.glyphs, -1);
             size--;
 

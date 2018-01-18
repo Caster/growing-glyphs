@@ -1,9 +1,9 @@
 package datastructure;
 
 import java.awt.geom.Rectangle2D;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.TreeSet;
 
 import datastructure.events.OutOfCell.Side;
@@ -115,12 +115,12 @@ public class HistoricQuadTree {
         return result;
     }
 
-    public Set<Glyph> getGlyphs() {
+    public List<Glyph> getGlyphs() {
         return track.getGlyphsAlive();
     }
 
-    public Set<HistoricQuadTree> getNeighbors(Side side) {
-        return new HashSet<>(0);
+    public List<HistoricQuadTree> getNeighbors(Side side) {
+        return new ArrayList<>(0);
     }
 
     public boolean isLeaf() {

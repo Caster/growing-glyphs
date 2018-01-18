@@ -1,11 +1,11 @@
 package datastructure;
 
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,7 +33,7 @@ public class Glyph {
      * Used by the clustering algorithm to track which glyphs think they'll merge
      * with {@code this} glyph before merging with any other glyph.
      */
-    public Set<Glyph> trackedBy;
+    public List<Glyph> trackedBy;
 
     /**
      * X-coordinate of the center of the glyph.
@@ -50,7 +50,7 @@ public class Glyph {
     /**
      * Set of QuadTree cells that this glyph intersects.
      */
-    private Set<QuadTree> cells;
+    private List<QuadTree> cells;
     /**
      * Events involving this glyph. Only one event is actually in the event
      * queue, others are added only when that one is popped from the queue.
@@ -92,14 +92,14 @@ public class Glyph {
         this.alive = alive;
         this.track = false;
         if (B.TRACK.get()) {
-            this.trackedBy = new HashSet<>(16);
+            this.trackedBy = new ArrayList<>();
         } else {
             this.trackedBy = null;
         }
         this.x = x;
         this.y = y;
         this.n = n;
-        this.cells = new HashSet<>();
+        this.cells = new ArrayList<>();
         this.mergeEvents = new PriorityQueue<>(I.MAX_MERGES_TO_RECORD.get());
         this.outOfCellEvents = new PriorityQueue<>();
     }
@@ -143,7 +143,7 @@ public class Glyph {
     /**
      * Returns all recorded cells intersecting the glyph.
      */
-    public Set<QuadTree> getCells() {
+    public List<QuadTree> getCells() {
         return cells;
     }
 

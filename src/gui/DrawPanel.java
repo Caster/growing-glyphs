@@ -19,10 +19,10 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 
 import javax.swing.JPanel;
 
@@ -192,7 +192,8 @@ public class DrawPanel extends JPanel implements
                     }
                 }
                 // glyphs in cells (only the centers!)
-                if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CENTERS)) {
+                if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CENTERS) &&
+                        cell.getGlyphs() != null) {
                     for (Glyph s : cell.getGlyphs()) {
                         g2.setColor(s == highlightedGlyph ? Color.RED : Color.BLACK);
                         g2.fill(new Rectangle2D.Double(
@@ -300,7 +301,7 @@ public class DrawPanel extends JPanel implements
                 Glyph closest = null;
                 double minDist = Double.MAX_VALUE;
                 // also search neighboring cells of leaf, nearest point may be there
-                Set<HistoricQuadTree> nodes = new HashSet<>();
+                List<HistoricQuadTree> nodes = new ArrayList<>();
                 nodes.add(leaf);
                 for (Side side : Side.values()) {
                     nodes.addAll(leaf.getNeighbors(side));

@@ -4,7 +4,6 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,15 +51,15 @@ public class QuadTree implements Iterable<QuadTree> {
     /**
      * Glyphs intersecting the cell.
      */
-    private Set<Glyph> glyphs;
+    private List<Glyph> glyphs;
     /**
      * Listeners listening to events.
      */
-    private Set<QuadTreeChangeListener> listeners;
+    private List<QuadTreeChangeListener> listeners;
     /**
      * Cache {@link #getNeighbors(Side)} for every side, but only for leaves.
      */
-    private List<Set<QuadTree>> neighbors;
+    private List<List<QuadTree>> neighbors;
 
 
     /**
@@ -101,15 +100,15 @@ public class QuadTree implements Iterable<QuadTree> {
         this.isOrphan = false;
         this.children = null;
         this.g = g;
-        this.glyphs = new HashSet<>(I.MAX_GLYPHS_PER_CELL.get());
+        this.glyphs = new ArrayList<>(I.MAX_GLYPHS_PER_CELL.get());
         if (B.ENABLE_LISTENERS.get()) {
-            this.listeners = new HashSet<>(1);
+            this.listeners = new ArrayList<>(1);
         } else {
             this.listeners = null;
         }
         this.neighbors = new ArrayList<>(Side.values().length);
         for (@SuppressWarnings("unused") Side side : Side.values()) {
-            this.neighbors.add(new HashSet<>());
+            this.neighbors.add(new ArrayList<>());
         }
     }
 
@@ -139,7 +138,7 @@ public class QuadTree implements Iterable<QuadTree> {
             glyph.removeCell(this);
         }
         glyphs.clear();
-        for (Set<QuadTree> neighborsOnSide : neighbors) {
+        for (List<QuadTree> neighborsOnSide : neighbors) {
             neighborsOnSide.clear();
         }
         if (B.ENABLE_LISTENERS.get()) {
@@ -173,14 +172,17 @@ public class QuadTree implements Iterable<QuadTree> {
         return this.children;
     }
 
-    public Set<Glyph> getGlyphs() {
+    public List<Glyph> getGlyphs() {
         return glyphs;
     }
 
-    public Set<Glyph> getGlyphsAlive() {
+    public List<Glyph> getGlyphsAlive() {
+        if (glyphs == null) {
+            return glyphs;
+        }
         return glyphs.stream()
                 .filter(glyph -> glyph.alive)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     public double getHeight() {
@@ -211,9 +213,9 @@ public class QuadTree implements Iterable<QuadTree> {
      *
      * @param side Side of cell to find leaves on.
      */
-    public Set<QuadTree> getLeaves(Side side) {
+    public List<QuadTree> getLeaves(Side side) {
         Timers.start("[QuadTree] getLeaves");
-        Set<QuadTree> result = new HashSet<>();
+        List<QuadTree> result = new ArrayList<>();
         getLeaves(side, result);
         Timers.stop("[QuadTree] getLeaves");
         return result;
@@ -229,9 +231,9 @@ public class QuadTree implements Iterable<QuadTree> {
      *          this is used to decide which cells {@code glyph} intersects.
      * @see #insert(Glyph, double, GrowFunction)
      */
-    public Set<QuadTree> getLeaves(Glyph glyph, double at, GrowFunction g) {
+    public List<QuadTree> getLeaves(Glyph glyph, double at, GrowFunction g) {
         Timers.start("[QuadTree] getLeaves");
-        Set<QuadTree> result = new HashSet<>();
+        List<QuadTree> result = new ArrayList<>();
         getLeaves(glyph, at, g, result);
         Timers.stop("[QuadTree] getLeaves");
         return result;
@@ -242,7 +244,7 @@ public class QuadTree implements Iterable<QuadTree> {
      *
      * @param side Side of cell to find neighbors on.
      */
-    public Set<QuadTree> getNeighbors(Side side) {
+    public List<QuadTree> getNeighbors(Side side) {
         return neighbors.get(side.ordinal());
     }
 
@@ -422,7 +424,9 @@ public class QuadTree implements Iterable<QuadTree> {
      *         need to be updated and out of cell events may be outdated.
      */
     public boolean removeGlyph(Glyph glyph, double at) {
-        glyphs.remove(glyph);
+        if (glyphs != null) {
+            glyphs.remove(glyph);
+        }
         if (parent != null) {
             return parent.joinMaybe(at);
         }
@@ -446,7 +450,7 @@ public class QuadTree implements Iterable<QuadTree> {
                         .insertCenterOf(glyph);
             }
             // only maintain glyphs in leaves
-            glyphs.clear();
+            glyphs = null;
         }
         // notify listeners
         if (B.ENABLE_LISTENERS.get()) {
@@ -480,7 +484,7 @@ public class QuadTree implements Iterable<QuadTree> {
                 }
             }
             // only maintain glyphs in leaves
-            glyphs.clear();
+            glyphs = null;
             // ensure that split did in fact have an effect
             for (QuadTree child : children) {
                 if (child.glyphs.size() > I.MAX_GLYPHS_PER_CELL.get()) {
@@ -510,7 +514,7 @@ public class QuadTree implements Iterable<QuadTree> {
     /**
      * Actual implementation of {@link #getLeaves(Glyph, double, GrowFunction)}.
      */
-    private void getLeaves(Glyph glyph, double at, GrowFunction g, Set<QuadTree> result) {
+    private void getLeaves(Glyph glyph, double at, GrowFunction g, List<QuadTree> result) {
         if (g.intersectAt(glyph, cell) > at + Utils.EPS) {
             return;
         }
@@ -530,7 +534,7 @@ public class QuadTree implements Iterable<QuadTree> {
      * @param side Side of cell to take leaves on.
      * @param result Set to add cells to.
      */
-    private void getLeaves(Side side, Set<QuadTree> result) {
+    private void getLeaves(Side side, List<QuadTree> result) {
         getLeaves(side, null, result);
     }
 
@@ -541,7 +545,7 @@ public class QuadTree implements Iterable<QuadTree> {
      *
      * @see QuadTree#getLeaves(Side, Set)
      */
-    private void getLeaves(Side side, Rectangle2D range, Set<QuadTree> result) {
+    private void getLeaves(Side side, Rectangle2D range, List<QuadTree> result) {
         if (range != null) {
             // reduce checking overlap to a 1D problem, as the given range and
             // this cell are extended to infinity in one dimension
@@ -602,6 +606,7 @@ public class QuadTree implements Iterable<QuadTree> {
         }
 
         // do a join, become a leaf, adopt glyphs and neighbors of children
+        glyphs = new ArrayList<>(I.MAX_GLYPHS_PER_CELL.get());
         for (int quadrant = 0; quadrant < children.length; ++quadrant) {
             QuadTree child = children[quadrant];
             for (Glyph glyph : child.getGlyphsAlive()) {
@@ -609,7 +614,7 @@ public class QuadTree implements Iterable<QuadTree> {
                 glyph.addCell(this);
                 glyph.removeCell(child);
             }
-            child.glyphs.clear();
+            child.glyphs = null;
             child.isOrphan = true;
             // adopt neighbors, keep neighbors of orphan intact
             // only adopt neighbors outside of the joined cell
@@ -622,7 +627,7 @@ public class QuadTree implements Iterable<QuadTree> {
         // any of what previously were our children, but are now orphans
         for (Side side : Side.values()) {
             for (QuadTree neighbor : neighbors.get(side.ordinal())) {
-                Set<QuadTree> neighborNeighbors = neighbor.neighbors.get(
+                List<QuadTree> neighborNeighbors = neighbor.neighbors.get(
                     side.opposite().ordinal());
                 for (QuadTree child : children) {
                     neighborNeighbors.remove(child);
@@ -691,7 +696,7 @@ public class QuadTree implements Iterable<QuadTree> {
         // update neighbors of neighbors; we split now
         for (Side side : Side.values()) {
             for (QuadTree neighbor : neighbors.get(side.ordinal())) {
-                Set<QuadTree> neighborsOnOurSide = neighbor.neighbors.get(
+                List<QuadTree> neighborsOnOurSide = neighbor.neighbors.get(
                     side.opposite().ordinal());
                 neighborsOnOurSide.remove(this);
                 for (int quadrant : side.quadrants()) {
@@ -708,7 +713,7 @@ public class QuadTree implements Iterable<QuadTree> {
 
         // update neighbors
         for (Side side : Side.values()) {
-            Set<QuadTree> neighborsOnSide = neighbors.get(side.ordinal());
+            List<QuadTree> neighborsOnSide = neighbors.get(side.ordinal());
             for (int quadrant : side.quadrants()) {
                 double[] qi = Side.interval(children[quadrant].cell, side);
                 // distribute own neighbors over children
@@ -721,7 +726,7 @@ public class QuadTree implements Iterable<QuadTree> {
                         // save ourselves some calculation and do it like this
                         .filter((neighbor) -> Utils.openIntervalsOverlap(qi,
                             Side.interval(neighbor.cell, side)))
-                        .collect(Collectors.toSet())
+                        .collect(Collectors.toList())
                 );
                 // the children are neighbors of each other; record this
                 children[quadrant].neighbors.get(side.opposite().ordinal()).add(

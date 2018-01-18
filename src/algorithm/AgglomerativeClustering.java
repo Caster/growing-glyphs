@@ -2,13 +2,12 @@ package algorithm;
 
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -119,8 +118,8 @@ public class AgglomerativeClustering {
         // and two sets that are reused somewhere deep in the algorithm
         PriorityQueue<GlyphMerge> nestedMerges = new PriorityQueue<>();
         HierarchicalClustering[] createdFromTmp = new HierarchicalClustering[2];
-        Set<Glyph> trackersNeedingUpdate = new HashSet<>();
-        Set<QuadTree> orphanedCells = new HashSet<>();
+        List<Glyph> trackersNeedingUpdate = new ArrayList<>();
+        List<QuadTree> orphanedCells = new ArrayList<>();
         // see Constants.D#TIME_MERGE_EVENT_AGGLOMERATIVE
         double lastDumpedMerges = Timers.in(Timers.elapsed("clustering"), Units.SECONDS);
         // finally, create an indication of which glyphs still participate
@@ -231,7 +230,7 @@ public class AgglomerativeClustering {
                             // copy the set of cells the glyph is in currently, because we
                             // are about to change that set and don't want to deal with
                             // ConcurrentModificationExceptions...
-                            for (QuadTree cell : new HashSet<>(glyph.getCells())) {
+                            for (QuadTree cell : new ArrayList<>(glyph.getCells())) {
                                 if (cell.removeGlyph(glyph, mergedAt)) {
                                     // handle merge events; because cell has
                                     // merged, we need to consider its parent
@@ -299,7 +298,7 @@ public class AgglomerativeClustering {
                         boolean create = false;
                         if (B.TIMERS_ENABLED.get())
                             Timers.start("neighbor finding");
-                        Set<QuadTree> neighbors = cell.getNeighbors(side);
+                        List<QuadTree> neighbors = cell.getNeighbors(side);
                         if (B.TIMERS_ENABLED.get())
                             Timers.stop("neighbor finding");
                         for (QuadTree neighbor : neighbors) {
@@ -470,7 +469,7 @@ public class AgglomerativeClustering {
         // while the out of cell event is being handled; inserting the glyph into
         // the neighboring cells can cause a split to occur and the neighbors to
         // update. All of that is avoided by making a copy now.
-        Set<QuadTree> neighbors = new HashSet<>(cell.getNeighbors(o.getSide()));
+        List<QuadTree> neighbors = new ArrayList<>(cell.getNeighbors(o.getSide()));
         if (LOGGER != null)
             LOGGER.log(Level.FINEST, "growing into");
         for (QuadTree neighbor : neighbors) {
@@ -486,7 +485,7 @@ public class AgglomerativeClustering {
             }
 
             // ensure that glyph was not in this cell yet
-            if (neighbor.getGlyphs().contains(glyph)) {
+            if (neighbor.getGlyphs() != null && neighbor.getGlyphs().contains(glyph)) {
                 if (LOGGER != null)
                     LOGGER.log(Level.FINEST, "-> but was already in there, so ignoring");
                 continue;
@@ -496,8 +495,9 @@ public class AgglomerativeClustering {
             neighbor.insert(glyph, oAt, g);
 
             // split cell if necessary, to maintain maximum glyphs per cell
-            Set<QuadTree> grownInto;
-            if (neighbor.getGlyphs().size() > I.MAX_GLYPHS_PER_CELL.get()) {
+            List<QuadTree> grownInto;
+            if (neighbor.getGlyphs() != null &&
+                    neighbor.getGlyphs().size() > I.MAX_GLYPHS_PER_CELL.get()) {
                 // 1. split and move glyphs in cell to appropriate leaf cells
                 //    (this may split the cell more than once!)
                 neighbor.split(oAt, g);
@@ -519,9 +519,7 @@ public class AgglomerativeClustering {
                     }
                 }
             } else {
-                List<QuadTree> into = neighbor.getLeaves();
-                grownInto = new HashSet<>(into.size());
-                grownInto.addAll(into);
+                grownInto = neighbor.getLeaves();
             }
 
             rec.from(glyph);
@@ -540,7 +538,7 @@ public class AgglomerativeClustering {
                         // only create an event when at least one neighbor on
                         // this side does not contain the glyph yet
                         boolean create = false;
-                        Set<QuadTree> neighbors2 = in.getNeighbors(side);
+                        List<QuadTree> neighbors2 = in.getNeighbors(side);
                         for (QuadTree neighbor2 : neighbors2) {
                             if (!neighbor2.getGlyphs().contains(glyph)) {
                                 create = true;

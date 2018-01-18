@@ -5,10 +5,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +32,7 @@ public class PointIO {
         if (B.TIMERS_ENABLED.get()) {
             Utils.Timers.start("reading file");
         }
-        Set<Glyph> largest = new HashSet<>(I.LARGE_SQUARES_TRACK.get());
+        List<Glyph> largest = new ArrayList<>(I.LARGE_SQUARES_TRACK.get());
         int smallestLarge = Integer.MAX_VALUE;
         try (Scanner reader = new Scanner(new FileInputStream(file))) {
             while (reader.hasNextDouble()) {

@@ -1,11 +1,11 @@
 package datastructure;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +24,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
 
     private Glyph glyph;
     private final double at;
-    private Set<HierarchicalClustering> createdFrom;
+    private List<HierarchicalClustering> createdFrom;
     private HierarchicalClustering mergedInto;
 
 
@@ -50,8 +50,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
         if (createdFrom.length == 0) {
             this.createdFrom = null;
         } else {
-            this.createdFrom = new HashSet<>(createdFrom.length);
-            this.createdFrom.addAll(Arrays.asList(createdFrom));
+            this.createdFrom = new ArrayList<>(Arrays.asList(createdFrom));
         }
         this.mergedInto = null;
 
@@ -64,7 +63,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
 
     public void alsoCreatedFrom(HierarchicalClustering from) {
         if (createdFrom == null) {
-            createdFrom = new HashSet<>(2);
+            createdFrom = new ArrayList<>(2);
         }
         createdFrom.add(from);
         from.mergeInto(this);
@@ -136,7 +135,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
 
         private Queue<HierarchicalClustering> next;
         private Queue<HierarchicalClustering> prev;
-        private Set<HierarchicalClustering> curr;
+        private List<HierarchicalClustering> curr;
         /**
          * A view can make half steps, wherein the situation right before a merge
          * is shown. This indicates if a half step forward is taken (true) or not.
@@ -160,7 +159,7 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             }
 
             // create set of current nodes
-            this.curr = new HashSet<>();
+            this.curr = new ArrayList<>();
             this.curr.add(clustering);
 
             // create queue for previous nodes
