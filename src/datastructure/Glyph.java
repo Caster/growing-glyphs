@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,11 +17,12 @@ import datastructure.events.OutOfCell;
 import datastructure.growfunction.GrowFunction;
 import utils.Constants.B;
 import utils.Constants.I;
+import utils.Utils;
 
 /**
  * A glyph starts as a point and then grows at a given speed.
  */
-public class Glyph {
+public class Glyph implements Comparable<Glyph> {
 
     /**
      * Used by clustering algorithm to track which glyphs are still of interest.
@@ -33,7 +36,7 @@ public class Glyph {
      * Used by the clustering algorithm to track which glyphs think they'll merge
      * with {@code this} glyph before merging with any other glyph.
      */
-    public List<Glyph> trackedBy;
+    public Set<Glyph> trackedBy;
 
     /**
      * X-coordinate of the center of the glyph.
@@ -92,7 +95,7 @@ public class Glyph {
         this.alive = alive;
         this.track = false;
         if (B.TRACK.get()) {
-            this.trackedBy = new ArrayList<>();
+            this.trackedBy = new TreeSet<>();
         } else {
             this.trackedBy = null;
         }
@@ -137,7 +140,31 @@ public class Glyph {
      * @param cell Cell to be added.
      */
     public void addCell(QuadTree cell) {
-        cells.add(cell);
+        if (!cells.contains(cell)) {
+            cells.add(cell);
+        }
+    }
+
+    /**
+     * Glyphs are comparable mainly so they can be placed in
+     * {@link TreeSet TreeSets}. Comparing is done by first looking at
+     * X-coordinate, then at Y-coordinate and then at number of entities.
+     */
+    @Override
+    public int compareTo(Glyph that) {
+        double d = this.x - that.x;
+        if (Utils.Double.neq(d, 0)) {
+            return (int) Math.signum(d);
+        }
+        d = this.y - that.y;
+        if (Utils.Double.neq(d, 0)) {
+            return (int) Math.signum(d);
+        }
+        d = this.n - that.n;
+        if (Utils.Double.neq(d, 0)) {
+            return (int) Math.signum(d);
+        }
+        return 0;
     }
 
     /**

@@ -336,8 +336,10 @@ public class QuadTree implements Iterable<QuadTree> {
         }
         Timers.start("[QuadTree] insert");
         if (isLeaf()) {
-            glyphs.add(glyph);
-            glyph.addCell(this);
+            if (!glyphs.contains(glyph)) {
+                glyphs.add(glyph);
+                glyph.addCell(this);
+            }
         } else {
             for (QuadTree child : children) {
                 child.insert(glyph, at, g);
@@ -363,8 +365,10 @@ public class QuadTree implements Iterable<QuadTree> {
         // can we insert here?
         Timers.start("[QuadTree] insert");
         if (isLeaf() && glyphs.size() < I.MAX_GLYPHS_PER_CELL.get()) {
-            glyphs.add(glyph);
-            glyph.addCell(this);
+            if (!glyphs.contains(glyph)) {
+                glyphs.add(glyph);
+                glyph.addCell(this);
+            }
             return true;
         }
         // split if necessary
@@ -610,8 +614,10 @@ public class QuadTree implements Iterable<QuadTree> {
         for (int quadrant = 0; quadrant < children.length; ++quadrant) {
             QuadTree child = children[quadrant];
             for (Glyph glyph : child.getGlyphsAlive()) {
-                glyphs.add(glyph);
-                glyph.addCell(this);
+                if (!glyphs.contains(glyph)) {
+                    glyphs.add(glyph);
+                    glyph.addCell(this);
+                }
                 glyph.removeCell(child);
             }
             child.glyphs = null;

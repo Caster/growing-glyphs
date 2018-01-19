@@ -65,7 +65,9 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
         if (createdFrom == null) {
             createdFrom = new ArrayList<>(2);
         }
-        createdFrom.add(from);
+        if (!createdFrom.contains(from)) {
+            createdFrom.add(from);
+        }
         from.mergeInto(this);
     }
 
@@ -279,7 +281,9 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
                 }
                 prev.add(node);
             }
-            curr.add(node);
+            if (!curr.contains(node)) {
+                curr.add(node);
+            }
             if (node.mergedInto != null && !next.contains(node.mergedInto)) {
                 next.add(node.mergedInto);
             }
@@ -319,7 +323,9 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             // only nodes that have a createdFrom should ever be added to prev
             // hence, no null check is needed
             for (HierarchicalClustering from : node.createdFrom) {
-                curr.add(from);
+                if (!curr.contains(from)) {
+                    curr.add(from);
+                }
                 if (from.createdFrom != null) {
                     prev.add(from);
                 }
