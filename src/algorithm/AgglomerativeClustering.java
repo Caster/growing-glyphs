@@ -8,8 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -120,7 +118,7 @@ public class AgglomerativeClustering {
         // and two sets that are reused somewhere deep in the algorithm
         PriorityQueue<GlyphMerge> nestedMerges = new PriorityQueue<>();
         HierarchicalClustering[] createdFromTmp = new HierarchicalClustering[2];
-        Set<Glyph> trackersNeedingUpdate = new TreeSet<>();
+        List<Glyph> trackersNeedingUpdate = new ArrayList<>();
         List<QuadTree> orphanedCells = new ArrayList<>();
         // see Constants.D#TIME_MERGE_EVENT_AGGLOMERATIVE
         double lastDumpedMerges = Timers.in(Timers.elapsed("clustering"), Units.SECONDS);
@@ -242,7 +240,11 @@ public class AgglomerativeClustering {
                             }
                             // update merge events of glyphs that tracked merged glyphs
                             if (B.TRACK.get() && !B.ROBUST.get()) {
-                                trackersNeedingUpdate.addAll(glyph.trackedBy);
+                                for (Glyph tracker : glyph.trackedBy) {
+                                    if (!trackersNeedingUpdate.contains(tracker)) {
+                                        trackersNeedingUpdate.add(tracker);
+                                    }
+                                }
                             }
                         }
                     }
