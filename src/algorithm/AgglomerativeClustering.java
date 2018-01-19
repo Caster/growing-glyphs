@@ -185,12 +185,12 @@ public class AgglomerativeClustering {
             case MERGE:
                 boolean track = false;
                 if (B.TIMERS_ENABLED.get()) {
-                    Timers.start("merge event processing");
+                    Timers.start("[merge event processing] total");
                     for (Glyph glyph : ((GlyphMerge) e).getGlyphs()) {
                         track = track || glyph.track;
                     }
                     if (track) {
-                        Timers.start("merge event processing (large)");
+                        Timers.start("[merge event processing] total (large)");
                     }
                 }
                 nestedMerges.add((GlyphMerge) e);
@@ -199,6 +199,9 @@ public class AgglomerativeClustering {
                 Glyph merged = null;
                 HierarchicalClustering mergedHC = null;
                 double mergedAt = e.getAt();
+                if (B.TIMERS_ENABLED.get()) {
+                    Timers.start("[merge event processing] nested merges");
+                }
                 do {
                     while (!nestedMerges.isEmpty()) {
                         GlyphMerge m = nestedMerges.poll();
@@ -249,6 +252,10 @@ public class AgglomerativeClustering {
                         }
                     }
                 } while (findOverlap(g, merged, mergedAt, nestedMerges));
+                if (B.TIMERS_ENABLED.get()) {
+                    Timers.stop("[merge event processing] nested merges");
+                    Timers.start("[merge event processing] merge events in joined cells");
+                }
                 // handle adding merge events in joined cells
                 orphanedCells.stream()
                         .map((cell) -> cell.getNonOrphanAncestor())
@@ -261,6 +268,10 @@ public class AgglomerativeClustering {
                                 Timers.stop("record all pairs");
                         });
                 orphanedCells.clear();
+                if (B.TIMERS_ENABLED.get()) {
+                    Timers.stop("[merge event processing] merge events in joined cells");
+                    Timers.start("[merge event processing] tracker updating");
+                }
                 // update merge events of glyphs that tracked merged glyphs
                 if (B.TRACK.get() && !B.ROBUST.get()) {
                     for (Glyph orphan : trackersNeedingUpdate) {
@@ -281,8 +292,16 @@ public class AgglomerativeClustering {
                     }
                     trackersNeedingUpdate.clear();
                 }
+                if (B.TIMERS_ENABLED.get()) {
+                    Timers.stop("[merge event processing] tracker updating");
+                    Timers.start("[merge event processing] merged glyph insert");
+                }
                 // add new glyph to QuadTree cell(s)
                 tree.insert(merged, mergedAt, g);
+                if (B.TIMERS_ENABLED.get()) {
+                    Timers.stop("[merge event processing] merged glyph insert");
+                    Timers.start("[merge event processing] merge event recording");
+                }
                 // create events with remaining glyphs
                 // (we always have to loop over cells here, `merged` has just
                 //  been created and thus hasn't recorded merge events yet)
@@ -326,15 +345,18 @@ public class AgglomerativeClustering {
                 }
                 merged.popOutOfCellInto(q);
                 rec.addEventsTo(q, LOGGER);
+                if (B.TIMERS_ENABLED.get()) {
+                    Timers.stop("[merge event processing] merge event recording");
+                }
                 // update bookkeeping
                 merged.alive = true; numAlive++;
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;
                 if (B.TIMERS_ENABLED.get()) {
-                    Timers.stop("merge event processing");
+                    Timers.stop("[merge event processing] total");
                     if (track) {
-                        Timers.stop("merge event processing (large)");
+                        Timers.stop("[merge event processing] total (large)");
                     }
                 }
                 if (D.TIME_MERGE_EVENT_AGGLOMERATIVE.get() > 0 &&
