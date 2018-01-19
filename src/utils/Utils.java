@@ -3,6 +3,7 @@ package utils;
 import java.awt.geom.Rectangle2D;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Locale.Category;
 import java.util.Map;
@@ -170,6 +171,20 @@ public class Utils {
      */
     public static boolean openIntervalsOverlap(double[] a, double[] b) {
         return (a[1] > b[0] && a[0] < b[1]);
+    }
+
+    /**
+     * Swap two objects from two lists.
+     *
+     * @param listA First list.
+     * @param indexA Index of item in first list to swap with second.
+     * @param listB Second list.
+     * @param indexB Index of item in second list to swap with first.
+     */
+    public static <T> void swap(List<T> listA, int indexA, List<T> listB, int indexB) {
+        T tmp = listA.get(indexA);
+        listA.set(indexA, listB.get(indexB));
+        listB.set(indexB, tmp);
     }
 
 

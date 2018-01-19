@@ -19,6 +19,7 @@ import datastructure.events.GlyphMerge;
 import datastructure.growfunction.GrowFunction;
 import utils.Constants.B;
 import utils.Constants.I;
+import utils.Utils;
 import utils.Utils.Timers;
 
 /**
@@ -67,12 +68,8 @@ public class FirstMergeRecorder {
      * @return A reference to the singleton instance of this class.
      */
     public static FirstMergeRecorder getInstance(GrowFunction g) {
-        if (instance == null) {
-            instance = new FirstMergeRecorder(g);
-        } else {
-            instance.g = g;
-        }
-        return instance;
+        INSTANCE.g = g;
+        return INSTANCE;
     }
 
 
@@ -80,10 +77,17 @@ public class FirstMergeRecorder {
      * Collector for stream operations.
      */
     private static Collector<Glyph, FirstMerge, FirstMerge> collector;
+
+
     /**
      * Singleton instance.
      */
-    private static FirstMergeRecorder instance;
+    private static final FirstMergeRecorder INSTANCE = new FirstMergeRecorder(null);
+    /**
+     * Used in {@link FirstMerge#combine(FirstMerge)}.
+     */
+    private static final ThreadLocal<FirstMerge> COMBINE_RESULT =
+            ThreadLocal.withInitial(() -> INSTANCE.new FirstMerge());
 
 
     /**
@@ -329,21 +333,23 @@ public class FirstMergeRecorder {
             }
             int thisInd = 0;
             int thatInd = 0;
-            FirstMerge result = new FirstMerge();
+            FirstMerge result = COMBINE_RESULT.get();
             for (int i = 0; i < I.MAX_MERGES_TO_RECORD.get(); ++i) {
+                // need to be careful here that we don't have both lists
+                // reference the same sublist; won't go well with resetting
                 if (that.at.get(thatInd) < this.at.get(thisInd)) {
-                    result.at.set(i, that.at.get(thatInd));
-                    result.glyphs.set(i, that.glyphs.get(thatInd));
+                    Utils.swap(result.at, i, that.at, thatInd);
+                    Utils.swap(result.glyphs, i, that.glyphs, thatInd);
                     thatInd++;
                 } else if (that.at.get(thatInd) == this.at.get(thisInd)) {
-                    result.at.set(i, that.at.get(thatInd));
-                    result.glyphs.set(i, that.glyphs.get(thatInd));
+                    Utils.swap(result.at, i, that.at, thatInd);
+                    Utils.swap(result.glyphs, i, that.glyphs, thatInd);
                     result.glyphs.get(i).addAll(this.glyphs.get(thisInd));
                     thisInd++;
                     thatInd++;
                 } else { // that.at.get(thatInd > this.at.get(thisInd)
-                    result.at.set(i, this.at.get(thisInd));
-                    result.glyphs.set(i, this.glyphs.get(thisInd));
+                    Utils.swap(result.at, i, this.at, thisInd);
+                    Utils.swap(result.glyphs, i, this.glyphs, thisInd);
                     thisInd++;
                 }
                 result.size++;
@@ -361,9 +367,17 @@ public class FirstMergeRecorder {
                         this.hashCode(), that.hashCode()
                     });
             }
+            // swap properties with result
+            List<Double> tmpAt = this.at;
             this.at = result.at;
+            result.at = tmpAt;
+            List<List<Glyph>> tmpGlyphs = this.glyphs;
             this.glyphs = result.glyphs;
+            result.glyphs = tmpGlyphs;
+            // as we reset result and primitive is copied anyway, no need to swap
             this.size = result.size;
+            // reset result, ready for reuse
+            result.reset();
             return this;
         }
 
@@ -377,6 +391,7 @@ public class FirstMergeRecorder {
                 at.set(i, Double.POSITIVE_INFINITY);
                 glyphs.get(i).clear();
             }
+            size = 0;
         }
 
         public void resizeIfNeeded() {
