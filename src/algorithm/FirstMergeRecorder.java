@@ -1,8 +1,10 @@
 package algorithm;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.Queue;
 import java.util.logging.Level;
@@ -88,6 +90,34 @@ public class FirstMergeRecorder {
      */
     private static final ThreadLocal<FirstMerge> COMBINE_RESULT =
             ThreadLocal.withInitial(() -> INSTANCE.new FirstMerge());
+    private static final Deque<FirstMerge> REUSABLE_RECORDS = new ArrayDeque<>();
+    private static FirstMerge firstReusedRecord = null;
+
+
+    /**
+     * Returns an instance of {@link FirstMerge} that is {@link FirstMerge#reset()}
+     * and ready to accept and combine. This method may cache instances and reuse
+     * them. {@link #REUSABLE_RECORDS} is used to this end.
+     */
+    private synchronized static FirstMerge newInstance() {
+        // attempt to use cache
+        if (REUSABLE_RECORDS.size() > 0 && (firstReusedRecord == null ||
+                REUSABLE_RECORDS.getLast() != firstReusedRecord)) {
+            FirstMerge record = REUSABLE_RECORDS.pollLast();
+            REUSABLE_RECORDS.addFirst(record);
+            if (firstReusedRecord == null) {
+                firstReusedRecord = record;
+            }
+            return record;
+        }
+        // we are forced to create a new instance, do so
+        FirstMerge record = INSTANCE.new FirstMerge();
+        REUSABLE_RECORDS.addFirst(record);
+        if (firstReusedRecord == null) {
+            firstReusedRecord = record;
+        }
+        return record;
+    }
 
 
     /**
@@ -144,12 +174,13 @@ public class FirstMergeRecorder {
             }
         }
         from.popMergeInto(q, l);
+        firstReusedRecord = null; // we can reuse all records again
     }
 
     public Collector<Glyph, FirstMerge, FirstMerge> collector() {
         if (collector == null) {
             collector = Collector.of(
-                    () -> new FirstMerge(),
+                    FirstMergeRecorder::newInstance,
                     (m, g) -> m.accept(g),
                     (a, b) -> a.combine(b),
                     Characteristics.UNORDERED);
