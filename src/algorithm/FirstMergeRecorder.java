@@ -227,7 +227,7 @@ public class FirstMergeRecorder {
      */
     public void record(List<Glyph> glyphs) {
         if (glyphs != null) {
-            record(glyphs.parallelStream());
+            record(glyphs.stream());
         }
     }
 
@@ -246,7 +246,7 @@ public class FirstMergeRecorder {
                 .collect(Collectors.toSet()));
 
         } else {
-            merge.combine(glyphs.parallel()
+            merge.combine(glyphs
                 .filter((glyph) -> glyph.alive && glyph != from)
                 .collect(collector()));
         }
