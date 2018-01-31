@@ -1,4 +1,4 @@
-package algorithm;
+package algorithm.clustering;
 
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import algorithm.FirstMergeRecorder;
 import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
@@ -32,24 +33,16 @@ import utils.Utils.Stats;
 import utils.Utils.Timers;
 import utils.Utils.Timers.Units;
 
-public class AgglomerativeClustering {
+public class QuadTreeClusterer extends Clusterer {
 
     private static final Logger LOGGER = (B.LOGGING_ENABLED.get() ?
-            Logger.getLogger(AgglomerativeClustering.class.getName()) : null);
+            Logger.getLogger(QuadTreeClusterer.class.getName()) : null);
 
 
-    /**
-     * Tree with {@link Glyph glyphs} that need clustering.
-     */
-    private QuadTree tree;
     /**
      * Single object that is used to easily find merge events to be added.
      */
     private FirstMergeRecorder rec;
-    /**
-     * Resulting clustering.
-     */
-    private HierarchicalClustering result;
 
 
     /**
@@ -57,33 +50,14 @@ public class AgglomerativeClustering {
      *
      * @param tree Tree with glyphs to be clustered.
      */
-    public AgglomerativeClustering(QuadTree tree) {
-        this.tree = tree;
+    public QuadTreeClusterer(QuadTree tree) {
+        super(tree);
         this.rec = null;
-        this.result = null;
-    }
-
-    /**
-     * Returns the latest result of executing the clustering algorithm. Initially
-     * {@code null}.
-     *
-     * @see #cluster()
-     */
-    public  HierarchicalClustering getClustering() {
-        return result;
     }
 
 
-    /**
-     * Run clustering algorithm on the QuadTree provided at construction time.
-     *
-     * @param g GrowFunction to use for deciding when glyphs touch.
-     * @param includeOutOfCell Whether events caused by a glyph growing out of
-     *            a cell should be included in the resulting clustering.
-     * @param step Whether processing should be paused after every event.
-     * @return A reference to the clustering instance, for chaining.
-     */
-    public AgglomerativeClustering cluster(GrowFunction g,
+    @Override
+    public Clusterer cluster(GrowFunction g,
             boolean includeOutOfCell, boolean step) {
         if (LOGGER != null) {
             LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
@@ -416,10 +390,6 @@ public class AgglomerativeClustering {
         if (LOGGER != null)
             LOGGER.log(Level.FINER, "RETURN from AgglomerativeClustering#cluster()");
         return this;
-    }
-
-    public void reset() {
-        result = null;
     }
 
 

@@ -2,7 +2,8 @@ package ui;
 
 import java.io.File;
 
-import algorithm.AgglomerativeClustering;
+import algorithm.clustering.Clusterer;
+import algorithm.clustering.QuadTreeClusterer;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
 import datastructure.growfunction.GrowFunction;
@@ -13,14 +14,14 @@ import utils.Utils.Stats;
 import utils.Utils.Timers;
 
 /**
- * Thin wrapper around {@link AgglomerativeClustering} and the {@link QuadTree}
+ * Thin wrapper around {@link QuadTreeClusterer} and the {@link QuadTree}
  * it works on. This class contains all functionality needed to execute the
  * Growing Glyphs program in background mode, all other functionality is
  * implemented in {@link GrowingGlyphs}.
  */
 public class GrowingGlyphsDaemon {
 
-    private AgglomerativeClustering clusterer;
+    private Clusterer clusterer;
     private boolean clustered;
     private GrowFunction g;
     private String dataSet;
@@ -31,7 +32,7 @@ public class GrowingGlyphsDaemon {
     public GrowingGlyphsDaemon(int w, int h, GrowFunction g) {
         this.g = g;
         this.tree = new QuadTree(-w / 2, -h / 2, w, h, g);
-        this.clusterer = new AgglomerativeClustering(this.tree);
+        this.clusterer = new QuadTreeClusterer(this.tree);
         this.clustered = false;
         this.dataSet = null;
         this.lastOpened = null;
