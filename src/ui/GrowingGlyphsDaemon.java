@@ -3,6 +3,7 @@ package ui;
 import java.io.File;
 
 import algorithm.clustering.Clusterer;
+import algorithm.clustering.NaiveClusterer;
 import algorithm.clustering.QuadTreeClusterer;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
@@ -34,7 +35,7 @@ public class GrowingGlyphsDaemon {
     public GrowingGlyphsDaemon(int w, int h, GrowFunction g) {
         this.g = g;
         this.tree = new QuadTree(-w / 2, -h / 2, w, h, g);
-        this.clusterer = new QuadTreeClusterer(this.tree);
+        this.clusterer = new NaiveClusterer(tree);//new QuadTreeClusterer(this.tree);
         this.clustered = false;
         this.dataSet = null;
         this.lastOpened = null;

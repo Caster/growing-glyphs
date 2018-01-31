@@ -36,7 +36,7 @@ import utils.Utils.Timers.Units;
 public class QuadTreeClusterer extends Clusterer {
 
     private static final Logger LOGGER = (B.LOGGING_ENABLED.get() ?
-            Logger.getLogger(QuadTreeClusterer.class.getName()) : null);
+            Logger.getLogger(Clusterer.class.getName()) : null);
 
 
     /**
@@ -46,9 +46,7 @@ public class QuadTreeClusterer extends Clusterer {
 
 
     /**
-     * Initialize algorithm for clustering growing glyphs on the given QuadTree.
-     *
-     * @param tree Tree with glyphs to be clustered.
+     * {@inheritDoc}
      */
     public QuadTreeClusterer(QuadTree tree) {
         super(tree);
