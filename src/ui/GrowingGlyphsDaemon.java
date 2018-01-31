@@ -10,6 +10,8 @@ import datastructure.growfunction.GrowFunction;
 import gui.GrowingGlyphs;
 import io.CsvIO;
 import io.PointIO;
+import utils.Constants.B;
+import utils.Constants.D;
 import utils.Utils.Stats;
 import utils.Utils.Timers;
 
@@ -72,8 +74,10 @@ public class GrowingGlyphsDaemon {
         if (clustered) {
             return;
         }
-        g.thresholds.defaultFor(dataSet); // TODO: allow to change this via GUI/CLI?
-        g.initialize(n, 256); // TODO: allow to change this via GUI/CLI?
+        if (B.INITIALIZE_DEFAULT_COMPRESSION_THRESHOLDS.get()) {
+            g.thresholds.defaultFor(dataSet);
+        }
+        g.initialize(n, D.MAX_RADIUS.get());
         clusterer.cluster(g, includeOutOfCell, step);
         clustered = true;
     }

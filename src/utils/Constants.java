@@ -6,6 +6,7 @@ import algorithm.FirstMergeRecorder;
 import datastructure.Glyph;
 import datastructure.QuadTree;
 import datastructure.QuadTreeChangeListener;
+import datastructure.growfunction.CompressionThreshold;
 import datastructure.growfunction.GrowFunction;
 import datastructure.queues.BucketingStrategy;
 import io.PointIO;
@@ -34,6 +35,12 @@ public final class Constants {
          * accepted and notified of events.
          */
         ENABLE_LISTENERS(true),
+
+        /**
+         * Whether {@link CompressionThreshold#defaultFor(String) default
+         * compression thresholds} should be loaded for data sets.
+         */
+        INITIALIZE_DEFAULT_COMPRESSION_THRESHOLDS(true),
 
         /**
          * Whether messages should be logged at all. This overrides logging
@@ -93,6 +100,13 @@ public final class Constants {
      * Double value constants. Short name for easy usage.
      */
     public static enum D {
+
+        /**
+         * Default maximum radius that the grow function is {@link
+         * GrowFunction#initialize(int, double) initialized} with by the {@link
+         * GrowingGlyphsDaemon#cluster(boolean, boolean) GrowingGlyphsDaemon}.
+         */
+        MAX_RADIUS(256),
 
         /**
          * Minimum width/height of a {@link QuadTree cell}.
