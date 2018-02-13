@@ -13,6 +13,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -215,15 +216,9 @@ public class DrawPanel extends JPanel implements
                 glyphs != null) {
             g2.setColor(Color.BLACK);
             for (GlyphShape glyph : glyphs) {
-                g2.setStroke(new BasicStroke((float) (glyph.compressionLevel / zoom)));
-                g2.draw(glyph.shape);
-//                AffineTransform t = new AffineTransform();
-//                AffineTransform to = g2.getTransform();
-//                for (int i = 1; i < glyph.compressionLevel; ++i) {
-//                    t.setToIdentity();
-//                    t.concatenate(to);
-//                    t.translate(tx, ty);
-//                }
+                Area border = new Area(glyph.shapeWithBorder);
+                border.subtract(new Area(glyph.shape));
+                g2.fill(border);
             }
         }
     }

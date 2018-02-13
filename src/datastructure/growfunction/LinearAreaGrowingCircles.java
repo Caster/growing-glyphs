@@ -24,12 +24,12 @@ public class LinearAreaGrowingCircles extends GrowFunction {
     }
 
     @Override
-    public Ellipse2D sizeAt(Glyph c, double at) {
-        double weight = w(c);
+    public Ellipse2D sizeAt(Glyph g, double at, int c) {
+        double weight = w(g);
         return new Ellipse2D.Double(
-                c.getX() - at * weight,
-                c.getY() - at * weight,
-                2 * at * weight, 2 * at * weight
+                g.getX() - at * weight - 2 * c,
+                g.getY() - at * weight - 2 * c,
+                2 * at * weight + 4 * c, 2 * at * weight + 4 * c
             );
     }
 

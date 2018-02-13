@@ -19,11 +19,11 @@ public class LevelGrowingSquares extends GrowFunction {
     }
 
     @Override
-    public Shape sizeAt(Glyph s, double at) {
+    public Shape sizeAt(Glyph g, double at, int c) {
         return new Rectangle2D.Double(
-                s.getX() - at,
-                s.getY() - at,
-                2 * at, 2 * at
+                g.getX() - at - 2 * c,
+                g.getY() - at - 2 * c,
+                2 * at + 4 * c, 2 * at + 4 * c
             );
     }
 

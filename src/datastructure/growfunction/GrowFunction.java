@@ -154,7 +154,27 @@ public abstract class GrowFunction {
      * @param at Time stamp or zoom level at which size must be computed.
      * @return A rectangle representing the glyph at time/zoom {@code at}.
      */
-    public abstract Shape sizeAt(Glyph glyph, double at);
+    public Shape sizeAt(Glyph glyph, double at) {
+        return sizeAt(glyph, at, 0);
+    }
+
+    /**
+     * Returns a shape representing the glyph at the given time stamp/zoom
+     * level, according to this grow function and with the given compression
+     * level applied (the higher the compression level, the thicker the border
+     * around the glyph will be.
+     *
+     * In particular, a glyph with compression level <code>k</code> will have a
+     * border of width <code>2k</code>.
+     *
+     * @param glyph glyph to compute the size of.
+     * @param at Time stamp or zoom level at which size must be computed.
+     * @param compressionLevel The compression level that is to be applied to
+     *            the given glyph; this determines the border width.
+     * @return A rectangle representing the glyph at time/zoom {@code at}.
+     */
+    public abstract Shape sizeAt(Glyph glyph, double at,
+            int compressionLevel);
 
     public Shape[] sizesAt(double at, Glyph... glyphs) {
         Shape[] result = new Shape[glyphs.length];

@@ -23,12 +23,12 @@ public class LogarithmicallyGrowingSquares extends LogarithmicGrowFunction {
     }
 
     @Override
-    public Shape sizeAt(Glyph s, double at) {
-        double r = (Math.log1p(at * w(s)) / LOG_DIV) * fA;
+    public Shape sizeAt(Glyph g, double at, int c) {
+        double r = (Math.log1p(at * w(g)) / LOG_DIV) * fA;
         return new Rectangle2D.Double(
-                s.getX() - r,
-                s.getY() - r,
-                2 * r, 2 * r);
+                g.getX() - r - 2 * c,
+                g.getY() - r - 2 * c,
+                2 * r + 4 * c, 2 * r + 4 * c);
     }
 
 }

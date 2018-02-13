@@ -26,12 +26,12 @@ public class LinearlyGrowingSquares extends GrowFunction {
         }
 
         @Override
-        public Rectangle2D sizeAt(Glyph s, double at) {
-            double weight = w(s);
+        public Rectangle2D sizeAt(Glyph g, double at, int c) {
+            double weight = w(g);
             return new Rectangle2D.Double(
-                    s.getX() - at * weight,
-                    s.getY() - at * weight,
-                    2 * at * weight, 2 * at * weight
+                    g.getX() - at * weight - 2 * c,
+                    g.getY() - at * weight - 2 * c,
+                    2 * at * weight + 4 * c, 2 * at * weight + 4 * c
                 );
         }
 

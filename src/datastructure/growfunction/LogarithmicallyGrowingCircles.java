@@ -28,12 +28,12 @@ public class LogarithmicallyGrowingCircles extends LogarithmicGrowFunction {
     }
 
     @Override
-    public Shape sizeAt(Glyph c, double at) {
-        double r = (Math.log1p(at * w(c)) / LOG_DIV) * fA;
+    public Shape sizeAt(Glyph g, double at, int c) {
+        double r = (Math.log1p(at * w(g)) / LOG_DIV) * fA;
         return new Ellipse2D.Double(
-                c.getX() - r,
-                c.getY() - r,
-                2 * r, 2 * r);
+                g.getX() - r - 2 * c,
+                g.getY() - r - 2 * c,
+                2 * r + 4 * c, 2 * r + 4 * c);
     }
 
 }
