@@ -233,6 +233,43 @@ public final class Constants {
 
     }
 
+    /**
+     * String value constants. Short name for easy usage.
+     */
+    public static enum S {
+
+        /**
+         * Name of the algorithm that is used by default.
+         */
+        CLUSTERER("QuadTree Clusterer"),
+
+        /**
+         * Name of the grow function that is used by default.
+         *
+         * @see GrowFunction#getAll()
+         */
+        GROW_FUNCTION("Linear Area Growing Squares");
+
+
+        /**
+         * Returns the actual value of the constant.
+         */
+        public String get() {
+            return value;
+        }
+
+
+        /**
+         * Value of the constant.
+         */
+        private String value;
+
+
+        private S(String value) {
+            this.value = value;
+        }
+    }
+
 
     /**
      * Will repeatedly run the algorithm on some input, and optimize a number
@@ -242,7 +279,7 @@ public final class Constants {
      */
     public static void main(String[] args) {
         File toOpen;
-        String gName = GrowFunction.DEFAULT;
+        String gName = S.GROW_FUNCTION.get();
         int argI = 0;
         if (args.length > argI) {
             toOpen = new File(args[argI++]);

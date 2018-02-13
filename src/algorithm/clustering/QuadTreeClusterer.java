@@ -390,6 +390,11 @@ public class QuadTreeClusterer extends Clusterer {
         return this;
     }
 
+    @Override
+    public String getName() {
+        return "QuadTree Clusterer";
+    }
+
 
     /**
      * Find glyphs that overlap the given glyph at the given timestamp/zoom level,

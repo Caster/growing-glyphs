@@ -87,4 +87,9 @@ public class NaiveClusterer extends Clusterer {
         return this;
     }
 
+    @Override
+    public String getName() {
+        return "Naive Clusterer";
+    }
+
 }

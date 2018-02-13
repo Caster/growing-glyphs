@@ -12,17 +12,12 @@ import java.util.regex.Pattern;
 import datastructure.Glyph;
 import datastructure.QuadTree;
 import datastructure.events.OutOfCell.Side;
+import utils.Constants.S;
 
 /**
  * Function determining how {@link Glyph Glyphs} should be scaled.
  */
 public abstract class GrowFunction {
-
-    /**
-     * Name of the grow function that is used by default.
-     */
-    public static final String DEFAULT = "Linear Area Growing Squares";
-
 
     /**
      * Map of names to instances of grow functions. These instances can be used
@@ -99,8 +94,8 @@ public abstract class GrowFunction {
                     result.append(m.group(0));
                 }
                 this.name = result.toString();
-                if (this.name.equals(DEFAULT)) {
-                    this.name = DEFAULT;
+                if (this.name.equals(S.GROW_FUNCTION.get())) {
+                    this.name = S.GROW_FUNCTION.get();
                 }
             } else {
                 this.name = "unknown grow function";

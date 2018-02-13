@@ -26,6 +26,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import algorithm.clustering.Clusterer;
 import algorithm.glyphgenerator.GlyphGenerator;
 import algorithm.glyphgenerator.Perlin;
 import algorithm.glyphgenerator.PopulationSim;
@@ -41,6 +42,7 @@ import io.PointIO;
 import ui.GrowingGlyphsDaemon;
 import utils.Constants.B;
 import utils.Constants.I;
+import utils.Constants.S;
 import utils.Utils.Timers;
 import utils.Utils.Timers.Units;
 
@@ -330,8 +332,7 @@ public class GrowingGlyphs extends JFrame {
                         + "only execute the algorithm and quit");
             }
         }
-        // GrowFunction.getAll().get("Linearly Growing Squares");//
-        GrowFunction g = GrowFunction.getAll().get(GrowFunction.DEFAULT);
+        GrowFunction g = GrowFunction.getAll().get(S.GROW_FUNCTION.get());
         if (background) {
             GrowingGlyphsDaemon d = new GrowingGlyphsDaemon(w, h, g);
             if (toOpen != null) {
@@ -473,13 +474,29 @@ public class GrowingGlyphs extends JFrame {
                 }
             }
             optionsMenu.addSeparator();
+            JMenu clustererMenu = new JMenu("Clusterer");
+            ButtonGroup clustererGroup = new ButtonGroup();
+            for (String clustererName : Clusterer.getAll().keySet()
+                    .stream().sorted().toArray(String[]::new)) {
+                JRadioButtonMenuItem item = new JRadioButtonMenuItem(
+                        clustererName,
+                        (clustererName.equals(S.CLUSTERER.get())));
+                clustererGroup.add(item);
+                clustererMenu.add(item);
+                item.addActionListener((ActionEvent e) ->
+                        frame.daemon.setClusterer(
+                            Clusterer.get(e.getActionCommand(),
+                                    frame.daemon.getTree()))
+                    );
+            }
+            optionsMenu.add(clustererMenu);
             JMenu growFunctionMenu = new JMenu("Grow function");
             ButtonGroup growFunctionGroup = new ButtonGroup();
             for (String growFunctionName : GrowFunction.getAll().keySet()
                     .stream().sorted().toArray(String[]::new)) {
                 JRadioButtonMenuItem item = new JRadioButtonMenuItem(
                         growFunctionName,
-                        (growFunctionName == GrowFunction.DEFAULT));
+                        (growFunctionName == S.GROW_FUNCTION.get()));
                 growFunctionGroup.add(item);
                 growFunctionMenu.add(item);
                 item.addActionListener((ActionEvent e) ->

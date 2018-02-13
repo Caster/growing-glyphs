@@ -1,9 +1,10 @@
 package ui;
 
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import algorithm.clustering.Clusterer;
-import algorithm.clustering.NaiveClusterer;
 import algorithm.clustering.QuadTreeClusterer;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
@@ -13,6 +14,7 @@ import io.CsvIO;
 import io.PointIO;
 import utils.Constants.B;
 import utils.Constants.D;
+import utils.Constants.S;
 import utils.Utils.Stats;
 import utils.Utils.Timers;
 
@@ -23,6 +25,10 @@ import utils.Utils.Timers;
  * implemented in {@link GrowingGlyphs}.
  */
 public class GrowingGlyphsDaemon {
+
+    private static final Logger LOGGER = (B.LOGGING_ENABLED.get() ?
+            Logger.getLogger(Clusterer.class.getName()) : null);
+
 
     private Clusterer clusterer;
     private boolean clustered;
@@ -35,7 +41,7 @@ public class GrowingGlyphsDaemon {
     public GrowingGlyphsDaemon(int w, int h, GrowFunction g) {
         this.g = g;
         this.tree = new QuadTree(-w / 2, -h / 2, w, h, g);
-        this.clusterer = new NaiveClusterer(tree);//new QuadTreeClusterer(this.tree);
+        this.clusterer = Clusterer.get(S.CLUSTERER.get(), this.tree);
         this.clustered = false;
         this.dataSet = null;
         this.lastOpened = null;
@@ -75,10 +81,18 @@ public class GrowingGlyphsDaemon {
         if (clustered) {
             return;
         }
+
+        // initialize grow function as necessary
         if (B.INITIALIZE_DEFAULT_COMPRESSION_THRESHOLDS.get()) {
             g.thresholds.defaultFor(dataSet);
         }
         g.initialize(n, D.MAX_RADIUS.get());
+
+        // perform the actual clustering
+        if (LOGGER != null) {
+            LOGGER.log(Level.FINE, "clustering using the {0} algorithm",
+                    this.clusterer.getName());
+        }
         clusterer.cluster(g, includeOutOfCell, step);
         clustered = true;
     }
@@ -123,6 +137,15 @@ public class GrowingGlyphsDaemon {
     public void reopen() {
         if (lastOpened != null) {
             openFile(lastOpened);
+        }
+    }
+
+    public void setClusterer(Clusterer clusterer) {
+        if (clusterer.hasSameTreeAs(this.clusterer)) {
+            this.clusterer = clusterer;
+        } else if (LOGGER != null) {
+            LOGGER.log(Level.WARNING, "trying to set clusterer with different "
+                    + "input tree");
         }
     }
 
