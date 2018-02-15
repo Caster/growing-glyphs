@@ -23,11 +23,14 @@ public class Settings extends HashMap<Setting, Object> {
 
     public enum Setting {
         DEBUG(SettingSection.ALGORITHM, "Debug", Boolean.FALSE),
-        DRAW_CELLS(SettingSection.DRAW, "Draw cells", Boolean.TRUE, true),
-        DRAW_CENTERS(SettingSection.DRAW, "Draw glyph centers", Boolean.TRUE, true),
-        DRAW_GLYPHS(SettingSection.DRAW, "Draw glyph outlines", Boolean.TRUE, true),
-        DRAW_MAP(SettingSection.DRAW, "Draw map in background", Boolean.FALSE, true),
-        SHOW_COORDS(SettingSection.MISC, "Show coordinates on mouse over", Boolean.TRUE),
+        DRAW_CELLS(SettingSection.DRAW, "Draw cells", Boolean.TRUE),
+        DRAW_CENTERS(SettingSection.DRAW, "Draw glyph centers", Boolean.TRUE),
+        DRAW_GLYPHS(SettingSection.DRAW, "Draw glyph outlines", Boolean.TRUE),
+        DRAW_MAP(SettingSection.DRAW, "Draw map in background", Boolean.FALSE),
+        COLORFUL_BORDERS(SettingSection.DRAW, "Indicate compression level with "
+                + "colors", Boolean.FALSE),
+        SHOW_COORDS(SettingSection.MISC, "Show coordinates on mouse over",
+                Boolean.TRUE),
         STEP(SettingSection.ALGORITHM, "Step through", Boolean.FALSE);
 
         private final Object defaultValue;
@@ -36,7 +39,7 @@ public class Settings extends HashMap<Setting, Object> {
         private final boolean triggersRepaint;
 
         private Setting(SettingSection section, String name, Object defaultValue) {
-            this(section, name, defaultValue, false);
+            this(section, name, defaultValue, (section == SettingSection.DRAW));
         }
 
         private Setting(SettingSection section, String name, Object defaultValue,

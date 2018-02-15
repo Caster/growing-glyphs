@@ -42,6 +42,15 @@ public class DrawPanel extends JPanel implements
         MouseListener, MouseMotionListener, MouseWheelListener {
 
     /**
+     * Colors used for glyphs of various compression levels
+     */
+    private static final Color[] GLYPH_BORDER_COLORS = new Color[] {
+            Color.BLACK, new Color(75, 25, 126), new Color(108, 36, 180),
+            new Color(150, 50, 250)
+    };
+
+
+    /**
      * Parent frame.
      */
     private GrowingGlyphs parent;
@@ -211,10 +220,17 @@ public class DrawPanel extends JPanel implements
         // glyphs (actual shapes)
         if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_GLYPHS) &&
                 glyphs != null) {
-            g2.setColor(Color.BLACK);
+            boolean colored = GrowingGlyphs.SETTINGS.getBoolean(
+                    Setting.COLORFUL_BORDERS);
+            if (!colored) {
+                g2.setColor(Color.BLACK);
+            }
             for (GlyphShape glyph : glyphs) {
                 Area border = new Area(glyph.shapeWithBorder);
                 border.subtract(new Area(glyph.shape));
+                if (colored) {
+                    g2.setColor(GLYPH_BORDER_COLORS[glyph.compressionLevel - 1]);
+                }
                 g2.fill(border);
             }
         }
