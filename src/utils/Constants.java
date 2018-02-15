@@ -114,6 +114,11 @@ public final class Constants {
         MIN_CELL_SIZE(0.0001),
 
         /**
+         * Minimum zoom factor in the GUI.
+         */
+        MIN_ZOOM(0.1),
+
+        /**
          * How often the number of merge events processed so far should be
          * logged (if logging is {@link B#LOGGING_ENABLED enabled}). To
          * disable this logging, a value of 0 or smaller can be set.
@@ -195,6 +200,11 @@ public final class Constants {
         LARGE_SQUARES_TRACK(5),
 
         /**
+         * The radius of discs representing input points in the GUI.
+         */
+        MARK_RADIUS(3),
+
+        /**
          * The maximum number of glyphs that should intersect any leaf
          * {@link QuadTree cell} at any point in time. Cells will split when
          * this constant is about to be violated, and will join when a glyph
@@ -210,7 +220,13 @@ public final class Constants {
          * More merges can be recorded with a glyph when many merges occur at the
          * exact same time.
          */
-        MAX_MERGES_TO_RECORD(4);
+        MAX_MERGES_TO_RECORD(4),
+
+        /**
+         * Padding around the QuadTree in the GUI, in the preferred display
+         * (before panning and zooming has taken place).
+         */
+        PADDING(10);
 
 
         /**

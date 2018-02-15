@@ -32,17 +32,14 @@ import datastructure.HistoricQuadTree;
 import datastructure.QuadTree;
 import datastructure.events.OutOfCell.Side;
 import gui.Settings.Setting;
+import utils.Constants.D;
+import utils.Constants.I;
 
 /**
  * Panel that draws a {@link QuadTree} and the {@link Glyph glyphs} inside of it.
  */
 public class DrawPanel extends JPanel implements
         MouseListener, MouseMotionListener, MouseWheelListener {
-
-    public static final int MARK_RADIUS = 3;
-    public static final double MIN_ZOOM = 0.1;
-    public static final int PADDING = 10;
-
 
     /**
      * Parent frame.
@@ -97,8 +94,8 @@ public class DrawPanel extends JPanel implements
 
     @Override
     public Dimension getPreferredSize() {
-        return new Dimension((int) tree.getWidth() + PADDING * 2,
-                (int) tree.getHeight() + PADDING * 2);
+        return new Dimension((int) tree.getWidth() + I.PADDING.get() * 2,
+                (int) tree.getHeight() + I.PADDING.get() * 2);
     }
 
     @Override
@@ -168,7 +165,7 @@ public class DrawPanel extends JPanel implements
                 GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CENTERS)) {
             Queue<HistoricQuadTree> toDraw = new ArrayDeque<>();
             toDraw.add(tree);
-            double r = MARK_RADIUS / zoom;
+            double r = I.MARK_RADIUS.get() / zoom;
             while (!toDraw.isEmpty()) {
                 HistoricQuadTree cell = toDraw.poll();
                 // cell outlines
@@ -226,9 +223,9 @@ public class DrawPanel extends JPanel implements
     public void resetView() {
         this.translation.setLocation(0, 0);
         this.zoom = Math.max(Math.min(
-                (getWidth() - 2 * PADDING) / tree.getWidth(),
-                (getHeight() - 2 * PADDING) / tree.getHeight()
-            ), MIN_ZOOM);
+                (getWidth() - 2 * I.PADDING.get()) / tree.getWidth(),
+                (getHeight() - 2 * I.PADDING.get()) / tree.getHeight()
+            ), D.MIN_ZOOM.get());
         repaint();
     }
 
@@ -260,8 +257,8 @@ public class DrawPanel extends JPanel implements
         double factor = (zoomIn ? 1.1 : 1 / 1.1);
         zoom *= Math.pow(factor, Math.abs(r));
         // enforce minimum zoom level
-        if (zoom < MIN_ZOOM) {
-            zoom = MIN_ZOOM;
+        if (zoom < D.MIN_ZOOM.get()) {
+            zoom = D.MIN_ZOOM.get();
         }
         // update translation to keep point under cursor the same, repaint
         if (oldZoom != zoom) {
