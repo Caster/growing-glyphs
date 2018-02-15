@@ -12,12 +12,21 @@ import java.util.regex.Pattern;
 import datastructure.Glyph;
 import datastructure.QuadTree;
 import datastructure.events.OutOfCell.Side;
+import datastructure.growfunction.shape.CirclesGrowShape;
+import datastructure.growfunction.shape.GrowShape;
+import datastructure.growfunction.shape.SquaresGrowShape;
+import datastructure.growfunction.speed.BoundedLogarithmicGrowSpeed;
+import datastructure.growfunction.speed.GrowSpeed;
+import datastructure.growfunction.speed.LevelGrowSpeed;
+import datastructure.growfunction.speed.LinearAreaGrowSpeed;
+import datastructure.growfunction.speed.LinearGrowSpeed;
+import datastructure.growfunction.speed.LogarithmicGrowSpeed;
 import utils.Constants.S;
 
 /**
  * Function determining how {@link Glyph Glyphs} should be scaled.
  */
-public abstract class GrowFunction {
+public class GrowFunction implements GrowShape, GrowSpeed {
 
     /**
      * Map of names to instances of grow functions. These instances can be used
@@ -32,18 +41,23 @@ public abstract class GrowFunction {
      */
     public static Map<String, GrowFunction> getAll() {
         if (ALL.isEmpty()) {
-            for (GrowFunction g : Arrays.asList(
-                    new LevelGrowingCircles(),
-                    new LevelGrowingSquares(),
-                    new LinearAreaGrowingCircles(),
-                    new LinearAreaGrowingSquares(),
-                    new LinearlyGrowingCircles(),
-                    new LinearlyGrowingSquares(),
-                    new LogarithmicallyGrowingCircles(),
-                    new LogarithmicallyGrowingSquares(),
-                    new LogarithmicallyGrowingCirclesBounded(),
-                    new LogarithmicallyGrowingSquaresBounded())) {
-                ALL.put(g.getName(), g);
+            List<Class<? extends GrowShape>> shapes = Arrays.asList(
+                CirclesGrowShape.class,
+                SquaresGrowShape.class
+            );
+            List<Class<? extends GrowSpeed>> speeds = Arrays.asList(
+                LevelGrowSpeed.class,
+                LinearGrowSpeed.class,
+                LinearAreaGrowSpeed.class,
+                LogarithmicGrowSpeed.class,
+                BoundedLogarithmicGrowSpeed.class
+            );
+            // construct growfunctions for all combinations
+            for (Class<? extends GrowSpeed> speed : speeds) {
+                for (Class<? extends GrowShape> shape : shapes) {
+                    GrowFunction g = new GrowFunction(shape, speed);
+                    ALL.put(g.getName(), g);
+                }
             }
         }
         return ALL;
@@ -57,11 +71,63 @@ public abstract class GrowFunction {
 
 
     /**
-     * Human readable name of this grow function. Created by {@link #getName()},
-     * which uses this field as a cache.
+     * Name of the grow function - determined by its {@link GrowShape} and
+     * {@link GrowShape}. See {@link #getName()}.
      */
-    protected String name = null;
+    protected String name;
 
+
+    /**
+     * Shape of glyphs that is implied by this grow function.
+     */
+    private final GrowShape shape;
+    /**
+     * Speed that is used by this grow function.
+     */
+    private final GrowSpeed speed;
+
+
+    /**
+     * Constructs a grow function that grows glyphs with the given shape and speed.
+     *
+     * @param shape Function that determines shape of all glyphs.
+     * @param speed Function that determines speed at which glyphs grow.
+     */
+    public GrowFunction(GrowShape shape, GrowSpeed speed) {
+        this.shape = shape;
+        this.speed = speed;
+    }
+
+    /**
+     * Constructs a grow function that grows glyphs with the given shape and speed.
+     *
+     * This constructor variant constructs fresh instances of the given functions
+     * and immediately links them to the created {@link GrowFunction} instance.
+     *
+     * @param shape Function that determines shape of all glyphs.
+     * @param speed Function that determines speed at which glyphs grow.
+     */
+    public GrowFunction(Class<? extends GrowShape> shape,
+            Class<? extends GrowSpeed> speed) {
+        try {
+            this.shape = shape.getConstructor(this.getClass()).newInstance(this);
+            this.speed = speed.getConstructor(this.getClass()).newInstance(this);
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+
+    @Override
+    public double dist(double px, double py, double qx, double qy) {
+        return shape.dist(px, py, qx, qy);
+    }
+
+
+    @Override
+    public double dist(Rectangle2D rect, double px, double py) {
+        return shape.dist(rect, px, py);
+    }
 
     /**
      * Returns at which zoom level a glyph touches the given side of the given
@@ -79,20 +145,36 @@ public abstract class GrowFunction {
     }
 
     /**
+     * Given a glyph, return the compression factor to be used on that glyph.
+     *
+     * @param glyph Glyph to find compression factor for.
+     */
+    public double getCompression(Glyph glyph) {
+        return thresholds.getCompression(glyph);
+    }
+
+    /**
      * Returns the human readable name of this function. This method guarantees
      * to always return the same exact instance of {@link String}.
      */
     public String getName() {
         if (this.name == null) {
-            String name = getClass().getName();
-            Matcher m = Pattern.compile("[A-Z][a-z]+")
-                    .matcher(name.substring(name.lastIndexOf('.') + 1));
-            if (m.find()) {
-                StringBuilder result = new StringBuilder(m.group(0));
-                while (m.find()) {
+            String shapeName = shape.getClass().getSimpleName();
+            String speedName = speed.getClass().getSimpleName();
+            Pattern wordPattern = Pattern.compile("[A-Z][a-z]+");
+            Matcher shMatcher = wordPattern.matcher(shapeName);
+            Matcher spMatcher = wordPattern.matcher(speedName);
+            if (spMatcher.find() && shMatcher.find()) {
+                StringBuilder result = new StringBuilder(spMatcher.group());
+                while (spMatcher.find() && !spMatcher.group().equals("Grow")) {
                     result.append(" ");
-                    result.append(m.group(0));
+                    result.append(spMatcher.group());
                 }
+                result.append(" Growing");
+                do {
+                    result.append(" ");
+                    result.append(shMatcher.group());
+                } while (shMatcher.find() && !shMatcher.group().equals("Grow"));
                 this.name = result.toString();
                 if (this.name.equals(S.GROW_FUNCTION.get())) {
                     this.name = S.GROW_FUNCTION.get();
@@ -114,29 +196,20 @@ public abstract class GrowFunction {
      * @param maxRadius The maximum radius of glyphs. The minimum radius of glyphs
      *            is always 0 because of restrictions in the clustering algorithm.
      */
+    @Override
     public void initialize(int numGlyphs, double maxRadius) {
-        // default implementation does nothing
+        speed.initialize(numGlyphs, maxRadius);
     }
 
-    /**
-     * Returns at which zoom level two glyphs will touch. Both glyphs are
-     * scaled using this {@link GrowFunction}.
-     *
-     * @param a First glyph.
-     * @param b Second glyph.
-     * @return Zoom level at which {@code a} and {@code b} touch.
-     */
-    public abstract double intersectAt(Glyph a, Glyph b);
+    @Override
+    public double intersectAt(Glyph a, Glyph b) {
+        return speed.intersectAt(a, b);
+    }
 
-    /**
-     * Returns at which zoom level a glyph touches a static rectangle. The
-     * glyph is scaled using this {@link GrowFunction}.
-     *
-     * @param r Static rectangle.
-     * @param glyph Growing glyph.
-     * @return Zoom level at which {@code r} and {@code glyph} touch.
-     */
-    public abstract double intersectAt(Rectangle2D r, Glyph glyph);
+    @Override
+    public double intersectAt(Rectangle2D r, Glyph glyph) {
+        return speed.intersectAt(r, glyph);
+    }
 
     /**
      * Same as {@link #intersectAt(Rectangle2D, Glyph)}, just with different order
@@ -146,11 +219,30 @@ public abstract class GrowFunction {
         return intersectAt(r, glyph);
     }
 
+    @Override
+    public double radius(Glyph g, double at) {
+        return speed.radius(g, at);
+    }
+
+    /**
+     * Given the radius of a glyph and its compression level, return the radius
+     * of that glyph including its border. The border width is determined by the
+     * compression level.
+     *
+     * @param radius Radius without border.
+     * @param compressionLevel Compression level of the glyph.
+     */
+    public double radius(double radius, int compressionLevel) {
+        return radius + 2 * compressionLevel;
+    }
+
     /**
      * Returns a shape representing the glyph at the given time stamp/zoom
-     * level, according to this grow function.
+     * level, according to this grow function. This will return the shape
+     * without a border; the result is exactly the same as calling
+     * {@link #sizeAt(Glyph, double, int)} with {@code compressionLevel 0}.
      *
-     * @param glyph glyph to compute the size of.
+     * @param glyph Glyph to compute the size of.
      * @param at Time stamp or zoom level at which size must be computed.
      * @return A rectangle representing the glyph at time/zoom {@code at}.
      */
@@ -158,24 +250,18 @@ public abstract class GrowFunction {
         return sizeAt(glyph, at, 0);
     }
 
-    /**
-     * Returns a shape representing the glyph at the given time stamp/zoom
-     * level, according to this grow function and with the given compression
-     * level applied (the higher the compression level, the thicker the border
-     * around the glyph will be.
-     *
-     * In particular, a glyph with compression level <code>k</code> will have a
-     * border of width <code>2k</code>.
-     *
-     * @param glyph glyph to compute the size of.
-     * @param at Time stamp or zoom level at which size must be computed.
-     * @param compressionLevel The compression level that is to be applied to
-     *            the given glyph; this determines the border width.
-     * @return A rectangle representing the glyph at time/zoom {@code at}.
-     */
-    public abstract Shape sizeAt(Glyph glyph, double at,
-            int compressionLevel);
+    @Override
+    public Shape sizeAt(Glyph glyph, double at, int compressionLevel) {
+        return shape.sizeAt(glyph, at, compressionLevel);
+    }
 
+    /**
+     * Convenience function that returns the shape of all given glyphs.
+     *
+     * @param at Time stamp or zoom level at which size must be computed.
+     * @param glyphs Zero or more glyphs to compute the size of.
+     * @return Array with the shapes of the give glyphs, in the given order.
+     */
     public Shape[] sizesAt(double at, Glyph... glyphs) {
         Shape[] result = new Shape[glyphs.length];
         for (int i = 0; i < glyphs.length; ++i) {
@@ -184,16 +270,15 @@ public abstract class GrowFunction {
         return result;
     }
 
+    /**
+     * Convenience function that returns the shape of all given glyphs.
+     *
+     * @param at Time stamp or zoom level at which size must be computed.
+     * @param glyphs List of zero or more glyphs to compute the size of.
+     * @return Array with the shapes of the give glyphs, in the given order.
+     */
     public Shape[] sizesAt(double at, List<Glyph> glyphs) {
         return this.sizesAt(at, glyphs.toArray(new Glyph[0]));
-    }
-
-
-    /**
-     * Returns the actual weight of a glyph.
-     */
-    protected double w(Glyph glyph) {
-        return thresholds.getN(glyph);
     }
 
 }
