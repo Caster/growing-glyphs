@@ -16,12 +16,12 @@ public class LevelGrowSpeed extends GrowSpeedBase {
 
     @Override
     public double intersectAt(Glyph a, Glyph b) {
-        return gf.dist(a.getX(), a.getY(), b.getX(), b.getY()) / 2.0;
+        return gf.dist(a, b) / 2.0;
     }
 
     @Override
     public double intersectAt(Rectangle2D r, Glyph g) {
-        return gf.dist(r, g.getX(), g.getY());
+        return gf.dist(r, g);
     }
 
     @Override

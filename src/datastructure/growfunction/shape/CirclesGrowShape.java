@@ -15,14 +15,17 @@ public class CirclesGrowShape extends GrowShapeBase {
     }
 
     @Override
-    public double dist(double px, double py, double qx, double qy) {
-        return Utils.euclidean(px, py, qx, qy);
+    public double dist(Glyph a, Glyph b) {
+        return Utils.euclidean(a.getX(), a.getY(), b.getX(), b.getY()) -
+                gf.border(a) - gf.border(b);
     }
 
     @Override
-    public double dist(Rectangle2D rect, double px, double py) {
-        return Utils.euclidean(rect, px, py);
+    public double dist(Rectangle2D rect, Glyph g) {
+        return Math.max(0, Utils.euclidean(rect, g.getX(), g.getY()) -
+                gf.border(g));
     }
+
     @Override
     public Shape sizeAt(Glyph g, double at, int c) {
         double r = gf.radius(gf.radius(g, at), c);

@@ -118,15 +118,25 @@ public class GrowFunction implements GrowShape, GrowSpeed {
     }
 
 
+    /**
+     * Given a glyph, return the width of its border.
+     *
+     * @param g Glyph to determine the border width of.
+     * @see #radius(double, int)
+     */
+    public double border(Glyph g) {
+        return border(thresholds.getCompressionLevel(g));
+    }
+
     @Override
-    public double dist(double px, double py, double qx, double qy) {
-        return shape.dist(px, py, qx, qy);
+    public double dist(Glyph a, Glyph b) {
+        return shape.dist(a, b);
     }
 
 
     @Override
-    public double dist(Rectangle2D rect, double px, double py) {
-        return shape.dist(rect, px, py);
+    public double dist(Rectangle2D rect, Glyph g) {
+        return shape.dist(rect, g);
     }
 
     /**
@@ -229,11 +239,15 @@ public class GrowFunction implements GrowShape, GrowSpeed {
      * of that glyph including its border. The border width is determined by the
      * compression level.
      *
+     * <p>In particular, a glyph with compression level <code>k</code> will have a
+     * border of width <code>2k</code>.
+     *
      * @param radius Radius without border.
      * @param compressionLevel Compression level of the glyph.
+     * @see #border(Glyph)
      */
     public double radius(double radius, int compressionLevel) {
-        return radius + 2 * compressionLevel;
+        return radius + border(compressionLevel);
     }
 
     /**
@@ -279,6 +293,18 @@ public class GrowFunction implements GrowShape, GrowSpeed {
      */
     public Shape[] sizesAt(double at, List<Glyph> glyphs) {
         return this.sizesAt(at, glyphs.toArray(new Glyph[0]));
+    }
+
+
+    /**
+     * Given a compression level, returns how wide the border for that level is.
+     *
+     * @param compressionLevel Compression level to calculate border width of.
+     * @see #border(Glyph)
+     * @see #radius(double, int)
+     */
+    private double border(int compressionLevel) {
+        return 2 * compressionLevel;
     }
 
 }

@@ -13,25 +13,32 @@ import datastructure.growfunction.GrowFunction;
 public interface GrowShape {
 
     /**
-     * Returns the distance between two points {@code p} and {@code q}.
+     * Returns the distance between two glyphs. This is the distance the glyphs
+     * have to bridge before their borders will touch. Effectively, this method
+     * returns the distance between their center points minus the widths of
+     * their respective borders. The value returned by this method may be
+     * negative in case the borders of glyphs overlap.
      *
-     * @param px X-coordinate of {@code p}.
-     * @param py Y-coordinate of {@code p}.
-     * @param qx X-coordinate of {@code q}.
-     * @param qy Y-coordinate of {@code q}.
+     * @param a First glyph.
+     * @param b Second glyph.
      */
-    public double dist(double px, double py, double qx, double qy);
+    public double dist(Glyph a, Glyph b);
 
     /**
-     * Returns the minimum distance between a point and any point in the given
-     * rectangle. This will in particular return 0 when the given point is
-     * contained in the rectangle.
+     * Returns the minimum distance between a glyph and any point in the given
+     * rectangle. This will in particular return 0 when the given glyph's center
+     * point is contained in the rectangle.
+     *
+     * <p>As with {@link #dist(Glyph, Glyph)}, this method takes the border
+     * width of the glyph into account. This means that it effectively returns
+     * the minimum distance between the center point of the glyph and the
+     * rectangle, minus the width of the glyph's border. This method will return
+     * a non-negative value though.
      *
      * @param rect Description of rectangle.
-     * @param px X-coordinate of {@code p}.
-     * @param py Y-coordinate of {@code p}.
+     * @param g Glyph to consider.
      */
-    public double dist(Rectangle2D rect, double px, double py);
+    public double dist(Rectangle2D rect, Glyph g);
 
     /**
      * Returns a shape representing the glyph at the given time stamp/zoom
@@ -39,14 +46,12 @@ public interface GrowShape {
      * level applied (the higher the compression level, the thicker the border
      * around the glyph will be.
      *
-     * <p>In particular, a glyph with compression level <code>k</code> will have a
-     * border of width <code>2k</code>. See {@link #radius(double, int)}.
-     *
      * @param glyph glyph to compute the size of.
      * @param at Time stamp or zoom level at which size must be computed.
      * @param compressionLevel The compression level that is to be applied to
      *            the given glyph; this determines the border width.
      * @return A rectangle representing the glyph at time/zoom {@code at}.
+     * @see GrowFunction#radius(double, int)
      */
     public Shape sizeAt(Glyph g, double at, int c);
 

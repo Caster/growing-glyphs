@@ -41,10 +41,6 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
      */
     public HierarchicalClustering(Glyph glyph, double at,
             HierarchicalClustering... createdFrom) {
-        if (at < 0) {
-            throw new IllegalArgumentException();
-        }
-
         this.glyph = glyph;
         this.at = at;
         if (createdFrom.length == 0) {
