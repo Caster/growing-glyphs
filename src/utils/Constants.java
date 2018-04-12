@@ -133,6 +133,13 @@ public final class Constants {
             return value;
         }
 
+        /**
+         * Returns a string representation of the actual value of the constant.
+         */
+        public String getString() {
+            return Double.toString(value);
+        }
+
 
         /**
          * Value of the constant.

@@ -67,7 +67,7 @@ public class QuadTreeClusterer extends Clusterer {
             LOGGER.log(Level.FINE, "QuadTree has {0} nodes and height {1}, having "
                     + "at most {2} glyphs per cell and cell size at least {3}",
                     new Object[] {tree.getSize(), tree.getTreeHeight(),
-                    I.MAX_GLYPHS_PER_CELL.get(), D.MIN_CELL_SIZE.get()});
+                    I.MAX_GLYPHS_PER_CELL.get(), D.MIN_CELL_SIZE.getString()});
             if (LOGGER.isLoggable(Level.FINE)) {
                 for (QuadTree leaf : tree.getLeaves()) {
                     Stats.record("glyphs per cell", leaf.getGlyphs().size());
