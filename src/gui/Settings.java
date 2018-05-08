@@ -29,6 +29,8 @@ public class Settings extends HashMap<Setting, Object> {
         DRAW_MAP(SettingSection.DRAW, "Draw map in background", Boolean.FALSE),
         COLORFUL_BORDERS(SettingSection.DRAW, "Indicate compression level with "
                 + "colors", Boolean.FALSE),
+        LABELED_BORDERS(SettingSection.DRAW, "Indicate compression level with "
+                + "numbers", Boolean.TRUE),
         SHOW_COORDS(SettingSection.MISC, "Show coordinates on mouse over",
                 Boolean.TRUE),
         STEP(SettingSection.ALGORITHM, "Step through", Boolean.FALSE);

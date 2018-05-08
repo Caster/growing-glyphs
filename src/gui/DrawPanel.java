@@ -19,10 +19,14 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Queue;
 
 import javax.swing.JPanel;
@@ -222,8 +226,13 @@ public class DrawPanel extends JPanel implements
                 glyphs != null) {
             boolean colored = GrowingGlyphs.SETTINGS.getBoolean(
                     Setting.COLORFUL_BORDERS);
+            boolean labeled = GrowingGlyphs.SETTINGS.getBoolean(
+                    Setting.LABELED_BORDERS);
             if (!colored) {
                 g2.setColor(Color.BLACK);
+            }
+            if (labeled) {
+                g2.setFont(g2.getFont().deriveFont(20f));
             }
             for (GlyphShape glyph : glyphs) {
                 Area border = new Area(glyph.shapeWithBorder);
@@ -232,6 +241,18 @@ public class DrawPanel extends JPanel implements
                     g2.setColor(GLYPH_BORDER_COLORS[glyph.compressionLevel - 1]);
                 }
                 g2.fill(border);
+
+                if (labeled && glyph.compressionLevel > 1) {
+                    DecimalFormat df = (DecimalFormat) NumberFormat.getInstance(Locale.US);
+                    DecimalFormatSymbols symbols = df.getDecimalFormatSymbols();
+                    symbols.setGroupingSeparator(' ');
+                    df.setDecimalFormatSymbols(symbols);
+
+                    g2.drawString(String.format("Level %d (%s works)",
+                                glyph.compressionLevel - 1, df.format(glyph.n)),
+                            (float) glyph.shape.getBounds2D().getX() + 2,
+                            (float) glyph.shape.getBounds2D().getMaxY() - 2);
+                }
             }
         }
     }

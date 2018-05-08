@@ -77,7 +77,7 @@ public class Glyph {
     }
 
     /**
-     * Construct a new glyph at the given coordinates, with given growing speed.
+     * Construct a new glyph at the given coordinates, with given weight.
      *
      * @param x X-coordinate of the center of the glyph.
      * @param y Y-coordinate of the center of the glyph.
