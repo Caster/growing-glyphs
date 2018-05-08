@@ -57,6 +57,9 @@ public class QuadTreeClusterer extends Clusterer {
     @Override
     public Clusterer cluster(GrowFunction g,
             boolean includeOutOfCell, boolean step) {
+        boolean checkTotal = B.CHECK_NUMBER_REPRESENTED.get();
+        int totalGlyphs = 0, totalEntities = 0;
+
         if (LOGGER != null) {
             LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
             LOGGER.log(Level.FINE, "clustering using {0} strategy", Utils.join(" + ",
@@ -69,9 +72,18 @@ public class QuadTreeClusterer extends Clusterer {
                     new Object[] {tree.getSize(), tree.getTreeHeight(),
                     I.MAX_GLYPHS_PER_CELL.get(), D.MIN_CELL_SIZE.getString()});
             if (LOGGER.isLoggable(Level.FINE)) {
+                int n = 0;
+                int c = 0;
                 for (QuadTree leaf : tree.getLeaves()) {
                     Stats.record("glyphs per cell", leaf.getGlyphs().size());
+                    for (Glyph glyph : leaf.getGlyphs()) {
+                        n += glyph.getN();
+                        c++;
+                    }
                 }
+                Stats.record("total # works", n);
+                totalGlyphs = c;
+                totalEntities = n;
             }
         }
         if (B.TIMERS_ENABLED.get()) {
@@ -177,6 +189,9 @@ public class QuadTreeClusterer extends Clusterer {
                 do {
                     while (!nestedMerges.isEmpty()) {
                         GlyphMerge m = nestedMerges.poll();
+                        if (LOGGER != null) {
+                            LOGGER.log(Level.FINEST, "handling {0}", m);
+                        }
 
                         // create a merged glyph, update clustering
                         if (mergedHC == null) {
@@ -221,6 +236,10 @@ public class QuadTreeClusterer extends Clusterer {
                                     }
                                 }
                             }
+                        }
+
+                        if (LOGGER != null) {
+                            LOGGER.log(Level.FINEST, "-> merged glyph is {0}", merged);
                         }
                     }
                 } while (findOverlap(g, merged, mergedAt, nestedMerges));
@@ -270,6 +289,10 @@ public class QuadTreeClusterer extends Clusterer {
                 }
                 // add new glyph to QuadTree cell(s)
                 tree.insert(merged, mergedAt, g);
+                if (LOGGER != null) {
+                    LOGGER.log(Level.FINER, "inserted merged glyph into {0} cells",
+                            merged.getCells().size());
+                }
                 if (B.TIMERS_ENABLED.get()) {
                     Timers.stop("[merge event processing] merged glyph insert");
                     Timers.start("[merge event processing] merge event recording");
@@ -361,8 +384,29 @@ public class QuadTreeClusterer extends Clusterer {
                 break;
             }
             step(step);
+
+            // check ourselves, conditionally
+            if (checkTotal) {
+                int n = 0;
+                int c = 0;
+                for (QuadTree leaf : tree.getLeaves()) {
+                    for (Glyph glyph : leaf.getGlyphsAlive()) {
+                        n += glyph.getN();
+                        c++;
+                    }
+                }
+                if (n != totalEntities) {
+                    LOGGER.log(Level.SEVERE, "Houston, we have a problem ... "
+                            + "Lost {0} works (had {1} glyphs, have {2} now).",
+                            new Object[] {totalEntities - n, totalGlyphs, c});
+                    return null;
+                }
+            }
         }
         if (LOGGER != null) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                Stats.record("total # works", result.getGlyph().getN());
+            }
             LOGGER.log(Level.FINE, "created {0} events, handled {1} and discarded "
                     + "{2}; {3} events were never considered",
                     new Object[] {q.getInsertions(), q.getDeletions(),

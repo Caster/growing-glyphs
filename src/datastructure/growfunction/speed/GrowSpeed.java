@@ -40,7 +40,8 @@ public interface GrowSpeed {
      *
      * @param r Static rectangle.
      * @param glyph Growing glyph.
-     * @return Zoom level at which {@code r} and {@code glyph} touch.
+     * @return Zoom level at which {@code r} and {@code glyph} touch. If the glyph
+     *     is contained in the rectangle, a negative value must be returned.
      */
     public double intersectAt(Rectangle2D r, Glyph glyph);
 

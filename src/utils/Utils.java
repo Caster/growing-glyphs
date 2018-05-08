@@ -33,12 +33,12 @@ public class Utils {
 
     /**
      * Returns the minimum Chebyshev distance between a point and any point in
-     * the given rectangle. This will in particular return 0 when the given
+     * the given rectangle. This will in particular return -1 when the given
      * point is contained in the rectangle.
      */
     public static double chebyshev(Rectangle2D rect, double px, double py) {
         if (rect.contains(px, py)) {
-            return 0;
+            return -1;
         }
         // determine the distance between the point and the point projected
         // onto the rectangle, or clamped into it, so to say
@@ -76,12 +76,12 @@ public class Utils {
 
     /**
      * Returns the minimum Euclidean distance between a point and any point in
-     * the given rectangle. This will in particular return 0 when the given
+     * the given rectangle. This will in particular return -1 when the given
      * point is contained in the rectangle.
      */
     public static double euclidean(Rectangle2D rect, double px, double py) {
         if (rect.contains(px, py)) {
-            return 0;
+            return -1;
         }
         // determine the distance between the point and the point projected
         // onto the rectangle, or clamped into it, so to say

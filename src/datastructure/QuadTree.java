@@ -331,9 +331,15 @@ public class QuadTree implements Iterable<QuadTree> {
      * @see #getLeaves(Glyph, double, GrowFunction)
      */
     public void insert(Glyph glyph, double at, GrowFunction g) {
-        if (g.intersectAt(glyph, cell) > at + Utils.EPS) {
+        double intersect = g.intersectAt(glyph, cell);
+        // if we intersect at some point, but later than current time;
+        // or when we are in the "before time", but the glyph is not contained
+        // in this QuadTree cell, then we should not insert
+        if ((at >= 0 && intersect > at + Utils.EPS) ||
+                (at < 0 && intersect >= 0)) {
             return;
         }
+        // otherwise, we will insert!
         Timers.start("[QuadTree] insert");
         if (isLeaf()) {
             if (!glyphs.contains(glyph)) {

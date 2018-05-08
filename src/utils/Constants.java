@@ -3,6 +3,7 @@ package utils;
 import java.io.File;
 
 import algorithm.FirstMergeRecorder;
+import algorithm.clustering.QuadTreeClusterer;
 import datastructure.Glyph;
 import datastructure.QuadTree;
 import datastructure.QuadTreeChangeListener;
@@ -29,6 +30,12 @@ public final class Constants {
      * Boolean value constants. Short name for easy usage.
      */
     public static enum B {
+
+        /**
+         * Whether the {@link QuadTreeClusterer} checks the total number of works
+         * represented by all alive glyphs after every step of the algorithm.
+         */
+        CHECK_NUMBER_REPRESENTED(false),
 
         /**
          * Whether {@link QuadTree} {@link QuadTreeChangeListener listeners} are

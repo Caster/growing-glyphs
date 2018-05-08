@@ -322,7 +322,9 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
                 if (!curr.contains(from)) {
                     curr.add(from);
                 }
-                if (from.createdFrom != null) {
+                // we only add nodes created from others to the prev queue,
+                // and also only nodes that have been created at a time >= 0
+                if (from.createdFrom != null && from.at >= 0) {
                     prev.add(from);
                 }
             }

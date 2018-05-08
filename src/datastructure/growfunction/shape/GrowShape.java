@@ -26,8 +26,8 @@ public interface GrowShape {
 
     /**
      * Returns the minimum distance between a glyph and any point in the given
-     * rectangle. This will in particular return 0 when the given glyph's center
-     * point is contained in the rectangle.
+     * rectangle. This will in particular return a negative value when the given
+     * glyph's center point is contained in the rectangle.
      *
      * <p>As with {@link #dist(Glyph, Glyph)}, this method takes the border
      * width of the glyph into account. This means that it effectively returns

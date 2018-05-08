@@ -22,8 +22,11 @@ public class CirclesGrowShape extends GrowShapeBase {
 
     @Override
     public double dist(Rectangle2D rect, Glyph g) {
-        return Math.max(0, Utils.euclidean(rect, g.getX(), g.getY()) -
-                gf.border(g));
+        double d = Utils.euclidean(rect, g.getX(), g.getY());
+        if (d < 0) {
+            return d;
+        }
+        return Math.max(0, d - gf.border(g));
     }
 
     @Override
