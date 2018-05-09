@@ -228,13 +228,8 @@ public class DrawPanel extends JPanel implements
                     Setting.COLORFUL_BORDERS);
             boolean labeled = GrowingGlyphs.SETTINGS.getBoolean(
                     Setting.LABELED_BORDERS);
-            int lineHeight = 0;
             if (!colored) {
                 g2.setColor(Color.BLACK);
-            }
-            if (labeled) {
-                g2.setFont(g2.getFont().deriveFont(10f));
-                lineHeight = g2.getFontMetrics().getHeight();
             }
             for (GlyphShape glyph : glyphs) {
                 Area border = new Area(glyph.shapeWithBorder);
@@ -250,9 +245,15 @@ public class DrawPanel extends JPanel implements
                     symbols.setGroupingSeparator(' ');
                     df.setDecimalFormatSymbols(symbols);
 
+                    g2.setFont(g2.getFont().deriveFont(border.getBounds().width / 16f));
+                    // g2.getFontMetrics().getHeight() suffers from rounding issues
+                    float lineHeight = (float) g2.getFont().createGlyphVector(
+                            g2.getFontRenderContext(), "Level works 0123456789")
+                            .getVisualBounds().getHeight();
+
                     g2.drawString(String.format("Level %d", glyph.compressionLevel - 1),
                             (float) glyph.shape.getBounds2D().getX() + 2,
-                            (float) glyph.shape.getBounds2D().getMaxY() - lineHeight);
+                            (float) glyph.shape.getBounds2D().getMaxY() - 4 - lineHeight);
                     g2.drawString(String.format("%s works", df.format(glyph.n)),
                         (float) glyph.shape.getBounds2D().getX() + 2,
                         (float) glyph.shape.getBounds2D().getMaxY() - 2);
