@@ -2,9 +2,9 @@ package logging;
 
 import java.io.PrintStream;
 
-public class NonClosablePrintStream extends PrintStream {
+public class NonCloseablePrintStream extends PrintStream {
 
-    public NonClosablePrintStream(PrintStream stream) {
+    public NonCloseablePrintStream(PrintStream stream) {
         super(stream);
     }
 

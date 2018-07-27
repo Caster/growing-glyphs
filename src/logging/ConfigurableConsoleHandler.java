@@ -16,6 +16,13 @@ import java.util.logging.StreamHandler;
  */
 public class ConfigurableConsoleHandler extends StreamHandler {
 
+    private static final NonCloseablePrintStream NON_CLOSEABLE_OUT =
+            new NonCloseablePrintStream(System.out);
+    private static final NonCloseablePrintStream NON_CLOSEABLE_ERR =
+            new NonCloseablePrintStream(System.err);
+
+
+    private NonCloseablePrintStream defaultPrintStream;
     private String indent = "";
 
 
@@ -25,6 +32,13 @@ public class ConfigurableConsoleHandler extends StreamHandler {
 
     @Override
     public synchronized void publish(LogRecord record) {
+        boolean streamChanged = false;
+        if (record.getLevel().intValue() >= Level.WARNING.intValue() &&
+                defaultPrintStream != NON_CLOSEABLE_ERR) {
+            setOutputStream(NON_CLOSEABLE_ERR);
+            streamChanged = true;
+        }
+
         if (record.getLevel().intValue() <= Level.FINE.intValue()) {
             int l = (500 - record.getLevel().intValue()) / 100;
             StringBuilder msg = new StringBuilder(
@@ -37,6 +51,10 @@ public class ConfigurableConsoleHandler extends StreamHandler {
         }
         super.publish(record);
         flush();
+
+        if (streamChanged) {
+            setOutputStream(defaultPrintStream);
+        }
     }
 
 
@@ -101,9 +119,9 @@ public class ConfigurableConsoleHandler extends StreamHandler {
 
         // set output stream
         if ("out".equals(manager.getProperty(cname + ".stream"))) {
-            setOutputStream(new NonClosablePrintStream(System.out));
+            setOutputStream(defaultPrintStream = NON_CLOSEABLE_OUT);
         } else {
-            setOutputStream(new NonClosablePrintStream(System.err));
+            setOutputStream(defaultPrintStream = NON_CLOSEABLE_ERR);
         }
 
         // set whether FINE/FINER/FINEST messages should be indented
