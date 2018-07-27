@@ -110,6 +110,12 @@ public class QuadTreeClusterer extends Clusterer {
         double lastDumpedMerges = Timers.in(Timers.elapsed("clustering"), Units.SECONDS);
         // finally, create an indication of which glyphs still participate
         int numAlive = 0;
+        // for debugging
+        Set<Glyph> seenGlyphs = null;
+        if (checkTotal) {
+            seenGlyphs = new HashSet<>();
+        }
+        // start recording merge events
         Rectangle2D rect = tree.getRectangle();
         for (QuadTree leaf : tree.getLeaves()) {
             Glyph[] glyphs = leaf.getGlyphs().toArray(new Glyph[0]);
@@ -387,20 +393,24 @@ public class QuadTreeClusterer extends Clusterer {
             }
             step(step);
 
+            LOGGER.log(Level.SEVERE, "step");
+
             // check ourselves, conditionally
             if (checkTotal) {
                 int n = 0;
                 int c = 0;
-                Set<Glyph> seenGlyphs = new HashSet<>();
+                Set<Glyph> seenPreviously = new HashSet<>(seenGlyphs);
+                Set<Glyph> seenNowGlyphs = new HashSet<>();
                 for (QuadTree leaf : tree.getLeaves()) {
                     for (Glyph glyph : leaf.getGlyphsAlive()) {
-                        if (!seenGlyphs.contains(glyph)) {
+                        if (!seenNowGlyphs.contains(glyph)) {
                             n += glyph.getN();
                             c++;
-                            seenGlyphs.add(glyph);
+                            seenNowGlyphs.add(glyph);
                         }
                     }
                 }
+                seenGlyphs = new HashSet<>(seenNowGlyphs);
                 if (n != totalEntities) {
                     if (n < totalEntities) {
                         LOGGER.log(Level.SEVERE, "Houston, we have a problem "
@@ -413,10 +423,25 @@ public class QuadTreeClusterer extends Clusterer {
                                 + "{2} now).", new Object[] {n - totalEntities,
                                         totalGlyphs, c});
                     }
-                    LOGGER.log(Level.SEVERE, "Timestamp of merge is {0}.",
-                            e.getAt());
+                    if (c < totalGlyphs) {
+                        seenPreviously.removeAll(seenNowGlyphs);
+                        seenNowGlyphs = seenPreviously;
+                        LOGGER.log(Level.SEVERE, "The following glyphs are missing:");
+                    } else {
+                        seenNowGlyphs.removeAll(seenPreviously);
+                        LOGGER.log(Level.SEVERE, "The following glyphs are added:");
+                    }
+                    for (Glyph glyph : seenNowGlyphs) {
+                        LOGGER.log(Level.SEVERE, "-> {0}, in cell(s)", glyph);
+                        for (QuadTree cell : glyph.getCells()) {
+                            LOGGER.log(Level.SEVERE, "     {0}", cell);
+                        }
+                    }
+                    LOGGER.log(Level.SEVERE, "Timestamp of {1} is {0}.",
+                            new Object[] {e.getAt(), e.getType()});
                     return null;
                 }
+                totalGlyphs = c;
             }
         }
         if (LOGGER != null) {
@@ -554,11 +579,17 @@ public class QuadTreeClusterer extends Clusterer {
 
             // register glyph in cell(s) it grows into
             neighbor.insert(glyph, oAt, g);
+//            if (LOGGER != null)
+//                LOGGER.log(Level.FINEST, "inserted into {0} cells", inserted);
 
             // split cell if necessary, to maintain maximum glyphs per cell
             List<QuadTree> grownInto;
             if (neighbor.getGlyphs() != null &&
                     neighbor.getGlyphs().size() > I.MAX_GLYPHS_PER_CELL.get()) {
+//                if (LOGGER != null)
+//                    LOGGER.log(Level.FINEST, "splitting {0} because it has {1} > {2} glyphs",
+//                            new Object[] {neighbor, neighbor.getGlyphs().size(),
+//                            I.MAX_GLYPHS_PER_CELL.get()});
                 // 1. split and move glyphs in cell to appropriate leaf cells
                 //    (this may split the cell more than once!)
                 neighbor.split(oAt, g);
@@ -574,6 +605,13 @@ public class QuadTreeClusterer extends Clusterer {
                 //    of `neighbor` or all glyphs associated with `neighbor`
                 grownInto = neighbor.getLeaves(glyph, oAt, g);
                 if (LOGGER != null && LOGGER.isLoggable(Level.FINE)) {
+//                    if (LOGGER.isLoggable(Level.FINEST)) {
+//                        LOGGER.log(Level.FINEST, "glyph grew into {0} cells now",
+//                                grownInto.size());
+//                        for (QuadTree in : grownInto) {
+//                            LOGGER.log(Level.FINEST, "-> {0}", in);
+//                        }
+//                    }
                     for (QuadTree in : neighbor.getLeaves()) {
                         Stats.record("glyphs per cell",
                                 in.getGlyphsAlive().size());

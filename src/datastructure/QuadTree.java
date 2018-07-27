@@ -328,29 +328,33 @@ public class QuadTree implements Iterable<QuadTree> {
      * @param at Timestamp/zoom level at which insertion takes place.
      * @param g Function to determine size of glyph. Together with {@code at},
      *          this is used to decide which cells {@code glyph} intersects.
+     * @return In how many cells the glyph has been inserted.
      * @see #getLeaves(Glyph, double, GrowFunction)
      */
-    public void insert(Glyph glyph, double at, GrowFunction g) {
+    public int insert(Glyph glyph, double at, GrowFunction g) {
         double intersect = g.intersectAt(glyph, cell);
         // if we intersect at some point, but later than current time
         // (this means that a glyph is in a cell already when its border is in
         //  the cell! see GrowFunction#intersectAt(Glyph, Rectangle2D)
         if (intersect > at + Utils.EPS) {
-            return;
+            return 0;
         }
         // otherwise, we will insert!
         Timers.start("[QuadTree] insert");
+        int inserted = 0; // keep track of number of cells we insert into
         if (isLeaf()) {
             if (!glyphs.contains(glyph)) {
                 glyphs.add(glyph);
                 glyph.addCell(this);
+                inserted = 1;
             }
         } else {
             for (QuadTree child : children) {
-                child.insert(glyph, at, g);
+                inserted += child.insert(glyph, at, g);
             }
         }
         Timers.stop("[QuadTree] insert");
+        return inserted;
     }
 
     /**
@@ -512,11 +516,9 @@ public class QuadTree implements Iterable<QuadTree> {
 
     @Override
     public String toString() {
-        return String.format("%s[cell = %.2f x %.2f %s%.2f %s%.2f]",
+        return String.format("%s[cell = [%.2f ; %.2f] x [%.2f ; %.2f]]",
                 getClass().getName(),
-                cell.getWidth(), cell.getHeight(),
-                (cell.getX() >= 0 ? "+" : ""), cell.getX(),
-                (cell.getY() >= 0 ? "+" : ""), cell.getY());
+                cell.getMinX(), cell.getMaxX(), cell.getMinY(), cell.getMaxY());
     }
 
 
