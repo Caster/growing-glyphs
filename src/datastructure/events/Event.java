@@ -21,13 +21,25 @@ public abstract class Event implements Comparable<Event> {
          * Event type to be used when a glyph grew to one of the borders of a
          * cell it is associated with.
          */
-        OUT_OF_CELL,
+        OUT_OF_CELL(10),
         /**
          * Event type to be used when two or more glyphs grew to touch.
          */
-        MERGE;
+        MERGE(0);
+
 
         private String cache = null;
+        /**
+         * Priority of the type, used when ordering events in a queue. Events are
+         * ordered by the time they occur, but when they have the same timestamp,
+         * events with lower priority are ordered before those with high priority.
+         */
+        private int priority;
+
+
+        private Type(int priority) {
+            this.priority = priority;
+        }
 
         @Override
         public String toString() {
@@ -61,8 +73,12 @@ public abstract class Event implements Comparable<Event> {
     }
 
     @Override
-    public int compareTo(Event o) {
-        return (int) Math.signum(at - o.at);
+    public int compareTo(Event that) {
+        int diff = (int) Math.signum(this.at - that.at);
+        if (diff != 0) {
+            return diff;
+        }
+        return this.getType().priority - that.getType().priority;
     }
 
     /**
