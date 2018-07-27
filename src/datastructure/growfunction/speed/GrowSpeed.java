@@ -30,7 +30,8 @@ public interface GrowSpeed {
      *
      * @param a First glyph.
      * @param b Second glyph.
-     * @return Zoom level at which {@code a} and {@code b} touch.
+     * @return Zoom level at which {@code a} and {@code b} touch. Returns
+     *     {@link Double#NEGATIVE_INFINITY} if the two glyphs share coordinates.
      */
     public double intersectAt(Glyph a, Glyph b);
 
@@ -41,7 +42,9 @@ public interface GrowSpeed {
      * @param r Static rectangle.
      * @param glyph Growing glyph.
      * @return Zoom level at which {@code r} and {@code glyph} touch. If the glyph
-     *     is contained in the rectangle, a negative value must be returned.
+     *     is contained in the rectangle, {@link Double#NEGATIVE_INFINITY} must be
+     *     returned. A negative value may still be returned in case the
+     *     {@code glyph} is right outside {@code r}, but its border overlaps it.
      */
     public double intersectAt(Rectangle2D r, Glyph glyph);
 

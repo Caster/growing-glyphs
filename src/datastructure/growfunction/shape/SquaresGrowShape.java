@@ -23,9 +23,9 @@ public class SquaresGrowShape extends GrowShapeBase {
     public double dist(Rectangle2D rect, Glyph g) {
         double d = Utils.chebyshev(rect, g.getX(), g.getY());
         if (d < 0) {
-            return d;
+            return Double.NEGATIVE_INFINITY;
         }
-        return Math.max(0, d - gf.border(g));
+        return d - gf.border(g);
     }
 
     @Override

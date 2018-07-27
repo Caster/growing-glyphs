@@ -35,7 +35,7 @@ public final class Constants {
          * Whether the {@link QuadTreeClusterer} checks the total number of works
          * represented by all alive glyphs after every step of the algorithm.
          */
-        CHECK_NUMBER_REPRESENTED(false),
+        CHECK_NUMBER_REPRESENTED(true),
 
         /**
          * Whether {@link QuadTree} {@link QuadTreeChangeListener listeners} are
@@ -57,9 +57,7 @@ public final class Constants {
 
         /**
          * Whether merge events are to be created for all pairs of glyphs, or only
-         * the first one. In practice, creating only the first merge event appears
-         * to result in clusterings free of overlap, but in theory overlap can
-         * occur. Setting this to {@code true} implies a performance hit.
+         * the first one. Setting this to {@code true} implies a performance hit.
          *
          * Please note that {@link QuadTree#MAX_GLYPHS_PER_CELL} cannot be set to
          * high values when setting this to {@code true}, or you need to allocate
@@ -68,7 +66,7 @@ public final class Constants {
         ROBUST(false),
 
         /**
-         * Whether timers should be used.
+         * Whether timers should be used to track wall clock computation time.
          */
         TIMERS_ENABLED(true),
 

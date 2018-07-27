@@ -28,6 +28,9 @@ public class LogarithmicGrowSpeed extends GrowSpeedBase {
 
     @Override
     public double intersectAt(Glyph gA, Glyph gB) {
+        if (gA.hasSamePositionAs(gB)) {
+            return Double.NEGATIVE_INFINITY;
+        }
         // we want that `log(1 + t * w_a) + log(1 + t * w_b) = d / fA`, which
         // translates to the below equation according to WolframAlpha
         double a = weight(gA);
@@ -39,9 +42,13 @@ public class LogarithmicGrowSpeed extends GrowSpeedBase {
 
     @Override
     public double intersectAt(Rectangle2D r, Glyph g) {
+        double d = gf.dist(r, g);
+        if (Double.isInfinite(d)) {
+            return d;
+        }
         // we want that `log(1 + t * w) = d / fA`, which translates to
         // `t = (base^(d / fA) - 1) / w`, which is used below
-        return (Math.pow(LOG_BASE, gf.dist(r, g) / fA) - 1) / weight(g);
+        return (Math.pow(LOG_BASE, d / fA) - 1) / weight(g);
     }
 
     @Override

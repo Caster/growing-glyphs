@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -190,7 +192,7 @@ public class QuadTreeClusterer extends Clusterer {
                     while (!nestedMerges.isEmpty()) {
                         GlyphMerge m = nestedMerges.poll();
                         if (LOGGER != null) {
-                            LOGGER.log(Level.FINEST, "handling {0}", m);
+                            LOGGER.log(Level.FINEST, "handling nested " + m);
                         }
 
                         // create a merged glyph, update clustering
@@ -389,16 +391,30 @@ public class QuadTreeClusterer extends Clusterer {
             if (checkTotal) {
                 int n = 0;
                 int c = 0;
+                Set<Glyph> seenGlyphs = new HashSet<>();
                 for (QuadTree leaf : tree.getLeaves()) {
                     for (Glyph glyph : leaf.getGlyphsAlive()) {
-                        n += glyph.getN();
-                        c++;
+                        if (!seenGlyphs.contains(glyph)) {
+                            n += glyph.getN();
+                            c++;
+                            seenGlyphs.add(glyph);
+                        }
                     }
                 }
                 if (n != totalEntities) {
-                    LOGGER.log(Level.SEVERE, "Houston, we have a problem ... "
-                            + "Lost {0} works (had {1} glyphs, have {2} now).",
-                            new Object[] {totalEntities - n, totalGlyphs, c});
+                    if (n < totalEntities) {
+                        LOGGER.log(Level.SEVERE, "Houston, we have a problem "
+                                + "... Lost {0} works (had {1} glyphs, have "
+                                + "{2} now).", new Object[] {totalEntities - n,
+                                        totalGlyphs, c});
+                    } else {
+                        LOGGER.log(Level.SEVERE, "Houston, we have a problem "
+                                + "... Gained {0} works (had {1} glyphs, have "
+                                + "{2} now).", new Object[] {n - totalEntities,
+                                        totalGlyphs, c});
+                    }
+                    LOGGER.log(Level.SEVERE, "Timestamp of merge is {0}.",
+                            e.getAt());
                     return null;
                 }
             }
@@ -504,7 +520,9 @@ public class QuadTreeClusterer extends Clusterer {
         Side oppositeSide = o.getSide().opposite();
         // create merge events with the glyphs in the neighbors
         // we take the size of the glyph at that point in time into account
-        double[] sideInterval = Side.interval(g.sizeAt(glyph, oAt).getBounds2D(), o.getSide());
+        double[] sideInterval = Side.interval(
+                g.sizeAt(glyph, oAt, g.getCompressionLevel(glyph)).getBounds2D(),
+                o.getSide());
         if (LOGGER != null)
             LOGGER.log(Level.FINER, "size at border is {0}", Arrays.toString(sideInterval));
         // Copy the set of neighbors returned, as the neighbors may in fact change
@@ -513,7 +531,8 @@ public class QuadTreeClusterer extends Clusterer {
         // update. All of that is avoided by making a copy now.
         List<QuadTree> neighbors = new ArrayList<>(cell.getNeighbors(o.getSide()));
         if (LOGGER != null)
-            LOGGER.log(Level.FINEST, "growing into");
+            LOGGER.log(Level.FINEST, "growing out of {1} of {0} into",
+                    new Object[] {o.getCell(), o.getSide()});
         for (QuadTree neighbor : neighbors) {
             if (LOGGER != null)
                 LOGGER.log(Level.FINEST, "{0}", neighbor);

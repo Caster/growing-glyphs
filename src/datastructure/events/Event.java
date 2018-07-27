@@ -119,7 +119,11 @@ public abstract class Event implements Comparable<Event> {
             if (!first) {
                 sb.append(", ");
             }
-            sb.append(glyph.toString());
+            if (glyph == null) {
+                sb.append("null");
+            } else {
+                sb.append(glyph.toString());
+            }
             first = false;
         }
         sb.append("]");

@@ -164,6 +164,15 @@ public class GrowFunction implements GrowShape, GrowSpeed {
     }
 
     /**
+     * Given a glyph, return the compression level to be used on that glyph.
+     *
+     * @param glyph Glyph to find compression level for.
+     */
+    public int getCompressionLevel(Glyph glyph) {
+        return thresholds.getCompressionLevel(glyph);
+    }
+
+    /**
      * Returns the human readable name of this function. This method guarantees
      * to always return the same exact instance of {@link String}.
      */

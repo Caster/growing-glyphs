@@ -15,6 +15,7 @@ import datastructure.events.OutOfCell;
 import datastructure.growfunction.GrowFunction;
 import utils.Constants.B;
 import utils.Constants.I;
+import utils.Utils;
 
 /**
  * A glyph starts as a point and then grows at a given speed.
@@ -183,6 +184,18 @@ public class Glyph {
         temp = Double.doubleToLongBits(y);
         result = prime * result + (int) (temp ^ (temp >>> 32));
         return result;
+    }
+
+    /**
+     * Returns whether this glyph and the given one share both X- and Y-
+     * coordinates. This is checked using
+     * {@link Utils.Double#eq(double, double)}, so with an epsilon.
+     *
+     * @param that Glyph to consider.
+     */
+    public boolean hasSamePositionAs(Glyph that) {
+        return (Utils.Double.eq(this.x, that.x) &&
+                Utils.Double.eq(this.y, that.y));
     }
 
     /**

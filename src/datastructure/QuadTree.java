@@ -332,11 +332,10 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     public void insert(Glyph glyph, double at, GrowFunction g) {
         double intersect = g.intersectAt(glyph, cell);
-        // if we intersect at some point, but later than current time;
-        // or when we are in the "before time", but the glyph is not contained
-        // in this QuadTree cell, then we should not insert
-        if ((at >= 0 && intersect > at + Utils.EPS) ||
-                (at < 0 && intersect >= 0)) {
+        // if we intersect at some point, but later than current time
+        // (this means that a glyph is in a cell already when its border is in
+        //  the cell! see GrowFunction#intersectAt(Glyph, Rectangle2D)
+        if (intersect > at + Utils.EPS) {
             return;
         }
         // otherwise, we will insert!

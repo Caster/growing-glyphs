@@ -16,6 +16,9 @@ public class LevelGrowSpeed extends GrowSpeedBase {
 
     @Override
     public double intersectAt(Glyph a, Glyph b) {
+        if (a.hasSamePositionAs(b)) {
+            return Double.NEGATIVE_INFINITY;
+        }
         return gf.dist(a, b) / 2.0;
     }
 
