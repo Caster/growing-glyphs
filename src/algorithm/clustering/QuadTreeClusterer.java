@@ -60,7 +60,7 @@ public class QuadTreeClusterer extends Clusterer {
     public Clusterer cluster(GrowFunction g,
             boolean includeOutOfCell, boolean step) {
         // for debugging only: checking the number of glyphs/entities
-        boolean checkTotal = B.CHECK_NUMBER_REPRESENTED.get();
+        boolean checkTotal = (B.CHECK_NUMBER_REPRESENTED.get() && LOGGER != null);
         int totalGlyphs = 0, totalEntities = 0;
         Set<Glyph> seenGlyphs = null;
         if (checkTotal) {
@@ -86,7 +86,9 @@ public class QuadTreeClusterer extends Clusterer {
                     for (Glyph glyph : leaf.getGlyphs()) {
                         n += glyph.getN();
                         c++;
-                        seenGlyphs.add(glyph); // set will not contain glyph yet
+                        if (checkTotal) {
+                            seenGlyphs.add(glyph);
+                        }
                     }
                 }
                 Stats.record("total # works", n);
@@ -394,10 +396,9 @@ public class QuadTreeClusterer extends Clusterer {
             }
             step(step);
 
-            LOGGER.log(Level.SEVERE, "step");
-
             // check ourselves, conditionally
             if (checkTotal) {
+                LOGGER.log(Level.SEVERE, "step");
                 int n = 0;
                 int c = 0;
                 Set<Glyph> seenPreviously = new HashSet<>(seenGlyphs);

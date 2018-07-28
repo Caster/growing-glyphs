@@ -34,6 +34,8 @@ public final class Constants {
         /**
          * Whether the {@link QuadTreeClusterer} checks the total number of works
          * represented by all alive glyphs after every step of the algorithm.
+         * This will only actually enable checking if
+         * {@linkplain #LOGGING_ENABLED logging is enabled}.
          */
         CHECK_NUMBER_REPRESENTED(true),
 
@@ -51,7 +53,9 @@ public final class Constants {
 
         /**
          * Whether messages should be logged at all. This overrides logging
-         * configuration from {@code logging.properties}.
+         * configuration from {@code logging.properties} (but only negatively,
+         * it will not log messages when this is disabled in
+         * {@code logging.properties}).
          */
         LOGGING_ENABLED(true),
 
