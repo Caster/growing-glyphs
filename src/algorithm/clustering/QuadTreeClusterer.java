@@ -59,8 +59,13 @@ public class QuadTreeClusterer extends Clusterer {
     @Override
     public Clusterer cluster(GrowFunction g,
             boolean includeOutOfCell, boolean step) {
+        // for debugging only: checking the number of glyphs/entities
         boolean checkTotal = B.CHECK_NUMBER_REPRESENTED.get();
         int totalGlyphs = 0, totalEntities = 0;
+        Set<Glyph> seenGlyphs = null;
+        if (checkTotal) {
+            seenGlyphs = new HashSet<>();
+        }
 
         if (LOGGER != null) {
             LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
@@ -81,6 +86,7 @@ public class QuadTreeClusterer extends Clusterer {
                     for (Glyph glyph : leaf.getGlyphs()) {
                         n += glyph.getN();
                         c++;
+                        seenGlyphs.add(glyph); // set will not contain glyph yet
                     }
                 }
                 Stats.record("total # works", n);
@@ -110,11 +116,6 @@ public class QuadTreeClusterer extends Clusterer {
         double lastDumpedMerges = Timers.in(Timers.elapsed("clustering"), Units.SECONDS);
         // finally, create an indication of which glyphs still participate
         int numAlive = 0;
-        // for debugging
-        Set<Glyph> seenGlyphs = null;
-        if (checkTotal) {
-            seenGlyphs = new HashSet<>();
-        }
         // start recording merge events
         Rectangle2D rect = tree.getRectangle();
         for (QuadTree leaf : tree.getLeaves()) {

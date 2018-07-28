@@ -149,6 +149,27 @@ public class QuadTree implements Iterable<QuadTree> {
     }
 
     /**
+     * Returns whether the given point is contained in this QuadTree cell. This
+     * is true when the following conditions are satisfied:
+     *   - cell.minX <= x; and
+     *   - cell.minY <= y; and
+     *   - x < cell.maxX or x == root.maxX; and
+     *   - y < cell.maxY or y == root.maxY.
+     * The above ensures that only a single cell at each level of the QuadTree
+     * will contain any given point, while simultaneously all points in the
+     * bounding box of the QuadTree are claimed by a cell at every level.
+     *
+     * @param x X-coordinate of query point.
+     * @param y Y-coordinate of query point.
+     */
+    public boolean contains(double x, double y) {
+        QuadTree root = getRoot();
+        return (cell.getMinX() <= x && cell.getMinY() <= y &&
+            (x < cell.getMaxX() || x == root.cell.getMaxX()) &&
+            (y < cell.getMaxY() || y == root.cell.getMaxY()));
+    }
+
+    /**
      * Return the leaf cell in this QuadTree that contains the given point. In
      * case the point lies outside of this QuadTree, {@code null} is returned.
      *
@@ -156,8 +177,7 @@ public class QuadTree implements Iterable<QuadTree> {
      * @param y Y-coordinate of query point.
      */
     public QuadTree findLeafAt(double x, double y) {
-        if (x < cell.getMinX() || x > cell.getMaxX() ||
-                y < cell.getMinY() || y > cell.getMaxY()) {
+        if (!contains(x, y)) {
             return null;
         }
         // already a match?
@@ -267,6 +287,13 @@ public class QuadTree implements Iterable<QuadTree> {
 
     public Rectangle2D getRectangle() {
         return cell;
+    }
+
+    public QuadTree getRoot() {
+        if (isRoot()) {
+            return this;
+        }
+        return parent.getRoot();
     }
 
     public Rectangle2D getSide(Side side) {

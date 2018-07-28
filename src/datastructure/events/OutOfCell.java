@@ -95,8 +95,8 @@ public class OutOfCell extends Event {
          * (order as per {@link #quadrant(int)}) that the point is in.
          */
         public static int quadrant(Rectangle2D cell, double x, double y) {
-            return (y <= cell.getCenterY() ? 0 : 2) +
-                    (x <= cell.getCenterX() ? 0 : 1);
+            return (y < cell.getCenterY() ? 0 : 2) +
+                    (x < cell.getCenterX() ? 0 : 1);
         }
 
         /**
