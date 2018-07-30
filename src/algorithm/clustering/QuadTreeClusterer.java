@@ -198,8 +198,16 @@ public class QuadTreeClusterer extends Clusterer {
                     Timers.start("[merge event processing] nested merges");
                 }
                 do {
-                    while (!nestedMerges.isEmpty()) {
+                    nestedMerge: while (!nestedMerges.isEmpty()) {
                         GlyphMerge m = nestedMerges.poll();
+
+                        // check that all glyphs in the merge are still alive
+                        for (Glyph glyph: m.getGlyphs()) {
+                            if (glyph != null && !glyph.alive) {
+                                continue nestedMerge;
+                            }
+                        }
+
                         if (LOGGER != null) {
                             LOGGER.log(Level.FINEST, "handling nested " + m);
                         }

@@ -37,7 +37,7 @@ public final class Constants {
          * This will only actually enable checking if
          * {@linkplain #LOGGING_ENABLED logging is enabled}.
          */
-        CHECK_NUMBER_REPRESENTED(true),
+        CHECK_NUMBER_REPRESENTED(false),
 
         /**
          * Whether {@link QuadTree} {@link QuadTreeChangeListener listeners} are
