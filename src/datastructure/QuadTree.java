@@ -658,9 +658,14 @@ public class QuadTree implements Iterable<QuadTree> {
             child.isOrphan = true;
             // adopt neighbors, keep neighbors of orphan intact
             // only adopt neighbors outside of the joined cell
+            // also, be careful to not have duplicate neighbors
             for (Side side : Side.quadrant(quadrant)) {
-                neighbors.get(side.ordinal()).addAll(
-                    child.neighbors.get(side.ordinal()));
+                List<QuadTree> ns = neighbors.get(side.ordinal());
+                for (QuadTree n : child.neighbors.get(side.ordinal())) {
+                    if (!ns.contains(n)) {
+                        ns.add(n);
+                    }
+                }
             }
         }
         // update neighbor pointers of neighbors; point to this instead of
