@@ -42,9 +42,16 @@ public class Stat {
     }
 
     public void log(Logger logger, String name) {
-        logger.log(Level.FINE, "{0} was {1} on average and always between "
-                + "{2} and {3}, over {4} measurement{5}", new Object[] {name,
-                String.format("%,9.2f", average), min, max, n, (n == 1 ? "" : "s")});
+        if (min == max) {
+            logger.log(Level.FINE, "{0} was {1} and did not change over {2} "
+                    + "measurement{3}", new Object[] {
+                    name, String.format("%,13.2f", max), n, (n == 1 ? "" : "s")});
+        } else {
+            logger.log(Level.FINE, "{0} was {1} on average and always between "
+                    + "{2} and {3}, over {4} measurement{5}", new Object[] {
+                    name, String.format("%,13.2f", average), min, max, n,
+                    (n == 1 ? "" : "s")});
+        }
     }
 
     public void logCount(Logger logger, String name) {
