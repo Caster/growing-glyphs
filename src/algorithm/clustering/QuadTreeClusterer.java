@@ -66,6 +66,7 @@ public class QuadTreeClusterer extends Clusterer {
         if (checkTotal) {
             seenGlyphs = new HashSet<>();
         }
+        int numBig = 0;
 
         if (LOGGER != null) {
             LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
@@ -244,6 +245,9 @@ public class QuadTreeClusterer extends Clusterer {
                                 continue;
                             }
                             glyph.perish(); numAlive--; glyphSize.unrecord(glyph.getN());
+                            if (glyph.isBig()) {
+                                numBig--;
+                            }
                             // copy the set of cells the glyph is in currently, because we
                             // are about to change that set and don't want to deal with
                             // ConcurrentModificationExceptions...
@@ -372,6 +376,14 @@ public class QuadTreeClusterer extends Clusterer {
                 }
                 // update bookkeeping
                 merged.participate(glyphSize); numAlive++; glyphSize.record(merged.getN());
+                if (merged.isBig()) {
+                    Stats.record("merged cells big glyphs", merged.getCells().size());
+                    Stats.record("glyphs around big glyphs",
+                            merged.getCells().stream().mapToInt((cell) ->
+                                cell.getGlyphsAlive().size()).sum());
+                    numBig++;
+                    Stats.record("number of big glyphs", numBig);
+                }
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;
