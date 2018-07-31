@@ -242,12 +242,12 @@ public class FirstMergeRecorder {
     public void record(Stream<Glyph> glyphs) {
         if (B.ROBUST.get()) {
             merge.getGlyphs().addAll(glyphs.parallel()
-                .filter((glyph) -> glyph.alive && glyph != from)
+                .filter((glyph) -> glyph.isAlive() && glyph != from)
                 .collect(Collectors.toSet()));
 
         } else {
             merge.combine(glyphs
-                .filter((glyph) -> glyph.alive && glyph != from)
+                .filter((glyph) -> glyph.isAlive() && glyph != from)
                 .collect(collector()));
         }
     }

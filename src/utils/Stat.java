@@ -59,6 +59,11 @@ public class Stat {
                 (n == 1 ? "once" : n + " times")});
     }
 
+    public void logPercentage(Logger logger, String name) {
+        logger.log(Level.FINE, "{0} {1}% of the time", new Object[] {name,
+                String.format("%.2f", average * 100)});
+    }
+
     public void record(double value) {
         if (n == 0) {
             this.n = 1;
@@ -73,6 +78,25 @@ public class Stat {
         if (value < min) {
             min = value;
         }
+    }
+
+    /**
+     * Forget about the given value. This method will update the average and sum
+     * that are recorded, while the minimum and maximum are invalidated (become
+     * {@link Double#NaN}). It is <i>not</i> checked whether the given value has
+     * been recorded before, because values are not tracked explicitly.
+     *
+     * @param value Value to forget about.
+     * @throws IllegalStateException When the number of recorded values is 0.
+     */
+    public void unrecord(double value) {
+        if (n == 0) {
+            throw new IllegalStateException("cannot unrecord a value when no "
+                    + "values are recorded");
+        }
+        average -= (value - average) / --n;
+        sum -= value;
+        min = max = Double.NaN;
     }
 
 }

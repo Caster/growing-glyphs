@@ -111,6 +111,12 @@ public final class Constants {
     public static enum D {
 
         /**
+         * Factor of average number of entities a glyph should represent before
+         * it is considered to be a {@linkplain Glyph#isBig() big glyph}.
+         */
+        BIG_GLYPH_FACTOR(1.1),
+
+        /**
          * Default maximum radius that the grow function is {@link
          * GrowFunction#initialize(int, double) initialized} with by the {@link
          * GrowingGlyphsDaemon#cluster(boolean, boolean) GrowingGlyphsDaemon}.
@@ -213,7 +219,7 @@ public final class Constants {
          * This behavior can be fully disabled by setting the number of squares
          * to track to 0 or smaller.
          */
-        LARGE_SQUARES_TRACK(5),
+        LARGE_SQUARES_TRACK(0),
 
         /**
          * The radius of discs representing input points in the GUI.

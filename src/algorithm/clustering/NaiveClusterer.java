@@ -56,11 +56,18 @@ public class NaiveClusterer extends Clusterer {
         for (QuadTree leaf : tree.getLeaves()) {
             for (Glyph glyph : leaf.getGlyphs()) {
                 map.put(glyph, new HierarchicalClustering(glyph, 0));
-                glyph.alive = true;
+                if (!glyph.isAlive()) {
+                    if (LOGGER != null) {
+                        LOGGER.log(Level.SEVERE, "unexpected dead glyph in input");
+                    }
+                    return null;
+                }
                 glyphsAlive.add(glyph);
             }
         }
-        LOGGER.log(Level.FINE, "initialized {0} glyphs", n);
+        if (LOGGER != null) {
+            LOGGER.log(Level.FINE, "initialized {0} glyphs", n);
+        }
 
         // create merge events for all pairs of glyphs; glyphs earlier in the
         // overall list of glyphs track glyphs later in the list, not vice versa
@@ -74,7 +81,9 @@ public class NaiveClusterer extends Clusterer {
                 numEvts++;
             }
         }
-        LOGGER.log(Level.FINE, "created {0} merge events", numEvts);
+        if (LOGGER != null) {
+            LOGGER.log(Level.FINE, "created {0} merge events", numEvts);
+        }
 
         for (int i = 0; i < n; ++i) {
             Arrays.sort(mergeMatrix[i]);

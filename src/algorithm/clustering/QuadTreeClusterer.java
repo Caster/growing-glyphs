@@ -118,6 +118,7 @@ public class QuadTreeClusterer extends Clusterer {
         double lastDumpedMerges = Timers.in(Timers.elapsed("clustering"), Units.SECONDS);
         // finally, create an indication of which glyphs still participate
         int numAlive = 0;
+        Stat glyphSize = new Stat();
         // start recording merge events
         Rectangle2D rect = tree.getRectangle();
         for (QuadTree leaf : tree.getLeaves()) {
@@ -143,9 +144,16 @@ public class QuadTreeClusterer extends Clusterer {
                 }
                 glyphs[i].popOutOfCellInto(q);
 
-                // create clustering leaves for all glyphs, mark them as alive
+                // create clustering leaves for all glyphs, count them as alive
                 map.put(glyphs[i], new HierarchicalClustering(glyphs[i], 0));
-                glyphs[i].alive = true; numAlive++;
+                numAlive++;
+                glyphSize.record(glyphs[i].getN());
+                if (!glyphs[i].isAlive()) {
+                    if (LOGGER != null) {
+                        LOGGER.log(Level.SEVERE, "unexpected dead glyph in input");
+                    }
+                    return null;
+                }
             }
         }
         if (LOGGER != null)
@@ -162,7 +170,7 @@ public class QuadTreeClusterer extends Clusterer {
             }
             // we ignore this event if not all glyphs from it are alive anymore
             for (Glyph glyph : e.getGlyphs()) {
-                if (!glyph.alive) {
+                if (!glyph.isAlive()) {
                     q.discard();
                     continue queue;
                 }
@@ -203,7 +211,7 @@ public class QuadTreeClusterer extends Clusterer {
 
                         // check that all glyphs in the merge are still alive
                         for (Glyph glyph: m.getGlyphs()) {
-                            if (glyph != null && !glyph.alive) {
+                            if (glyph != null && !glyph.isAlive()) {
                                 continue nestedMerge;
                             }
                         }
@@ -232,10 +240,10 @@ public class QuadTreeClusterer extends Clusterer {
                             // overlap is handled and then it is detected again. This
                             // would result in the event being handled more than once,
                             // which leads to issues. Hence the `!glyph.alive` check.
-                            if (glyph == null || !glyph.alive) {
+                            if (glyph == null || !glyph.isAlive()) {
                                 continue;
                             }
-                            glyph.alive = false; numAlive--;
+                            glyph.perish(); numAlive--; glyphSize.unrecord(glyph.getN());
                             // copy the set of cells the glyph is in currently, because we
                             // are about to change that set and don't want to deal with
                             // ConcurrentModificationExceptions...
@@ -285,7 +293,7 @@ public class QuadTreeClusterer extends Clusterer {
                 // update merge events of glyphs that tracked merged glyphs
                 if (B.TRACK.get() && !B.ROBUST.get()) {
                     for (Glyph orphan : trackersNeedingUpdate) {
-                        if (orphan.alive) {
+                        if (orphan.isAlive()) {
                             Stats.record("orphan cells", orphan.getCells().size());
                             if (!orphan.popMergeInto(q, LOGGER)) {
                                 rec.from(orphan);
@@ -363,7 +371,7 @@ public class QuadTreeClusterer extends Clusterer {
                     Timers.stop("[merge event processing] merge event recording");
                 }
                 // update bookkeeping
-                merged.alive = true; numAlive++;
+                merged.participate(glyphSize); numAlive++; glyphSize.record(merged.getN());
                 map.put(merged, mergedHC);
                 // eventually, the last merged glyph is the root
                 result = mergedHC;

@@ -201,7 +201,7 @@ public class QuadTree implements Iterable<QuadTree> {
             return glyphs;
         }
         return glyphs.stream()
-                .filter(glyph -> glyph.alive)
+                .filter(Glyph::isAlive)
                 .collect(Collectors.toList());
     }
 
@@ -519,7 +519,7 @@ public class QuadTree implements Iterable<QuadTree> {
             // (a glyph can be inserted into more than one cell!)
             for (Glyph glyph : glyphs) {
                 // don't bother with dead glyphs
-                if (glyph.alive) {
+                if (glyph.isAlive()) {
                     insert(glyph, at, g);
                 }
             }

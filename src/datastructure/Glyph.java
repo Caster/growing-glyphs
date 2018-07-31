@@ -9,12 +9,17 @@ import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import algorithm.clustering.QuadTreeClusterer;
 import datastructure.events.Event;
 import datastructure.events.GlyphMerge;
 import datastructure.events.OutOfCell;
 import datastructure.growfunction.GrowFunction;
+import utils.Constants;
 import utils.Constants.B;
+import utils.Constants.D;
 import utils.Constants.I;
+import utils.Stat;
+import utils.Utils.Stats;
 import utils.Utils;
 
 /**
@@ -22,10 +27,6 @@ import utils.Utils;
  */
 public class Glyph {
 
-    /**
-     * Used by clustering algorithm to track which glyphs are still of interest.
-     */
-    public boolean alive;
     /**
      * Whether this glyph is of special interest. Used for debugging.
      */
@@ -49,19 +50,28 @@ public class Glyph {
      */
     private int n;
     /**
+     * Used by clustering algorithm to track which glyphs are still of interest.
+     */
+    private boolean alive;
+    /**
+     * Whether this glyph represents {@linkplain Constants.D#BIG_GLYPH_FACTOR
+     * more entities than the average glyph} at the time it is constructed.
+     */
+    private boolean big;
+    /**
      * Set of QuadTree cells that this glyph intersects.
      */
-    private List<QuadTree> cells;
+    private final List<QuadTree> cells;
     /**
      * Events involving this glyph. Only one event is actually in the event
      * queue, others are added only when that one is popped from the queue.
      */
-    private Queue<GlyphMerge> mergeEvents;
+    private final Queue<GlyphMerge> mergeEvents;
     /**
      * Events involving this glyph. Only one event is actually in the event
      * queue, others are added only when that one is popped from the queue.
      */
-    private Queue<OutOfCell> outOfCellEvents;
+    private final Queue<OutOfCell> outOfCellEvents;
 
 
     /**
@@ -90,7 +100,6 @@ public class Glyph {
         if (n < 1) {
             throw new IllegalArgumentException("n must be at least 1");
         }
-        this.alive = alive;
         this.track = false;
         if (B.TRACK.get()) {
             this.trackedBy = new ArrayList<>();
@@ -100,6 +109,8 @@ public class Glyph {
         this.x = x;
         this.y = y;
         this.n = n;
+        this.alive = alive;
+        this.big = false;
         this.cells = new ArrayList<>();
         this.mergeEvents = new PriorityQueue<>(I.MAX_MERGES_TO_RECORD.get());
         this.outOfCellEvents = new PriorityQueue<>();
@@ -199,6 +210,26 @@ public class Glyph {
     }
 
     /**
+     * Returns whether this glyph is still taking part in the clustering process.
+     */
+    public boolean isAlive() {
+        return alive;
+    }
+
+    /**
+     * Returns whether this glyph is considered to be a big glyph, meaning that
+     * at the time of its construction, it was representing more than {@link
+     * Constants.D#BIG_GLYPH_FACTOR} times the average number of entities.
+     *
+     * <p>Glyphs initially are not big, but can be determined to be big when they
+     * {@link #participate(Stat)} later - this is true for merged glyphs in the
+     * {@link QuadTreeClusterer}.
+     */
+    public boolean isBig() {
+        return big;
+    }
+
+    /**
      * Implement strict equality.
      */
     @Override
@@ -226,6 +257,26 @@ public class Glyph {
      */
     public double intersects(Glyph that, GrowFunction g) {
         return g.intersectAt(this, that);
+    }
+
+    /**
+     * Marks this glyph as alive: participating in the clustering process.
+     *
+     * @param glyphSize Statistic covering number of entities represented by
+     *            other glyphs, used to determine if this glyph {@link #isBig()}.
+     */
+    public void participate(Stat glyphSize) {
+        this.alive = true;
+        this.big = (this.n > glyphSize.getAverage() * D.BIG_GLYPH_FACTOR.get());
+        Stats.count("glyph was big when it participated", this.big);
+    }
+
+    /**
+     * Marks this glyph as not alive: no longer participating in the clustering
+     * process.
+     */
+    public void perish() {
+        this.alive = false;
     }
 
     /**

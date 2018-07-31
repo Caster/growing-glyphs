@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -273,7 +274,7 @@ public class Utils {
      */
     public static class Stats {
 
-        private static final Pattern TAG_REGEX = Pattern.compile("^\\[[a-z]+\\]\\s+");
+        private static final Pattern TAG_REGEX = Pattern.compile("^\\[([a-z]+)\\]\\s+");
 
 
         /**
@@ -284,6 +285,10 @@ public class Utils {
 
         public static void count(String name) {
             record("[count] " + name, 1);
+        }
+
+        public static void count(String name, boolean bool) {
+            record("[perc] " + name, (bool ? 1 : 0));
         }
 
         public static Stat get(String name) {
@@ -304,15 +309,29 @@ public class Utils {
             logger.log(Level.FINE, "");
             logger.log(Level.FINE, "STATS");
             int padTo = stats.keySet().stream()
+                    .filter((n) -> {
+                        Matcher tagMatcher = TAG_REGEX.matcher(n);
+                        if (tagMatcher.find() &&
+                                tagMatcher.group(1).equals("perc")) {
+                            return false;
+                        }
+                        return true;
+                    })
                     .map((n) -> TAG_REGEX.matcher(n).replaceAll(""))
                     .max(Comparator.comparingInt(String::length)).get().length();
             String f = "%1$-" + padTo + "s";
             stats.entrySet().stream()
                 .sorted((a, b) -> a.getKey().compareTo(b.getKey()))
                 .forEach((e) -> {
-                    if (TAG_REGEX.matcher(e.getKey()).find()) {
-                        e.getValue().logCount(logger, String.format(f,
-                                TAG_REGEX.matcher(e.getKey()).replaceAll("")));
+                    Matcher tagMatcher = TAG_REGEX.matcher(e.getKey());
+                    if (tagMatcher.find()) {
+                        String tag = tagMatcher.group(1);
+                        String n = String.format(f, tagMatcher.replaceAll(""));
+                        if (tag.equals("perc")) {
+                            e.getValue().logPercentage(logger, n);
+                        } else {
+                            e.getValue().logCount(logger, n);
+                        }
                     } else {
                         e.getValue().log(logger, String.format(f, e.getKey()));
                     }
