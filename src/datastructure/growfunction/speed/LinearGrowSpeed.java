@@ -23,17 +23,17 @@ public class LinearGrowSpeed extends GrowSpeedBase {
     }
 
     @Override
-    public double intersectAt(Rectangle2D r, Glyph c) {
-        double d = gf.dist(r, c);
+    public double intersectAt(Rectangle2D r, Glyph g) {
+        double d = gf.dist(r, g);
         if (Double.isInfinite(d)) {
             return d;
         }
-        return d / weight(c);
+        return d / weight(g);
     }
 
     @Override
     public double radius(Glyph g, double at) {
-        return at * weight(g);
+        return Math.max(0, at) * weight(g);
     }
 
 }

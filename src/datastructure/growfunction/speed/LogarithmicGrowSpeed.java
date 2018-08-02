@@ -31,12 +31,19 @@ public class LogarithmicGrowSpeed extends GrowSpeedBase {
         if (gA.hasSamePositionAs(gB)) {
             return Double.NEGATIVE_INFINITY;
         }
-        // we want that `log(1 + t * w_a) + log(1 + t * w_b) = d / fA`, which
-        // translates to the below equation according to WolframAlpha
+        double d = gf.dist(gA, gB);
         double a = weight(gA);
         double b = weight(gB);
+
+        // borders grow linearly in negative time
+        if (d < 0) {
+            return d / (a + b);
+        }
+
+        // we want that `log(1 + t * w_a) + log(1 + t * w_b) = d / fA`, which
+        // translates to the below equation according to WolframAlpha
         return (Math.sqrt(a * a + 4 * a * b *
-                Math.pow(LOG_BASE, gf.dist(gA, gB) / fA) -
+                Math.pow(LOG_BASE, d / fA) -
                 2 * a * b + b * b) - a - b) / (2 * a * b);
     }
 
@@ -46,6 +53,12 @@ public class LogarithmicGrowSpeed extends GrowSpeedBase {
         if (Double.isInfinite(d)) {
             return d;
         }
+
+        // borders grow linearly in negative time
+        if (d < 0) {
+            return d / weight(g);
+        }
+
         // we want that `log(1 + t * w) = d / fA`, which translates to
         // `t = (base^(d / fA) - 1) / w`, which is used below
         return (Math.pow(LOG_BASE, d / fA) - 1) / weight(g);
@@ -53,7 +66,7 @@ public class LogarithmicGrowSpeed extends GrowSpeedBase {
 
     @Override
     public double radius(Glyph g, double at) {
-        return (Math.log1p(at * weight(g)) / LOG_DIV) * fA;
+        return (Math.log1p(Math.max(0, at) * weight(g)) / LOG_DIV) * fA;
     }
 
 }

@@ -29,7 +29,7 @@ public class LevelGrowSpeed extends GrowSpeedBase {
 
     @Override
     public double radius(Glyph g, double at) {
-        return at;
+        return Math.max(0, at);
     }
 
 }

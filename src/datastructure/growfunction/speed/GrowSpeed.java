@@ -51,6 +51,8 @@ public interface GrowSpeed {
     /**
      * Returns the radius of the given glyph at the given time stamp/zoom level.
      *
+     * <p>The radius of a glyph is non-negative.
+     *
      * @param g Glyph to calculate radius of.
      * @param at Time stamp/zoom level to determine radius at.
      */

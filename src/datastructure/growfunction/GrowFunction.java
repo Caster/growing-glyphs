@@ -122,10 +122,11 @@ public class GrowFunction implements GrowShape, GrowSpeed {
      * Given a glyph, return the width of its border.
      *
      * @param g Glyph to determine the border width of.
+     * @param at Timestamp at which border width is determined.
      * @see #radius(double, int)
      */
-    public double border(Glyph g) {
-        return border(thresholds.getCompressionLevel(g));
+    public double border(Glyph g, double at) {
+        return border(thresholds.getCompressionLevel(g), at);
     }
 
     @Override
@@ -249,14 +250,16 @@ public class GrowFunction implements GrowShape, GrowSpeed {
      * compression level.
      *
      * <p>In particular, a glyph with compression level <code>k</code> will have a
-     * border of width <code>2k</code>.
+     * border of width <code>2k</code>. However, for negative timestamps the border
+     * may be less wide; it grows into existence at linear pace.
      *
      * @param radius Radius without border.
      * @param compressionLevel Compression level of the glyph.
+     * @param at Timestamp at which radius is determined.
      * @see #border(Glyph)
      */
-    public double radius(double radius, int compressionLevel) {
-        return radius + border(compressionLevel);
+    public double radius(double radius, int compressionLevel, double at) {
+        return radius + border(compressionLevel, at);
     }
 
     /**
@@ -309,11 +312,16 @@ public class GrowFunction implements GrowShape, GrowSpeed {
      * Given a compression level, returns how wide the border for that level is.
      *
      * @param compressionLevel Compression level to calculate border width of.
+     * @param at Timestamp at which border width is determined.
      * @see #border(Glyph)
      * @see #radius(double, int)
      */
-    private double border(int compressionLevel) {
-        return 2 * compressionLevel;
+    private double border(int compressionLevel, double at) {
+        double w = 2 * compressionLevel;
+        if (at < 0) {
+            w = Math.max(0, w + at);
+        }
+        return w;
     }
 
 }

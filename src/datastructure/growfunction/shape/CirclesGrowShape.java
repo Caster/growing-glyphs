@@ -17,7 +17,7 @@ public class CirclesGrowShape extends GrowShapeBase {
     @Override
     public double dist(Glyph a, Glyph b) {
         return Utils.euclidean(a.getX(), a.getY(), b.getX(), b.getY()) -
-                gf.border(a) - gf.border(b);
+                gf.border(a, 0) - gf.border(b, 0);
     }
 
     @Override
@@ -26,12 +26,12 @@ public class CirclesGrowShape extends GrowShapeBase {
         if (d < 0) {
             return Double.NEGATIVE_INFINITY;
         }
-        return d - gf.border(g);
+        return d - gf.border(g, 0);
     }
 
     @Override
     public Shape sizeAt(Glyph g, double at, int c) {
-        double r = gf.radius(gf.radius(g, at), c);
+        double r = gf.radius(gf.radius(g, at), c, at);
         return new Ellipse2D.Double(g.getX() - r, g.getY() - r, 2 * r, 2 * r);
     }
 
