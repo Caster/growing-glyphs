@@ -103,10 +103,7 @@ public class GrowingGlyphs extends JFrame {
     }
 
     public void randomGlyphs(int n, GlyphGenerator gen) {
-        menu.ensure(Setting.DRAW_CELLS, true);
-        menu.ensure(Setting.DRAW_CENTERS, true);
-        menu.ensure(Setting.DRAW_MAP, false);
-        menu.ensure(Setting.SHOW_COORDS, true);
+        setDrawingOptions(DrawingOption.POINTS);
 
         boolean clear = SETTINGS.getBoolean(Setting.CLEAR_BEFORE_GENERATE);
         if (clear) {
@@ -218,6 +215,7 @@ public class GrowingGlyphs extends JFrame {
         }
         view = null;
         viewNav.setEnabled(false);
+        setDrawingOptions(DrawingOption.POINTS);
     }
 
     /**
@@ -251,6 +249,7 @@ public class GrowingGlyphs extends JFrame {
         }
         view = null;
         viewNav.setEnabled(false);
+        setDrawingOptions(DrawingOption.POINTS);
     }
 
     /**
@@ -259,7 +258,6 @@ public class GrowingGlyphs extends JFrame {
      * @param events Ignored.
      */
     private void run(ActionEvent...events) {
-        menu.ensure(Setting.SHOW_COORDS, false);
         if (daemon.isClustered()) {
             status.setText("Already clustered. Please reopen the data to cluster "
                     + "with different parameters.");
@@ -272,9 +270,7 @@ public class GrowingGlyphs extends JFrame {
                 daemon.cluster(SETTINGS.getBoolean(Setting.DEBUG),
                         SETTINGS.getBoolean(Setting.STEP));
                 if (daemon.getClustering() != null) {
-                    menu.ensure(Setting.DRAW_CELLS, false);
-                    menu.ensure(Setting.DRAW_CENTERS, false);
-                    menu.ensure(Setting.DRAW_MAP, true);
+                    setDrawingOptions(DrawingOption.MAP);
 
                     view = new HierarchicalClustering.View(daemon.getClustering());
                     view.syncWith(viewNav);
@@ -315,6 +311,23 @@ public class GrowingGlyphs extends JFrame {
         if (getFC().showSaveDialog(GrowingGlyphs.this) ==
                 JFileChooser.APPROVE_OPTION) {
             PointIO.write(daemon.getTree(), getFC().getSelectedFile());
+        }
+    }
+
+    private void setDrawingOptions(DrawingOption option) {
+        switch (option) {
+        case MAP:
+            menu.ensure(Setting.DRAW_CELLS, false);
+            menu.ensure(Setting.DRAW_CENTERS, false);
+            menu.ensure(Setting.DRAW_MAP, true);
+            menu.ensure(Setting.SHOW_COORDS, false);
+            break;
+        case POINTS:
+            menu.ensure(Setting.DRAW_CELLS, true);
+            menu.ensure(Setting.DRAW_CENTERS, true);
+            menu.ensure(Setting.DRAW_MAP, false);
+            menu.ensure(Setting.SHOW_COORDS, true);
+            break;
         }
     }
 
@@ -555,6 +568,11 @@ public class GrowingGlyphs extends JFrame {
                 menuItem.doClick();
             }
         }
+    }
+
+
+    private enum DrawingOption {
+        POINTS, MAP;
     }
 
 
