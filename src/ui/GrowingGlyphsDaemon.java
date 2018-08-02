@@ -10,6 +10,7 @@ import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
 import datastructure.growfunction.GrowFunction;
 import gui.GrowingGlyphs;
+import gui.Settings.Setting;
 import io.CsvIO;
 import io.PointIO;
 import utils.Constants.B;
@@ -84,7 +85,7 @@ public class GrowingGlyphsDaemon {
 
         // initialize grow function as necessary
         g.thresholds.clear();
-        if (B.INITIALIZE_DEFAULT_COMPRESSION_THRESHOLDS.get()) {
+        if (GrowingGlyphs.SETTINGS.getBoolean(Setting.COMPRESSION)) {
             g.thresholds.defaultFor(dataSet);
         }
         g.initialize(n, D.MAX_RADIUS.get());

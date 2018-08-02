@@ -25,6 +25,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
+import javax.swing.ToolTipManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -91,6 +92,7 @@ public class GrowingGlyphs extends JFrame {
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         this.fc = null;
         setJMenuBar(this.menu = new Menu(this));
+        ToolTipManager.sharedInstance().setInitialDelay(0);
 
         KeyListener kl = new KeyListener();
         addKeyListener(kl);
@@ -590,12 +592,11 @@ public class GrowingGlyphs extends JFrame {
         }
 
         public MenuItemCheck(Setting setting, ActionListener onClick) {
-            this(setting.toString(), SETTINGS.getBoolean(setting), onClick);
-        }
-
-        public MenuItemCheck(String name, boolean initial, ActionListener onClick) {
-            super(name, initial);
+            super(setting.toString(), SETTINGS.getBoolean(setting));
             addActionListener(onClick);
+            if (setting.getToolTipText() != null) {
+                setToolTipText(setting.getToolTipText());
+            }
         }
     }
 

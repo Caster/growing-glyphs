@@ -30,6 +30,9 @@ public class Settings extends HashMap<Setting, Object> {
         CLEAR_BEFORE_GENERATE(null, "Clear points before generation", Boolean.TRUE),
         COLORFUL_BORDERS(SettingSection.DRAW, "Indicate compression level with "
                 + "colors", Boolean.FALSE),
+        COMPRESSION(SettingSection.MISC, "Compress glyphs", Boolean.TRUE,
+                "This will load hardcoded compression factors for some data "
+                + "sets. Won't do compression for unknown data sets."),
         LABELED_BORDERS(SettingSection.DRAW, "Indicate compression level with "
                 + "numbers", Boolean.TRUE),
         SHOW_COORDS(SettingSection.MISC, "Show coordinates on mouse over",
@@ -39,17 +42,23 @@ public class Settings extends HashMap<Setting, Object> {
         private final Object defaultValue;
         private final String name;
         private final SettingSection section;
+        private final String tooltip;
         private final boolean triggersRepaint;
 
         private Setting(SettingSection section, String name, Object defaultValue) {
-            this(section, name, defaultValue, (section == SettingSection.DRAW));
+            this(section, name, defaultValue, (section == SettingSection.DRAW), null);
+        }
+
+        private Setting(SettingSection section, String name, Object defaultValue, String tooltip) {
+            this(section, name, defaultValue, (section == SettingSection.DRAW), tooltip);
         }
 
         private Setting(SettingSection section, String name, Object defaultValue,
-                boolean triggersRepaint) {
+                boolean triggersRepaint, String tooltip) {
             this.defaultValue = defaultValue;
             this.name = name;
             this.section = section;
+            this.tooltip = tooltip;
             this.triggersRepaint = triggersRepaint;
         }
 
@@ -60,6 +69,10 @@ public class Settings extends HashMap<Setting, Object> {
 
         public SettingSection getSection() {
             return section;
+        }
+
+        public String getToolTipText() {
+            return tooltip;
         }
 
         @Override
