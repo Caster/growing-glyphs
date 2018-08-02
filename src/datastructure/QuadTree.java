@@ -134,10 +134,14 @@ public class QuadTree implements Iterable<QuadTree> {
             }
             children = null;
         }
-        for (Glyph glyph : glyphs) {
-            glyph.removeCell(this);
+        if (glyphs != null) {
+            for (Glyph glyph : glyphs) {
+                glyph.removeCell(this);
+            }
+            glyphs.clear();
+        } else {
+            glyphs = new ArrayList<>(I.MAX_GLYPHS_PER_CELL.get());
         }
-        glyphs.clear();
         for (List<QuadTree> neighborsOnSide : neighbors) {
             neighborsOnSide.clear();
         }
