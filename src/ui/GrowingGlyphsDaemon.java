@@ -128,17 +128,21 @@ public class GrowingGlyphsDaemon {
             dataSet = file.getName();
             n = PointIO.read(file, tree);
         }
-        clustered = false;
-        clusterer.reset();
         lastOpened = file;
-        Stats.reset();
-        Timers.reset();
+        reset();
     }
 
     public void reopen() {
         if (lastOpened != null) {
             openFile(lastOpened);
         }
+    }
+
+    public void reset() {
+        clustered = false;
+        clusterer.reset();
+        Stats.reset();
+        Timers.reset();
     }
 
     public void setClusterer(Clusterer clusterer) {

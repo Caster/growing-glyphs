@@ -8,7 +8,9 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.Area;
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -80,8 +82,6 @@ public class GrowingGlyphs extends JFrame {
         this.drawPanel = new DrawPanel(this.historicTree, this);
         add(drawPanel, BorderLayout.CENTER);
 
-        randomGlyphs(NUM_POINTS_INITIALLY, GENERATORS[0]);
-
         add(viewNav = new ScrollableSlider(), BorderLayout.NORTH);
         viewNav.setEnabled(false);
         viewNav.setFocusable(false); // we handle keyboard input ourselves
@@ -96,21 +96,53 @@ public class GrowingGlyphs extends JFrame {
         addKeyListener(kl);
         drawPanel.addKeyListener(kl);
 
+        randomGlyphs(NUM_POINTS_INITIALLY, GENERATORS[0]);
+
         pack();
         drawPanel.resetView();
     }
 
     public void randomGlyphs(int n, GlyphGenerator gen) {
-        daemon.getTree().clear();
-        Glyph[] glyphs = new Glyph[n];
+        menu.ensure(Setting.DRAW_CELLS, true);
+        menu.ensure(Setting.DRAW_CENTERS, true);
+        menu.ensure(Setting.DRAW_MAP, false);
+        menu.ensure(Setting.SHOW_COORDS, true);
+
+        boolean clear = SETTINGS.getBoolean(Setting.CLEAR_BEFORE_GENERATE);
+        if (clear) {
+            daemon.getTree().clear();
+        }
+
+        // let the generator do its work
         gen.init(n, daemon.getTree().getRectangle());
         for (int i = 0; i < n; ++i) {
-            glyphs[i] = gen.next();
-            daemon.getTree().insertCenterOf(glyphs[i]);
+            daemon.getTree().insertCenterOf(gen.next());
         }
+        // no more glyph outlines, only centers; triggers repaint
         drawPanel.setGlyphs(null);
+
         if (status != null) {
-            status.setText("Loaded new random set of " + n + " glyphs.");
+            if (clear) {
+                status.setText("Loaded new random set of " + n + " glyphs.");
+            } else {
+                Set<Glyph> seenNowGlyphs = new HashSet<>();
+                int numGlyphs = 0;
+                for (QuadTree leaf : daemon.getTree().getLeaves()) {
+                    for (Glyph glyph : leaf.getGlyphsAlive()) {
+                        if (!seenNowGlyphs.contains(glyph)) {
+                            numGlyphs++;
+                            seenNowGlyphs.add(glyph);
+                        }
+                    }
+                }
+                status.setText("Added " + n + " glyphs, have " + numGlyphs + " now.");
+            }
+        }
+
+        if (daemon.isClustered()) {
+            daemon.reset();
+            view = null;
+            viewNav.setEnabled(false);
         }
     }
 
@@ -227,9 +259,7 @@ public class GrowingGlyphs extends JFrame {
      * @param events Ignored.
      */
     private void run(ActionEvent...events) {
-        if (menu.booleanSettings.get(Setting.SHOW_COORDS).isSelected()) {
-            menu.booleanSettings.get(Setting.SHOW_COORDS).doClick();
-        }
+        menu.ensure(Setting.SHOW_COORDS, false);
         if (daemon.isClustered()) {
             status.setText("Already clustered. Please reopen the data to cluster "
                     + "with different parameters.");
@@ -242,11 +272,10 @@ public class GrowingGlyphs extends JFrame {
                 daemon.cluster(SETTINGS.getBoolean(Setting.DEBUG),
                         SETTINGS.getBoolean(Setting.STEP));
                 if (daemon.getClustering() != null) {
-                    if (!menu.booleanSettings.get(Setting.DRAW_MAP).isSelected()) {
-                        menu.booleanSettings.get(Setting.DRAW_CELLS).doClick();
-                        menu.booleanSettings.get(Setting.DRAW_CENTERS).doClick();
-                        menu.booleanSettings.get(Setting.DRAW_MAP).doClick();
-                    }
+                    menu.ensure(Setting.DRAW_CELLS, false);
+                    menu.ensure(Setting.DRAW_CENTERS, false);
+                    menu.ensure(Setting.DRAW_MAP, true);
+
                     view = new HierarchicalClustering.View(daemon.getClustering());
                     view.syncWith(viewNav);
                     view.setChangeListener(new ChangeListener() {
@@ -515,7 +544,16 @@ public class GrowingGlyphs extends JFrame {
                     frame.random(ind);
                 }));
             }
+            genMenu.addSeparator();
+            genMenu.add(new MenuItemCheck(Setting.CLEAR_BEFORE_GENERATE));
             add(genMenu);
+        }
+
+        public void ensure(Setting setting, boolean selected) {
+            MenuItemCheck menuItem = booleanSettings.get(setting);
+            if (menuItem.isSelected() != selected) {
+                menuItem.doClick();
+            }
         }
     }
 
@@ -529,6 +567,10 @@ public class GrowingGlyphs extends JFrame {
 
 
     private static class MenuItemCheck extends JCheckBoxMenuItem {
+        public MenuItemCheck(Setting setting) {
+            this(setting, (ActionEvent e) -> SETTINGS.toggle(setting));
+        }
+
         public MenuItemCheck(Setting setting, ActionListener onClick) {
             this(setting.toString(), SETTINGS.getBoolean(setting), onClick);
         }

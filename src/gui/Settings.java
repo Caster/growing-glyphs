@@ -27,6 +27,7 @@ public class Settings extends HashMap<Setting, Object> {
         DRAW_CENTERS(SettingSection.DRAW, "Draw glyph centers", Boolean.TRUE),
         DRAW_GLYPHS(SettingSection.DRAW, "Draw glyph outlines", Boolean.TRUE),
         DRAW_MAP(SettingSection.DRAW, "Draw map in background", Boolean.FALSE),
+        CLEAR_BEFORE_GENERATE(null, "Clear points before generation", Boolean.TRUE),
         COLORFUL_BORDERS(SettingSection.DRAW, "Indicate compression level with "
                 + "colors", Boolean.FALSE),
         LABELED_BORDERS(SettingSection.DRAW, "Indicate compression level with "

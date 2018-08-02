@@ -18,7 +18,8 @@ public class UniformRandom extends GlyphGenerator {
         return new Glyph(
                 rand.nextDouble() * rect.getWidth() + rect.getX(),
                 rand.nextDouble() * rect.getHeight() + rect.getY(),
-                rand.nextInt(WEIGHT_RANGE[1]) + WEIGHT_RANGE[0]
+                rand.nextInt(WEIGHT_RANGE[1]) + WEIGHT_RANGE[0],
+                true
             );
     }
 

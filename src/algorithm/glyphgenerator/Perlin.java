@@ -30,7 +30,8 @@ public class Perlin extends GlyphGenerator {
                 return new Glyph(
                         x / MAX * rect.getWidth() + rect.getX(),
                         y / MAX * rect.getHeight() + rect.getY(),
-                        rand.nextInt(WEIGHT_RANGE[1]) + WEIGHT_RANGE[0]
+                        rand.nextInt(WEIGHT_RANGE[1]) + WEIGHT_RANGE[0],
+                        true
                     );
             }
         }

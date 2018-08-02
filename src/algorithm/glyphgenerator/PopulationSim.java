@@ -90,7 +90,7 @@ public class PopulationSim extends GlyphGenerator {
         placed.add(p);
         i++;
         LOGGER.log(Level.FINE, "at position {0}", p);
-        return new Glyph(p.getX(), p.getY(), w);
+        return new Glyph(p.getX(), p.getY(), w, true);
     }
 
 
