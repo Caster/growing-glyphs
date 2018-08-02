@@ -83,6 +83,7 @@ public class GrowingGlyphsDaemon {
         }
 
         // initialize grow function as necessary
+        g.thresholds.clear();
         if (B.INITIALIZE_DEFAULT_COMPRESSION_THRESHOLDS.get()) {
             g.thresholds.defaultFor(dataSet);
         }

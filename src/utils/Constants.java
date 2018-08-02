@@ -38,7 +38,6 @@ public final class Constants {
          * {@linkplain #LOGGING_ENABLED logging is enabled}.
          */
         CHECK_NUMBER_REPRESENTED(false),
-
         /**
          * Whether {@link QuadTree} {@link QuadTreeChangeListener listeners} are
          * accepted and notified of events.
@@ -49,7 +48,7 @@ public final class Constants {
          * Whether {@link CompressionThreshold#defaultFor(String) default
          * compression thresholds} should be loaded for data sets.
          */
-        INITIALIZE_DEFAULT_COMPRESSION_THRESHOLDS(true),
+        INITIALIZE_DEFAULT_COMPRESSION_THRESHOLDS(false),
 
         /**
          * Whether messages should be logged at all. This overrides logging
