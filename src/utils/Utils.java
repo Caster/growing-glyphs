@@ -22,7 +22,7 @@ public class Utils {
     /**
      * Epsilon, useful for double comparison.
      */
-    public static final double EPS = 1e-5;
+    public static final double EPS = 1e-7;
 
 
     /**

@@ -35,11 +35,6 @@ public class LogarithmicGrowSpeed extends GrowSpeedBase {
         double a = weight(gA);
         double b = weight(gB);
 
-        // borders grow linearly in negative time
-        if (d < 0) {
-            return d / (a + b);
-        }
-
         // we want that `log(1 + t * w_a) + log(1 + t * w_b) = d / fA`, which
         // translates to the below equation according to WolframAlpha
         return (Math.sqrt(a * a + 4 * a * b *
@@ -52,11 +47,6 @@ public class LogarithmicGrowSpeed extends GrowSpeedBase {
         double d = gf.dist(r, g);
         if (Double.isInfinite(d)) {
             return d;
-        }
-
-        // borders grow linearly in negative time
-        if (d < 0) {
-            return d / weight(g);
         }
 
         // we want that `log(1 + t * w) = d / fA`, which translates to
