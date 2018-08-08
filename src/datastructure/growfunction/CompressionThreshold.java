@@ -51,8 +51,7 @@ public class CompressionThreshold {
      *         {@link CompressionThreshold} changed state, or not.
      */
     public boolean defaultFor(String dataSet) {
-        switch (dataSet) {
-        case "trove":
+        if (dataSet != null && dataSet.startsWith("trove")) {
             // Jasper used 25/39 from 1_000_000 and 4/9 from 10_000_000
             // according to his thesis (approx. 0.64 and 0.44). We tweaked this
             // to the below values, that appear to work well with the Linear
