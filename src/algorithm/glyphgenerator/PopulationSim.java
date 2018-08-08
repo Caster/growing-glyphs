@@ -36,7 +36,6 @@ public class PopulationSim extends GlyphGenerator {
      */
     private static final int POINTS_PLACED_FREELY = 5;
 
-    private int i;
     private double maxDistSq;
     private ArrayList<Point2D> placed;
 
@@ -50,8 +49,6 @@ public class PopulationSim extends GlyphGenerator {
     public void init(int n, Rectangle2D rect) {
         super.init(n, rect);
 
-        // reset counter
-        i = 0;
         // diagonal of the rectangle is maximum distance between two points
         maxDistSq = rect.getWidth() * rect.getWidth() +
                 rect.getHeight() * rect.getHeight();
@@ -65,14 +62,12 @@ public class PopulationSim extends GlyphGenerator {
 
     @Override
     public Glyph next() {
-        if (i == n) {
-            throw new RuntimeException();
-        }
+        count();
 
         double multiplier = Math.max(MIN_MULTIPLIER, MULTIPLIER_WEIGHT - MULTIPLIER_WEIGHT *
                 Math.log(i + POINTS_PLACED_FREELY - 1) / Math.log(n - POINTS_PLACED_FREELY + 1));
         LOGGER.log(Level.FINE, "placing glyph {0}, multiplier {1}",
-                new Object[] {i + 1, multiplier});
+                new Object[] {i, multiplier});
         Point2D p = new Point2D.Double();
         double near = random(p);
         int w = rand.nextInt(WEIGHT_RANGE[1]) + WEIGHT_RANGE[0];
@@ -88,7 +83,6 @@ public class PopulationSim extends GlyphGenerator {
         }
 
         placed.add(p);
-        i++;
         LOGGER.log(Level.FINE, "at position {0}", p);
         return new Glyph(p.getX(), p.getY(), w, true);
     }

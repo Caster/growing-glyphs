@@ -206,7 +206,8 @@ public class DrawPanel extends JPanel implements
                 if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CENTERS) &&
                         cell.getGlyphs() != null) {
                     for (Glyph s : cell.getGlyphs()) {
-                        g2.setColor(s == highlightedGlyph ? Color.RED : Color.BLACK);
+                        g2.setColor(s == highlightedGlyph || s.track ?
+                                Color.RED : Color.BLACK);
                         g2.fill(new Rectangle2D.Double(
                                 s.getX() - r,
                                 s.getY() - r,
@@ -370,7 +371,11 @@ public class DrawPanel extends JPanel implements
 
 
     @Override
-    public void mouseClicked(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {
+        if (highlightedGlyph != null) {
+            highlightedGlyph.track = !highlightedGlyph.track;
+        }
+    }
 
 
     @Override

@@ -319,12 +319,20 @@ public class Glyph {
      * {@link #record(OutOfCell) recorded} event to the given queue.
      *
      * @param q Event queue to add {@link OutOfCell} to.
+     * @param l Logger to log events to, can be {@code null}.
      * @return Whether an event was popped into the queue.
      */
-    public boolean popOutOfCellInto(Queue<Event> q) {
+    public boolean popOutOfCellInto(Queue<Event> q, Logger l) {
         if (!outOfCellEvents.isEmpty()) {
-            q.add(outOfCellEvents.poll());
+            OutOfCell o = outOfCellEvents.poll();
+            if (l != null) {
+                l.log(Level.FINEST, "popping {0} into the queue", o);
+            }
+            q.add(o);
             return true;
+        }
+        if (l != null) {
+            l.log(Level.FINEST, "no out of cell event to pop");
         }
         return false;
     }

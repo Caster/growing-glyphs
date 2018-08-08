@@ -67,6 +67,7 @@ public class QuadTreeClusterer extends Clusterer {
             seenGlyphs = new HashSet<>();
         }
         int numBig = 0;
+        Level defaultLevel = (LOGGER == null ? null : LOGGER.getLevel());
 
         if (LOGGER != null) {
             LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
@@ -143,7 +144,7 @@ public class QuadTreeClusterer extends Clusterer {
                         glyphs[i].record(new OutOfCell(glyphs[i], g, leaf, side));
                     }
                 }
-                glyphs[i].popOutOfCellInto(q);
+                glyphs[i].popOutOfCellInto(q, LOGGER);
 
                 // create clustering leaves for all glyphs, count them as alive
                 map.put(glyphs[i], new HierarchicalClustering(glyphs[i], 0));
@@ -177,7 +178,17 @@ public class QuadTreeClusterer extends Clusterer {
                 }
             }
             e = q.poll();
+            // log on a slightly higher urgency level when one of the glyphs is tracked
             if (LOGGER != null) {
+                if (LOGGER.getLevel().intValue() > Level.FINER.intValue()) {
+                    for (Glyph glyph : e.getGlyphs()) {
+                        if (glyph.track) {
+                            LOGGER.setLevel(Level.FINEST);
+                            break;
+                        }
+                    }
+                }
+                // log about handling this event
                 LOGGER.log(Level.FINER, "handling {0} at {1} involving",
                         new Object[] {e.getType(), e.getAt()});
                 for (Glyph glyph : e.getGlyphs()) {
@@ -194,7 +205,7 @@ public class QuadTreeClusterer extends Clusterer {
                         track = track || glyph.track;
                     }
                     if (track) {
-                        Timers.start("[merge event processing] total (large)");
+                        Timers.start("[merge event processing] total (track)");
                     }
                 }
                 nestedMerges.add((GlyphMerge) e);
@@ -270,7 +281,7 @@ public class QuadTreeClusterer extends Clusterer {
                         }
 
                         if (LOGGER != null) {
-                            LOGGER.log(Level.FINEST, "-> merged glyph is {0}", merged);
+                            LOGGER.log(Level.FINEST, "→ merged glyph is {0}", merged);
                         }
                     }
                 } while (findOverlap(g, merged, mergedAt, nestedMerges));
@@ -364,12 +375,12 @@ public class QuadTreeClusterer extends Clusterer {
                         if (ooe.getAt() > mergedAt) {
                             merged.record(ooe);
                             if (LOGGER != null)
-                                LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
+                                LOGGER.log(Level.FINEST, "→ out of {0} of {2} at {1}",
                                         new Object[] {side, ooe.getAt(), cell});
                         }
                     }
                 }
-                merged.popOutOfCellInto(q);
+                merged.popOutOfCellInto(q, LOGGER);
                 rec.addEventsTo(q, LOGGER);
                 if (B.TIMERS_ENABLED.get()) {
                     Timers.stop("[merge event processing] merge event recording");
@@ -390,7 +401,7 @@ public class QuadTreeClusterer extends Clusterer {
                 if (B.TIMERS_ENABLED.get()) {
                     Timers.stop("[merge event processing] total");
                     if (track) {
-                        Timers.stop("[merge event processing] total (large)");
+                        Timers.stop("[merge event processing] total (track)");
                     }
                 }
                 if (D.TIME_MERGE_EVENT_AGGLOMERATIVE.get() > 0 &&
@@ -462,7 +473,7 @@ public class QuadTreeClusterer extends Clusterer {
                         LOGGER.log(Level.SEVERE, "The following glyphs are added:");
                     }
                     for (Glyph glyph : seenNowGlyphs) {
-                        LOGGER.log(Level.SEVERE, "-> {0}, in cell(s)", glyph);
+                        LOGGER.log(Level.SEVERE, "→ {0}, in cell(s)", glyph);
                         for (QuadTree cell : glyph.getCells()) {
                             LOGGER.log(Level.SEVERE, "     {0}", cell);
                         }
@@ -473,6 +484,9 @@ public class QuadTreeClusterer extends Clusterer {
                 }
                 totalGlyphs = c;
             }
+            // reset higher log level for tracked glyphs, if applicable
+            if (LOGGER != null)
+                LOGGER.setLevel(defaultLevel);
         }
         if (LOGGER != null) {
             if (LOGGER.isLoggable(Level.FINE)) {
@@ -563,7 +577,7 @@ public class QuadTreeClusterer extends Clusterer {
                 // we do need to add an event for when this glyph grows out of
                 // the non-orphan cell, because that has not been done yet
                 glyph.record(new OutOfCell(glyph, g, cell, o.getSide()));
-                glyph.popOutOfCellInto(q);
+                glyph.popOutOfCellInto(q, LOGGER);
                 return; // nothing to be done anymore
             }
         }
@@ -596,14 +610,16 @@ public class QuadTreeClusterer extends Clusterer {
             if (!Utils.intervalsOverlap(Side.interval(
                     neighbor.getSide(oppositeSide), oppositeSide), sideInterval)) {
                 if (LOGGER != null)
-                    LOGGER.log(Level.FINEST, "-> but not at this point in time, so ignoring");
+                    LOGGER.log(Level.FINEST, "→ but not at this point in time, so ignoring");
                 continue;
             }
 
             // ensure that glyph was not in this cell yet
             if (neighbor.getGlyphs() != null && neighbor.getGlyphs().contains(glyph)) {
                 if (LOGGER != null)
-                    LOGGER.log(Level.FINEST, "-> but was already in there, so ignoring");
+                    LOGGER.log(Level.FINEST, "→ but was already in there, so ignoring");
+                // there might still be other interesting events for this glyph
+                glyph.popOutOfCellInto(q, LOGGER);
                 continue;
             }
 
@@ -666,13 +682,13 @@ public class QuadTreeClusterer extends Clusterer {
                         }
                         // now, actually create an OUT_OF_CELL event
                         if (LOGGER != null)
-                            LOGGER.log(Level.FINEST, "-> out of {0} of {2} at {1}",
+                            LOGGER.log(Level.FINEST, "→ out of {0} of {2} at {1}",
                                     new Object[] {side, at, in});
                         glyph.record(new OutOfCell(glyph, in, side, at));
                     }
                 }
             }
-            glyph.popOutOfCellInto(q);
+            glyph.popOutOfCellInto(q, LOGGER);
             rec.addEventsTo(q, LOGGER);
         }
     }

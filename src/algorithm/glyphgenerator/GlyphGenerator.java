@@ -15,6 +15,7 @@ public abstract class GlyphGenerator {
     protected final String name;
     protected final Random rand;
 
+    protected int i;
     protected int n;
     protected Rectangle2D rect;
 
@@ -29,10 +30,27 @@ public abstract class GlyphGenerator {
     }
 
     public void init(int n, Rectangle2D rect) {
+        this.i = 0;
         this.n = n;
         this.rect = rect;
     }
 
     public abstract Glyph next();
+
+
+    /**
+     * Increment the counter for number of generated glyphs, check if that
+     * number is at most {@code n}. If not, throw a {@link RuntimeException}.
+     */
+    protected final void count() {
+        if (i >= n) {
+            throw new RuntimeException();
+        }
+        i++;
+    }
+
+    protected final int randN() {
+        return rand.nextInt(WEIGHT_RANGE[1]) + WEIGHT_RANGE[0];
+    }
 
 }
