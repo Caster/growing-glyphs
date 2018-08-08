@@ -5,10 +5,12 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import datastructure.Glyph;
+import datastructure.QuadTree;
 
-public class PopulationSim extends GlyphGenerator {
+public class PopulationSim extends GlyphGenerator implements GlyphGenerator.Stateful {
 
     private static final Logger LOGGER =
             Logger.getLogger(PopulationSim.class.getName());
@@ -61,6 +63,14 @@ public class PopulationSim extends GlyphGenerator {
     }
 
     @Override
+    public void init(QuadTree tree) {
+        placed.addAll(tree.getLeaves().stream()
+                .flatMap((c) -> c.getGlyphsAlive().stream())
+                .map((g) -> new Point2D.Double(g.getX(), g.getY()))
+                .collect(Collectors.toList()));
+    }
+
+    @Override
     public Glyph next() {
         count();
 
@@ -103,11 +113,14 @@ public class PopulationSim extends GlyphGenerator {
      */
     private double random(Point2D p) {
         double near;
+        int c = 0;
         do {
             p.setLocation(rand.nextDouble() * rect.getWidth() + rect.getX(),
                 rand.nextDouble() * rect.getHeight() + rect.getY());
             near = nearestNeighborDistSq(p);
+            c++;
         } while (near < MIN_DIST_SQ);
+        LOGGER.log(Level.FINE, "took {0} attempts", c);
         return near;
     }
 

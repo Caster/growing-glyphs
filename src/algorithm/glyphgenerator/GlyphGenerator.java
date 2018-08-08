@@ -4,8 +4,28 @@ import java.awt.geom.Rectangle2D;
 import java.util.Random;
 
 import datastructure.Glyph;
+import datastructure.QuadTree;
 
+/**
+ * A glyph generator will iteratively generate glyphs according to some scheme.
+ */
 public abstract class GlyphGenerator {
+
+    /**
+     * A stateful glyph generator uses the positions of already placed points.
+     */
+    public interface Stateful {
+
+        /**
+         * Can be called after calling {@link #init(int, Rectangle2D)}; will consider
+         * all glyphs in the given tree to be already placed points.
+         *
+         * @param tree Tree that contains glyphs.
+         */
+        public void init(QuadTree tree);
+
+    }
+
 
     /**
      * Range for randomly selecting glyph ranges from.

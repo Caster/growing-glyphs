@@ -6,9 +6,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Area;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,9 +25,12 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -70,6 +76,7 @@ public class GrowingGlyphs extends JFrame {
     private JFileChooser fc;
     private Menu menu;
     private JLabel status;
+    private JProgressBar statusProgress;
     private JSlider viewNav;
 
 
@@ -87,10 +94,18 @@ public class GrowingGlyphs extends JFrame {
         add(viewNav = new ScrollableSlider(), BorderLayout.NORTH);
         viewNav.setEnabled(false);
         viewNav.setFocusable(false); // we handle keyboard input ourselves
-        add(status = new JLabel("Ready. Press 'h' for help."), BorderLayout.SOUTH);
-        status.setBorder(BorderFactory.createCompoundBorder(
+
+        JPanel statusPanel = new JPanel(new BorderLayout());
+        statusPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLoweredBevelBorder(),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+        add(statusPanel, BorderLayout.SOUTH);
+        statusPanel.add(status = new JLabel("Ready. Press 'h' for help."),
+                BorderLayout.CENTER);
+        statusPanel.add(statusProgress = new JProgressBar(),
+                BorderLayout.EAST);
+        statusProgress.setStringPainted(true);
+
         this.fc = null;
         setJMenuBar(this.menu = new Menu(this));
         ToolTipManager.sharedInstance().setInitialDelay(0);
@@ -113,31 +128,69 @@ public class GrowingGlyphs extends JFrame {
             daemon.getTree().clear();
         }
 
-        // let the generator do its work
-        gen.init(n, daemon.getTree().getRectangle());
-        for (int i = 0; i < n; ++i) {
-            daemon.getTree().insertCenterOf(gen.next());
-        }
         // no more glyph outlines, only centers; triggers repaint
         drawPanel.setGlyphs(null);
 
-        if (status != null) {
-            if (clear) {
-                status.setText("Loaded new random set of " + n + " glyphs.");
-            } else {
-                Set<Glyph> seenNowGlyphs = new HashSet<>();
-                int numGlyphs = 0;
-                for (QuadTree leaf : daemon.getTree().getLeaves()) {
-                    for (Glyph glyph : leaf.getGlyphsAlive()) {
-                        if (!seenNowGlyphs.contains(glyph)) {
-                            numGlyphs++;
-                            seenNowGlyphs.add(glyph);
-                        }
-                    }
-                }
-                status.setText("Added " + n + " glyphs, have " + numGlyphs + " now.");
-            }
+        // let the generator do its work
+        gen.init(n, daemon.getTree().getRectangle());
+        if (gen instanceof GlyphGenerator.Stateful) {
+            ((GlyphGenerator.Stateful) gen).init(daemon.getTree());
         }
+        SwingWorker<Void, Glyph> worker = new SwingWorker<Void, Glyph>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                for (int i = 0; !isCancelled() && i < n; ++i) {
+                    Glyph glyph = gen.next();
+                    publish(glyph);
+                    setProgress(100 * i / n);
+                }
+                return null;
+            }
+
+            @Override
+            protected void process(List<Glyph> glyphs) {
+                for (Glyph glyph : glyphs) {
+                    daemon.getTree().insertCenterOf(glyph);
+                }
+                drawPanel.repaint();
+            }
+
+            @Override
+            protected void done() {
+                if (status != null) {
+                    if (clear) {
+                        status.setText("Loaded new random set of " + n +
+                                " glyphs.");
+                    } else {
+                        Set<Glyph> seenNowGlyphs = new HashSet<>();
+                        int numGlyphs = 0;
+                        for (QuadTree leaf : daemon.getTree().getLeaves()) {
+                            for (Glyph glyph : leaf.getGlyphsAlive()) {
+                                if (!seenNowGlyphs.contains(glyph)) {
+                                    numGlyphs++;
+                                    seenNowGlyphs.add(glyph);
+                                }
+                            }
+                        }
+                        status.setText("Added " + n + " glyphs, have " +
+                                numGlyphs + " now.");
+                    }
+                    statusProgress.setValue(statusProgress.getMaximum());
+                    statusProgress.setString("");
+                }
+            }
+        };
+        worker.addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getPropertyName().equals("progress")) {
+                    Integer percent = (Integer) evt.getNewValue();
+                    statusProgress.setValue(percent);
+                    statusProgress.setString(percent * n / 100 + " / " + n);
+                }
+            }
+        });
+        worker.execute();
 
         if (daemon.isClustered()) {
             daemon.reset();
