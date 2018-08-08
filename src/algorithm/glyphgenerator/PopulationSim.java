@@ -3,6 +3,7 @@ package algorithm.glyphgenerator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -40,11 +41,13 @@ public class PopulationSim extends GlyphGenerator implements GlyphGenerator.Stat
 
     private double maxDistSq;
     private ArrayList<Point2D> placed;
+    private QuadTree tree;
 
 
     public PopulationSim() {
         super("Population simulation");
         placed = new ArrayList<>();
+        tree = null;
     }
 
     @Override
@@ -60,6 +63,7 @@ public class PopulationSim extends GlyphGenerator implements GlyphGenerator.Stat
         // reset list of placed points
         placed.clear();
         placed.ensureCapacity(n);
+        tree = null;
     }
 
     @Override
@@ -68,10 +72,16 @@ public class PopulationSim extends GlyphGenerator implements GlyphGenerator.Stat
                 .flatMap((c) -> c.getGlyphsAlive().stream())
                 .map((g) -> new Point2D.Double(g.getX(), g.getY()))
                 .collect(Collectors.toList()));
+        this.tree = tree;
     }
 
     @Override
     public Glyph next() {
+        if (tree == null) {
+            throw new IllegalStateException("the generator must be initialized "
+                    + "with a QuadTree before it can generate glyphs");
+        }
+
         count();
 
         double multiplier = Math.max(MIN_MULTIPLIER, MULTIPLIER_WEIGHT - MULTIPLIER_WEIGHT *
@@ -81,7 +91,8 @@ public class PopulationSim extends GlyphGenerator implements GlyphGenerator.Stat
         Point2D p = new Point2D.Double();
         double near = random(p);
         int w = rand.nextInt(WEIGHT_RANGE[1]) + WEIGHT_RANGE[0];
-        while (i > POINTS_PLACED_FREELY - 1) { // first X points are always placed
+        // first X points are always placed; this is essentially a while(true) loop
+        while (placed.size() > POINTS_PLACED_FREELY - 1) {
             double r = rand.nextDouble();
             double toBeat = near / (maxDistSq * multiplier);
             LOGGER.log(Level.FINER, "nearest neighbor at {0}, r = {1} > {2}? {3}",
@@ -99,6 +110,22 @@ public class PopulationSim extends GlyphGenerator implements GlyphGenerator.Stat
 
 
     private double nearestNeighborDistSq(Point2D p) {
+        // first, attempt using the QuadTree
+        double s = MIN_DIST_SQ;
+        Rectangle2D query = new Rectangle2D.Double(
+                p.getX() - s, p.getY() - s, 2 * s, 2 * s);
+        List<Glyph> nearbyGlyphs = tree.getLeaves(query).stream()
+            .flatMap((c) -> c.getGlyphsAlive().stream())
+            .collect(Collectors.toList());
+        if (nearbyGlyphs.size() > 0) {
+            double distSq = Double.MAX_VALUE;
+            for (Glyph glyph : nearbyGlyphs) {
+                distSq = Math.min(distSq, p.distanceSq(glyph.getX(), glyph.getY()));
+            }
+            return distSq;
+        }
+
+        // failed? loop over all points
         double distSq = Double.MAX_VALUE;
         for (Point2D q : placed) {
             distSq = Math.min(distSq, q.distanceSq(p));

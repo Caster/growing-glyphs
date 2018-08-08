@@ -246,6 +246,20 @@ public class QuadTree implements Iterable<QuadTree> {
     }
 
     /**
+     * Returns a set of all QuadTree cells that are descendants of this cell,
+     * {@link #isLeaf() leaves} and intersect the given rectangle.
+     *
+     * @param rectangle The query rectangle.
+     */
+    public List<QuadTree> getLeaves(Rectangle2D rectangle) {
+        Timers.start("[QuadTree] getLeaves(Rectangle2D)");
+        List<QuadTree> result = new ArrayList<>();
+        getLeaves(rectangle, result);
+        Timers.stop("[QuadTree] getLeaves(Rectangle2D)");
+        return result;
+    }
+
+    /**
      * Return a set of all leaves of this QuadTree that intersect the given
      * glyph at the given point in time.
      *
@@ -578,6 +592,28 @@ public class QuadTree implements Iterable<QuadTree> {
      */
     private void getLeaves(Side side, List<QuadTree> result) {
         getLeaves(side, null, result);
+    }
+
+    /**
+     * Add all leaf cells intersecting the given rectangle to the given set. If
+     * this cell is a leaf, it will add itself as a whole.
+     *
+     * @param rectangle Query rectangle.
+     * @param result Set to add cells to.
+     */
+    private void getLeaves(Rectangle2D rectangle, List<QuadTree> result) {
+        if (Utils.intervalsOverlap(new double[] {cell.getMinX(), cell.getMaxX()},
+                new double[] {rectangle.getMinX(), rectangle.getMaxX()}) &&
+                Utils.intervalsOverlap(new double[] {cell.getMinY(), cell.getMaxY()},
+                    new double[] {rectangle.getMinY(), rectangle.getMaxY()})) {
+            if (isLeaf()) {
+                result.add(this);
+            } else {
+                for (QuadTree child : children) {
+                    child.getLeaves(rectangle, result);
+                }
+            }
+        }
     }
 
     /**
