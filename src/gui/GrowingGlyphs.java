@@ -535,8 +535,11 @@ public class GrowingGlyphs extends JFrame {
 
     private static class Menu extends JMenuBar {
         public Map<Setting, MenuItemCheck> booleanSettings;
+        public GrowingGlyphs frame;
 
         public Menu(GrowingGlyphs frame) {
+            this.frame = frame;
+
             JMenu fileMenu = new JMenu("File");
             fileMenu.add(new MenuItem("Open", frame::open));
             fileMenu.add(new MenuItem("Reopen", frame::reopen));
@@ -564,6 +567,11 @@ public class GrowingGlyphs extends JFrame {
                     });
                     subOptionsMenu.add(item);
                     booleanSettings.put(setting, item);
+                }
+                if (section == SettingSection.DRAW) {
+                    JMenu markRadiusMenu = new JMenu("Glyph center size");
+                    markRadiusMenu.add(createMarkRadiusSlider());
+                    subOptionsMenu.add(markRadiusMenu);
                 }
                 if (section != SettingSection.MISC) {
                     optionsMenu.add(subOptionsMenu);
@@ -621,6 +629,20 @@ public class GrowingGlyphs extends JFrame {
             if (menuItem.isSelected() != selected) {
                 menuItem.doClick();
             }
+        }
+
+
+        private JSlider createMarkRadiusSlider() {
+            JSlider markRadiusSlider = new JSlider(JSlider.HORIZONTAL, 1, 500,
+                    (int) (frame.drawPanel.markRadius * 100));
+            markRadiusSlider.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    frame.drawPanel.markRadius = markRadiusSlider.getValue() / 100.0;
+                    frame.drawPanel.repaint();
+                }
+            });
+            return markRadiusSlider;
         }
     }
 

@@ -55,6 +55,12 @@ public class DrawPanel extends JPanel implements
 
 
     /**
+     * The radius of squares that depict glyph centers.
+     */
+    public double markRadius = 3;
+
+
+    /**
      * Parent frame.
      */
     private GrowingGlyphs parent;
@@ -178,7 +184,7 @@ public class DrawPanel extends JPanel implements
                 GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_CENTERS)) {
             Queue<HistoricQuadTree> toDraw = new ArrayDeque<>();
             toDraw.add(tree);
-            double r = I.MARK_RADIUS.get() / zoom;
+            double r = markRadius / zoom;
             while (!toDraw.isEmpty()) {
                 HistoricQuadTree cell = toDraw.poll();
                 // cell outlines

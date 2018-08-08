@@ -214,11 +214,6 @@ public final class Constants {
         LARGE_SQUARES_TRACK(0),
 
         /**
-         * The radius of discs representing input points in the GUI.
-         */
-        MARK_RADIUS(3),
-
-        /**
          * The maximum number of glyphs that should intersect any leaf
          * {@link QuadTree cell} at any point in time. Cells will split when
          * this constant is about to be violated, and will join when a glyph
