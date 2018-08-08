@@ -42,6 +42,7 @@ public class CsvIO {
             String[] titleCols = titleLine.split(splitOn);
             int latInd = Utils.indexOf(titleCols, "latitude");
             int lngInd = Utils.indexOf(titleCols, "longitude");
+            int nInd = Utils.indexOf(titleCols, "n");
             if (latInd < 0 || lngInd < 0) {
                 throw new RuntimeException("need columns 'latitude' and "
                         + "'longitude' in data");
@@ -58,17 +59,26 @@ public class CsvIO {
                     continue;
                 }
                 // parse coordinates
-                LatLng p = new LatLng(
-                        Double.parseDouble(cols[latInd]),
-                        Double.parseDouble(cols[lngInd])
-                    );
-                // increment count for that coordinate
-                if (read.containsKey(p)) {
-                    read.put(p, read.get(p) + 1);
-                } else {
-                    read.put(p, 1);
+                try {
+                    LatLng p = new LatLng(
+                            Double.parseDouble(cols[latInd]),
+                            Double.parseDouble(cols[lngInd])
+                        );
+                    // increment count for that coordinate
+                    int weight = 1;
+                    if (nInd >= 0) {
+                        weight = Integer.parseInt(cols[nInd]);
+                    }
+                    if (read.containsKey(p)) {
+                        read.put(p, read.get(p) + weight);
+                    } else {
+                        read.put(p, weight);
+                    }
+                    ignoredRead[1]++;
+                } catch (NumberFormatException nfe) {
+                    ignoredRead[0]++;
+                    continue;
                 }
-                ignoredRead[1]++;
             }
             // insert data into tree
             for (LatLng ll : read.keySet()) {
