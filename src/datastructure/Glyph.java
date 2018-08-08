@@ -13,20 +13,28 @@ import algorithm.clustering.QuadTreeClusterer;
 import datastructure.events.Event;
 import datastructure.events.GlyphMerge;
 import datastructure.events.OutOfCell;
+import datastructure.growfunction.CompressionThreshold;
+import datastructure.growfunction.CompressionThreshold.Threshold;
 import datastructure.growfunction.GrowFunction;
 import utils.Constants;
 import utils.Constants.B;
 import utils.Constants.D;
 import utils.Constants.I;
+import utils.MutableOptional;
 import utils.Stat;
-import utils.Utils.Stats;
 import utils.Utils;
+import utils.Utils.Stats;
 
 /**
  * A glyph starts as a point and then grows at a given speed.
  */
 public class Glyph {
 
+    /**
+     * Compression threshold that should be used for this glyph. This is determined
+     * by {@link CompressionThreshold}, and cached on the glyph.
+     */
+    public MutableOptional<Threshold> threshold;
     /**
      * Whether this glyph is of special interest. Used for debugging.
      */
@@ -100,6 +108,7 @@ public class Glyph {
         if (n < 1) {
             throw new IllegalArgumentException("n must be at least 1");
         }
+        this.threshold = new MutableOptional<>();
         this.track = false;
         if (B.TRACK.get()) {
             this.trackedBy = new ArrayList<>();

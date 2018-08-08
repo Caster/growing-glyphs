@@ -15,6 +15,13 @@ import datastructure.Glyph;
  */
 public class CompressionThreshold {
 
+    /**
+     * Threshold object (re)used for querying, to avoid repeated construction of
+     * Threshold objects.
+     */
+    private static final Threshold QUERY = new Threshold(0);
+
+
     private NavigableSet<Threshold> thresholds;
 
     public CompressionThreshold() {
@@ -70,7 +77,7 @@ public class CompressionThreshold {
      * @param glyph Glyph to find compression factor for.
      */
     public double getCompression(Glyph glyph) {
-        Threshold toUse = thresholds.floor(new Threshold(glyph.getN()));
+        Threshold toUse = getThreshold(glyph);
         if (toUse == null) {
             return 1d;
         }
@@ -84,7 +91,7 @@ public class CompressionThreshold {
      * @see #getCompression(Glyph)
      */
     public int getCompressionLevel(Glyph glyph) {
-        Threshold toUse = thresholds.ceiling(new Threshold(glyph.getN()));
+        Threshold toUse = getThreshold(glyph);
         if (toUse == null) {
             return thresholds.size() + 1;
         }
@@ -99,7 +106,7 @@ public class CompressionThreshold {
      * @param glyph Glyph to read weight of.
      */
     public double getN(Glyph glyph) {
-        Threshold toUse = thresholds.floor(new Threshold(glyph.getN()));
+        Threshold toUse = getThreshold(glyph);
         if (toUse == null) {
             return glyph.getN();
         }
@@ -114,11 +121,26 @@ public class CompressionThreshold {
     }
 
 
-    private static class Threshold implements Comparable<Threshold> {
+    /**
+     * Given a glyph, find the threshold to use on it.
+     *
+     * @param glyph Glyph to find threshold for.
+     */
+    private Threshold getThreshold(Glyph glyph) {
+        if (!glyph.threshold.isSet()) {
+            QUERY.threshold = glyph.getN();
+            glyph.threshold.set(thresholds.ceiling(QUERY));
+        }
 
-        public final int level;
-        public final double compression;
-        public final int threshold;
+        return glyph.threshold.get();
+    }
+
+
+    public static class Threshold implements Comparable<Threshold> {
+
+        private final int level;
+        private final double compression;
+        private int threshold; // not final because of QUERY
 
         public Threshold(int threshold) {
             this(-1, threshold);
