@@ -313,7 +313,7 @@ public class Glyph {
                 }
             }
             if (l != null) {
-                l.log(Level.FINEST, "-> merge at {0} with {1}",
+                l.log(Level.FINEST, "→ merge at {0} with {1}",
                         new Object[] {merge.getAt(), with});
             }
             // we found an event and added it to the queue, return
