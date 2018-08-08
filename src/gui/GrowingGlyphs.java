@@ -141,6 +141,7 @@ public class GrowingGlyphs extends JFrame {
             protected Void doInBackground() throws Exception {
                 for (int i = 0; !isCancelled() && i < n; ++i) {
                     Glyph glyph = gen.next();
+                    daemon.getTree().insertCenterOf(glyph);
                     publish(glyph);
                     setProgress(100 * i / n);
                 }
@@ -149,9 +150,6 @@ public class GrowingGlyphs extends JFrame {
 
             @Override
             protected void process(List<Glyph> glyphs) {
-                for (Glyph glyph : glyphs) {
-                    daemon.getTree().insertCenterOf(glyph);
-                }
                 drawPanel.repaint();
             }
 

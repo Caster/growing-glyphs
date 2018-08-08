@@ -18,7 +18,7 @@ public class PopulationSim extends GlyphGenerator implements GlyphGenerator.Stat
     /**
      * Minimum squared nearest neighbor distance that is accepted.
      */
-    private static final double MIN_DIST_SQ = 10;
+    private static final double MIN_DIST_SQ = 1;
     /**
      * Minimum value for the multiplier.
      */
