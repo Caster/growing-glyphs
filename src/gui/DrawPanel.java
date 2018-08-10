@@ -52,6 +52,7 @@ public class DrawPanel extends JPanel implements
             Color.BLACK, new Color(75, 25, 126), new Color(108, 36, 180),
             new Color(150, 50, 250)
     };
+    private static final Color GLYPH_FILL = new Color(0, 0, 0, 64);
 
 
     /**
@@ -231,27 +232,53 @@ public class DrawPanel extends JPanel implements
         // glyphs (actual shapes)
         if (GrowingGlyphs.SETTINGS.getBoolean(Setting.DRAW_GLYPHS) &&
                 glyphs != null) {
+            boolean borders = GrowingGlyphs.SETTINGS.getBoolean(Setting.BORDERS);
             boolean colored = GrowingGlyphs.SETTINGS.getBoolean(
                     Setting.COLORFUL_BORDERS);
             boolean labeled = GrowingGlyphs.SETTINGS.getBoolean(
                     Setting.LABELED_BORDERS);
-            if (!colored) {
+            if (borders && !colored) {
                 g2.setColor(Color.BLACK);
             }
+            if (!borders) {
+                g2.setColor(GLYPH_FILL);
+            }
             for (GlyphShape glyph : glyphs) {
-                Area border = new Area(glyph.shapeWithBorder);
-                border.subtract(new Area(glyph.shape));
-                if (colored) {
-                    g2.setColor(GLYPH_BORDER_COLORS[glyph.compressionLevel - 1]);
-                }
-                g2.fill(border);
+                Rectangle2D bbox;
+                Area border = null;
 
-                if (labeled && glyph.compressionLevel > 1) {
+                // ensure that something is drawn, if only a single pixel
+                if (!borders && (bbox = glyph.shapeWithBorder.getBounds2D()).getWidth() < 1) {
+                    // needed here because label uses different color
+                    g2.setColor(GLYPH_FILL);
+                    // draw single pixel
+                    g2.drawLine((int) bbox.getX(), (int) bbox.getY(),
+                            (int) bbox.getX(), (int) bbox.getY());
+                } else {
+                    border = new Area(glyph.shapeWithBorder);
+                    if (borders) {
+                        border.subtract(new Area(glyph.shape));
+                        // needed here because label uses different color
+                        g2.setColor(Color.BLACK);
+                    }
+                    if (colored) {
+                        g2.setColor(GLYPH_BORDER_COLORS[glyph.compressionLevel - 1]);
+                    }
+                    g2.fill(border);
+                }
+
+                // draw a label in some cases
+                if (border != null && labeled && glyph.compressionLevel > 1) {
                     DecimalFormat df = (DecimalFormat) NumberFormat.getInstance(Locale.US);
                     DecimalFormatSymbols symbols = df.getDecimalFormatSymbols();
                     symbols.setGroupingSeparator(' ');
                     df.setDecimalFormatSymbols(symbols);
 
+                    // undo different fill color if needed
+                    if (colored || !borders) {
+                        g2.setColor(Color.BLACK);
+                    }
+                    // set font size depending on glyph width
                     g2.setFont(g2.getFont().deriveFont(border.getBounds().width / 16f));
                     // g2.getFontMetrics().getHeight() suffers from rounding issues
                     float lineHeight = (float) g2.getFont().createGlyphVector(

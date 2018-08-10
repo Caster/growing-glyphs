@@ -21,6 +21,8 @@ import datastructure.growfunction.speed.LevelGrowSpeed;
 import datastructure.growfunction.speed.LinearAreaGrowSpeed;
 import datastructure.growfunction.speed.LinearGrowSpeed;
 import datastructure.growfunction.speed.LogarithmicGrowSpeed;
+import gui.GrowingGlyphs;
+import gui.Settings.Setting;
 import utils.Constants.S;
 
 /**
@@ -126,6 +128,9 @@ public class GrowFunction implements GrowShape, GrowSpeed {
      * @see #radius(double, int)
      */
     public double border(Glyph g, double at) {
+        if (!GrowingGlyphs.SETTINGS.getBoolean(Setting.BORDERS)) {
+            return 0;
+        }
         return border(thresholds.getCompressionLevel(g), at);
     }
 
@@ -317,6 +322,9 @@ public class GrowFunction implements GrowShape, GrowSpeed {
      * @see #radius(double, int)
      */
     private double border(int compressionLevel, double at) {
+        if (!GrowingGlyphs.SETTINGS.getBoolean(Setting.BORDERS)) {
+            return 0;
+        }
         double w = 2 * compressionLevel;
         if (at < 0) {
             w = Math.max(0, w + at);
