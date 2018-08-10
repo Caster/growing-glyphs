@@ -32,8 +32,7 @@ public class UncertainGlyphMerge extends UncertainEvent {
 
     @Override
     protected void recomputeLowerBoundInternal() {
-        // TODO Auto-generated method stub
-
+        // TODO!
     }
 
 }

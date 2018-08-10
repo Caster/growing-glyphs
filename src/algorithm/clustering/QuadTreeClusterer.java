@@ -189,6 +189,11 @@ public class QuadTreeClusterer extends Clusterer {
             // depending on the type of event, handle it appropriately
             switch (e.getType()) {
             case MERGE:
+                // determine whether one of the glyphs is tracked
+                boolean track = false;
+                for (Glyph glyph : e.getGlyphs()) {
+                    track = track || glyph.track;
+                }
                 // check if one of the glyphs is big; if so, handle separately
                 for (Glyph glyph : e.getGlyphs()) {
                     if (glyph.isBig()) {
@@ -196,7 +201,7 @@ public class QuadTreeClusterer extends Clusterer {
                             Timers.start("[merge event processing] total");
                             Timers.start("[merge event processing] big");
                         }
-                        handleBigMerge(g, (GlyphMerge) e, state, q);
+                        handleBigMerge(g, (GlyphMerge) e, state, q, track);
                         if (B.TIMERS_ENABLED.get()) {
                             Timers.stop("[merge event processing] total");
                             Timers.stop("[merge event processing] big");
@@ -205,7 +210,7 @@ public class QuadTreeClusterer extends Clusterer {
                     }
                 }
 
-                handleGlyphMerge(g, (GlyphMerge) e, state, q);
+                handleGlyphMerge(g, (GlyphMerge) e, state, q, track);
                 break;
             case OUT_OF_CELL:
                 if (B.TIMERS_ENABLED.get())
@@ -339,153 +344,18 @@ public class QuadTreeClusterer extends Clusterer {
     }
 
     private void handleBigMerge(GrowFunction g, GlyphMerge m,
-            GlobalState s, MultiQueue q) {
-        handleGlyphMerge(g, m, s, q);
+            GlobalState s, MultiQueue q, boolean track) {
+        handleGlyphMerge(g, m, s, q, track);
+        // TODO!
     }
 
     private void handleGlyphMerge(GrowFunction g, GlyphMerge m,
-            GlobalState s, MultiQueue q) {
-        boolean track = false;
-        for (Glyph glyph : m.getGlyphs()) {
-            track = track || glyph.track;
-        }
-        if (B.TIMERS_ENABLED.get()) {
-            Timers.start("[merge event processing] total");
-            if (track) {
-                Timers.start("[merge event processing] total (track)");
-            }
-        }
-        s.nestedMerges.add(m);
-        // create a merged glyph and ensure that the merged glyph does not
-        // overlap other glyphs at this time - repeat until no more overlap
-        Glyph merged = null;
-        HierarchicalClustering mergedHC = null;
+            GlobalState s, MultiQueue q, boolean track) {
+        Glyph merged = processNestedMerges(g, m, s, q, track);
         double mergedAt = m.getAt();
-        if (B.TIMERS_ENABLED.get()) {
-            Timers.start("[merge event processing] nested merges");
-        }
-        do {
-            nestedMerge: while (!s.nestedMerges.isEmpty()) {
-                m = s.nestedMerges.poll();
 
-                // check that all glyphs in the merge are still alive
-                for (Glyph glyph : m.getGlyphs()) {
-                    if (glyph != null && !glyph.isAlive()) {
-                        continue nestedMerge;
-                    }
-                }
-
-                if (LOGGER != null) {
-                    LOGGER.log(Level.FINEST, "handling nested " + m);
-                }
-
-                // create a merged glyph, update clustering
-                if (mergedHC == null) {
-                    merged = new Glyph(m.getGlyphs());
-                    mergedHC = new HierarchicalClustering(merged,
-                        mergedAt, Utils.map(m.getGlyphs(), s.map,
-                        s.createdFromTmp));
-                } else {
-                    mergedHC.alsoCreatedFrom(s.map.get(m.getGlyphs()[1]));
-                    merged = new Glyph(merged, m.getGlyphs()[1]);
-                    mergedHC.setGlyph(merged);
-                }
-
-                // mark merged glyphs as dead
-                for (Glyph glyph : m.getGlyphs()) {
-                    // We skip the `merged` glyph, see `#findOverlap`.
-                    // We also skip repeated events - it may happen that a glyph
-                    // is detected as overlapping the merged glyph, some other
-                    // overlap is handled and then it is detected again. This
-                    // would result in the event being handled more than once,
-                    // which leads to issues. Hence the `!glyph.alive` check.
-                    if (glyph == null || !glyph.isAlive()) {
-                        continue;
-                    }
-                    glyph.perish(); s.numAlive--; s.glyphSize.unrecord(glyph.getN());
-                    if (glyph.isBig()) {
-                        s.numBig--;
-                    }
-                    // copy the set of cells the glyph is in currently, because we
-                    // are about to change that set and don't want to deal with
-                    // ConcurrentModificationExceptions...
-                    for (QuadTree cell : new ArrayList<>(glyph.getCells())) {
-                        if (cell.removeGlyph(glyph, mergedAt)) {
-                            // handle merge events (later, see below)
-                            s.orphanedCells.add(cell);
-                            // out of cell events are handled when they
-                            // occur, see #handleOutOfCell
-                        }
-                    }
-                    // update merge events of glyphs that tracked merged glyphs
-                    if (B.TRACK.get() && !B.ROBUST.get()) {
-                        for (Glyph tracker : glyph.trackedBy) {
-                            if (!s.trackersNeedingUpdate.contains(tracker)) {
-                                s.trackersNeedingUpdate.add(tracker);
-                            }
-                        }
-                    }
-                }
-
-                if (LOGGER != null) {
-                    LOGGER.log(Level.FINEST, "→ merged glyph is {0}", merged);
-                }
-            }
-        } while (findOverlap(g, merged, mergedAt, s.nestedMerges));
-        if (B.TIMERS_ENABLED.get()) {
-            Timers.stop("[merge event processing] nested merges");
-            Timers.start("[merge event processing] merge events in joined cells");
-        }
-        // handle adding merge events in joined cells
-        s.orphanedCells.stream()
-                .map((cell) -> cell.getNonOrphanAncestor())
-                .distinct()
-                .forEach((cell) -> {
-                    if (B.TIMERS_ENABLED.get())
-                        Timers.start("record all pairs");
-                    rec.recordAllPairs(cell.getNonOrphanAncestor(), q, LOGGER);
-                    if (B.TIMERS_ENABLED.get())
-                        Timers.stop("record all pairs");
-                });
-        s.orphanedCells.clear();
-        if (B.TIMERS_ENABLED.get()) {
-            Timers.stop("[merge event processing] merge events in joined cells");
-            Timers.start("[merge event processing] tracker updating");
-        }
-        // update merge events of glyphs that tracked merged glyphs
-        if (B.TRACK.get() && !B.ROBUST.get()) {
-            for (Glyph orphan : s.trackersNeedingUpdate) {
-                if (orphan.isAlive()) {
-                    Stats.record("orphan cells", orphan.getCells().size());
-                    if (!orphan.popMergeInto(q, LOGGER)) {
-                        rec.from(orphan);
-                        if (B.TIMERS_ENABLED.get())
-                            Timers.start("first merge recording 2");
-                        for (QuadTree cell : orphan.getCells()) {
-                            rec.record(cell.getGlyphs());
-                        }
-                        if (B.TIMERS_ENABLED.get())
-                            Timers.stop("first merge recording 2");
-                        rec.addEventsTo(q, LOGGER);
-                    }
-                }
-            }
-            s.trackersNeedingUpdate.clear();
-        }
-        if (B.TIMERS_ENABLED.get()) {
-            Timers.stop("[merge event processing] tracker updating");
-            Timers.start("[merge event processing] merged glyph insert");
-        }
-        // add new glyph to QuadTree cell(s)
-        tree.insert(merged, mergedAt, g);
-        if (LOGGER != null) {
-            LOGGER.log(Level.FINER, "inserted merged glyph into {0} cells",
-                    merged.getCells().size());
-        }
-        if (B.TIMERS_ENABLED.get()) {
-            Timers.stop("[merge event processing] merged glyph insert");
+        if (B.TIMERS_ENABLED.get())
             Timers.start("[merge event processing] merge event recording");
-        }
         // create events with remaining glyphs
         // (we always have to loop over cells here, `merged` has just
         //  been created and thus hasn't recorded merge events yet)
@@ -529,9 +399,7 @@ public class QuadTreeClusterer extends Clusterer {
         }
         merged.popOutOfCellInto(q, LOGGER);
         rec.addEventsTo(q, LOGGER);
-        if (B.TIMERS_ENABLED.get()) {
-            Timers.stop("[merge event processing] merge event recording");
-        }
+
         // update bookkeeping
         merged.participate(s.glyphSize); s.numAlive++; s.glyphSize.record(merged.getN());
         if (merged.isBig()) {
@@ -542,9 +410,10 @@ public class QuadTreeClusterer extends Clusterer {
             s.numBig++;
             Stats.record("number of big glyphs", s.numBig);
         }
-        s.map.put(merged, mergedHC);
-        // eventually, the last merged glyph is the root
-        result = mergedHC;
+
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.stop("[merge event processing] merge event recording");
+        }
         if (B.TIMERS_ENABLED.get()) {
             Timers.stop("[merge event processing] total");
             if (track) {
@@ -708,6 +577,160 @@ public class QuadTreeClusterer extends Clusterer {
             glyph.popOutOfCellInto(q, LOGGER);
             rec.addEventsTo(q, LOGGER);
         }
+    }
+
+    /**
+     * Given a merge event, see if performing it would cause more merges, and
+     * process those repeatedly until no overlap remains. This function also
+     * has glyphs that tracked any merged glyphs update who they track, and
+     * inserts the merged glyph into the QuadTree. When the merging of glyphs
+     * causes cells of the QuadTree to join, then new merge events are created
+     * in those joined cells as well.
+     */
+    private Glyph processNestedMerges(GrowFunction g, GlyphMerge m,
+            GlobalState s, MultiQueue q, boolean track) {
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.start("[merge event processing] total");
+            if (track) {
+                Timers.start("[merge event processing] total (track)");
+            }
+        }
+        s.nestedMerges.add(m);
+        // create a merged glyph and ensure that the merged glyph does not
+        // overlap other glyphs at this time - repeat until no more overlap
+        Glyph merged = null;
+        HierarchicalClustering mergedHC = null;
+        double mergedAt = m.getAt();
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.start("[merge event processing] nested merges");
+        }
+        do {
+            nestedMerge: while (!s.nestedMerges.isEmpty()) {
+                m = s.nestedMerges.poll();
+
+                // check that all glyphs in the merge are still alive
+                for (Glyph glyph : m.getGlyphs()) {
+                    if (glyph != null && !glyph.isAlive()) {
+                        continue nestedMerge;
+                    }
+                }
+
+                if (LOGGER != null) {
+                    LOGGER.log(Level.FINEST, "handling nested " + m);
+                }
+
+                // create a merged glyph, update clustering
+                if (mergedHC == null) {
+                    merged = new Glyph(m.getGlyphs());
+                    mergedHC = new HierarchicalClustering(merged,
+                        mergedAt, Utils.map(m.getGlyphs(), s.map,
+                        s.createdFromTmp));
+                } else {
+                    mergedHC.alsoCreatedFrom(s.map.get(m.getGlyphs()[1]));
+                    merged = new Glyph(merged, m.getGlyphs()[1]);
+                    mergedHC.setGlyph(merged);
+                }
+
+                // mark merged glyphs as dead
+                for (Glyph glyph : m.getGlyphs()) {
+                    // We skip the `merged` glyph, see `#findOverlap`.
+                    // We also skip repeated events - it may happen that a glyph
+                    // is detected as overlapping the merged glyph, some other
+                    // overlap is handled and then it is detected again. This
+                    // would result in the event being handled more than once,
+                    // which leads to issues. Hence the `!glyph.alive` check.
+                    if (glyph == null || !glyph.isAlive()) {
+                        continue;
+                    }
+                    glyph.perish(); s.numAlive--; s.glyphSize.unrecord(glyph.getN());
+                    if (glyph.isBig()) {
+                        s.numBig--;
+                    }
+                    // copy the set of cells the glyph is in currently, because we
+                    // are about to change that set and don't want to deal with
+                    // ConcurrentModificationExceptions...
+                    for (QuadTree cell : new ArrayList<>(glyph.getCells())) {
+                        if (cell.removeGlyph(glyph, mergedAt)) {
+                            // handle merge events (later, see below)
+                            s.orphanedCells.add(cell);
+                            // out of cell events are handled when they
+                            // occur, see #handleOutOfCell
+                        }
+                    }
+                    // update merge events of glyphs that tracked merged glyphs
+                    if (B.TRACK.get() && !B.ROBUST.get()) {
+                        for (Glyph tracker : glyph.trackedBy) {
+                            if (!s.trackersNeedingUpdate.contains(tracker)) {
+                                s.trackersNeedingUpdate.add(tracker);
+                            }
+                        }
+                    }
+                }
+
+                if (LOGGER != null) {
+                    LOGGER.log(Level.FINEST, "→ merged glyph is {0}", merged);
+                }
+            }
+        } while (findOverlap(g, merged, mergedAt, s.nestedMerges));
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.stop("[merge event processing] nested merges");
+            Timers.start("[merge event processing] merge events in joined cells");
+        }
+        // handle adding merge events in joined cells
+        s.orphanedCells.stream()
+                .map((cell) -> cell.getNonOrphanAncestor())
+                .distinct()
+                .forEach((cell) -> {
+                    if (B.TIMERS_ENABLED.get())
+                        Timers.start("record all pairs");
+                    rec.recordAllPairs(cell.getNonOrphanAncestor(), q, LOGGER);
+                    if (B.TIMERS_ENABLED.get())
+                        Timers.stop("record all pairs");
+                });
+        s.orphanedCells.clear();
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.stop("[merge event processing] merge events in joined cells");
+            Timers.start("[merge event processing] tracker updating");
+        }
+        // update merge events of glyphs that tracked merged glyphs
+        if (B.TRACK.get() && !B.ROBUST.get()) {
+            for (Glyph orphan : s.trackersNeedingUpdate) {
+                if (orphan.isAlive()) {
+                    Stats.record("orphan cells", orphan.getCells().size());
+                    if (!orphan.popMergeInto(q, LOGGER)) {
+                        rec.from(orphan);
+                        if (B.TIMERS_ENABLED.get())
+                            Timers.start("first merge recording 2");
+                        for (QuadTree cell : orphan.getCells()) {
+                            rec.record(cell.getGlyphs());
+                        }
+                        if (B.TIMERS_ENABLED.get())
+                            Timers.stop("first merge recording 2");
+                        rec.addEventsTo(q, LOGGER);
+                    }
+                }
+            }
+            s.trackersNeedingUpdate.clear();
+        }
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.stop("[merge event processing] tracker updating");
+            Timers.start("[merge event processing] merged glyph insert");
+        }
+        // add new glyph to QuadTree cell(s)
+        tree.insert(merged, mergedAt, g);
+        if (LOGGER != null) {
+            LOGGER.log(Level.FINER, "inserted merged glyph into {0} cells",
+                    merged.getCells().size());
+        }
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.stop("[merge event processing] merged glyph insert");
+        }
+
+        // eventually, the last merged glyph is the root
+        s.map.put(merged, mergedHC);
+        result = mergedHC;
+
+        return merged;
     }
 
     /**
