@@ -22,7 +22,7 @@ public class Settings extends HashMap<Setting, Object> {
     }
 
     public enum Setting {
-        BORDERS(SettingSection.ALGORITHM, "Glyph borders", Boolean.TRUE),
+        BORDERS(SettingSection.ALGORITHM, "Glyph borders", Boolean.FALSE),
         DEBUG(SettingSection.ALGORITHM, "Debug", Boolean.FALSE),
         DRAW_CELLS(SettingSection.DRAW, "Draw cells", Boolean.TRUE),
         DRAW_CENTERS(SettingSection.DRAW, "Draw glyph centers", Boolean.TRUE),

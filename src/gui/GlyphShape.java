@@ -12,6 +12,7 @@ import gui.Settings.Setting;
 public class GlyphShape {
 
     public final int compressionLevel;
+    public final boolean big;
     public final int n;
     public final Shape shape;
     public final Shape shapeWithBorder;
@@ -19,6 +20,7 @@ public class GlyphShape {
 
     public GlyphShape(Glyph glyph, double at, GrowFunction g) {
         this.compressionLevel = g.thresholds.getCompressionLevel(glyph);
+        this.big = glyph.isBig();
         this.n = glyph.getN();
         this.shape = g.sizeAt(glyph, at);
         if (GrowingGlyphs.SETTINGS.getBoolean(Setting.BORDERS)) {

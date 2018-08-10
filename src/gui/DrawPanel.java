@@ -53,6 +53,7 @@ public class DrawPanel extends JPanel implements
             new Color(150, 50, 250)
     };
     private static final Color GLYPH_FILL = new Color(0, 0, 0, 64);
+    private static final Color GLYPH_TRACK_FILL = new Color(255, 0, 0, 64);
 
 
     /**
@@ -240,26 +241,22 @@ public class DrawPanel extends JPanel implements
             if (borders && !colored) {
                 g2.setColor(Color.BLACK);
             }
-            if (!borders) {
-                g2.setColor(GLYPH_FILL);
-            }
             for (GlyphShape glyph : glyphs) {
                 Rectangle2D bbox;
                 Area border = null;
 
                 // ensure that something is drawn, if only a single pixel
                 if (!borders && (bbox = glyph.shapeWithBorder.getBounds2D()).getWidth() < 1) {
-                    // needed here because label uses different color
                     g2.setColor(GLYPH_FILL);
-                    // draw single pixel
                     g2.drawLine((int) bbox.getX(), (int) bbox.getY(),
                             (int) bbox.getX(), (int) bbox.getY());
                 } else {
                     border = new Area(glyph.shapeWithBorder);
                     if (borders) {
                         border.subtract(new Area(glyph.shape));
-                        // needed here because label uses different color
                         g2.setColor(Color.BLACK);
+                    } else {
+                        g2.setColor(glyph.big ? GLYPH_TRACK_FILL : GLYPH_FILL);
                     }
                     if (colored) {
                         g2.setColor(GLYPH_BORDER_COLORS[glyph.compressionLevel - 1]);
