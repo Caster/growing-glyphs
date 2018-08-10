@@ -190,20 +190,20 @@ public class QuadTreeClusterer extends Clusterer {
             switch (e.getType()) {
             case MERGE:
                 // check if one of the glyphs is big; if so, handle separately
-//                for (Glyph glyph : e.getGlyphs()) {
-//                    if (glyph.isBig()) {
-//                        if (B.TIMERS_ENABLED.get()) {
-//                            Timers.start("[merge event processing] total");
-//                            Timers.start("[merge event processing] big");
-//                        }
-//                        handleBigMerge((GlyphMerge) e);
-//                        if (B.TIMERS_ENABLED.get()) {
-//                            Timers.stop("[merge event processing] total");
-//                            Timers.stop("[merge event processing] big");
-//                        }
-//                        continue queue;
-//                    }
-//                }
+                for (Glyph glyph : e.getGlyphs()) {
+                    if (glyph.isBig()) {
+                        if (B.TIMERS_ENABLED.get()) {
+                            Timers.start("[merge event processing] total");
+                            Timers.start("[merge event processing] big");
+                        }
+                        handleBigMerge(g, (GlyphMerge) e, state, q);
+                        if (B.TIMERS_ENABLED.get()) {
+                            Timers.stop("[merge event processing] total");
+                            Timers.stop("[merge event processing] big");
+                        }
+                        continue queue;
+                    }
+                }
 
                 handleGlyphMerge(g, (GlyphMerge) e, state, q);
                 break;
@@ -338,8 +338,9 @@ public class QuadTreeClusterer extends Clusterer {
         return foundOverlap;
     }
 
-    private void handleBigMerge(GlyphMerge m) {
-        System.exit(1);
+    private void handleBigMerge(GrowFunction g, GlyphMerge m,
+            GlobalState s, MultiQueue q) {
+        handleGlyphMerge(g, m, s, q);
     }
 
     private void handleGlyphMerge(GrowFunction g, GlyphMerge m,

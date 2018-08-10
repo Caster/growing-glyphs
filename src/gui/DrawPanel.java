@@ -242,7 +242,7 @@ public class DrawPanel extends JPanel implements
                 g2.setColor(Color.BLACK);
             }
             for (GlyphShape glyph : glyphs) {
-                Rectangle2D bbox;
+                Rectangle2D bbox = null;
                 Area border = null;
 
                 // ensure that something is drawn, if only a single pixel
@@ -265,7 +265,8 @@ public class DrawPanel extends JPanel implements
                 }
 
                 // draw a label in some cases
-                if (border != null && labeled && glyph.compressionLevel > 1) {
+                if (border != null && labeled && (glyph.compressionLevel > 1 ||
+                        bbox.getWidth() * zoom > 100)) {
                     DecimalFormat df = (DecimalFormat) NumberFormat.getInstance(Locale.US);
                     DecimalFormatSymbols symbols = df.getDecimalFormatSymbols();
                     symbols.setGroupingSeparator(' ');
