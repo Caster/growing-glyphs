@@ -246,10 +246,10 @@ public class DrawPanel extends JPanel implements
                 Area border = null;
 
                 // ensure that something is drawn, if only a single pixel
-                if (!borders && (bbox = glyph.shapeWithBorder.getBounds2D()).getWidth() < 1) {
+                if (!borders && (bbox = glyph.shapeWithBorder.getBounds2D()).getWidth() * zoom < 2) {
                     g2.setColor(GLYPH_FILL);
-                    g2.drawLine((int) bbox.getX(), (int) bbox.getY(),
-                            (int) bbox.getX(), (int) bbox.getY());
+                    bbox.setRect(bbox.getX() - 0.5 / zoom, bbox.getY() - 0.5 / zoom, 1 / zoom, 1 / zoom);
+                    g2.fill(bbox);
                 } else {
                     border = new Area(glyph.shapeWithBorder);
                     if (borders) {

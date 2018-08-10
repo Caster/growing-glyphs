@@ -34,7 +34,7 @@ public abstract class Event implements Comparable<Event> {
          * ordered by the time they occur, but when they have the same timestamp,
          * events with lower priority are ordered before those with high priority.
          */
-        private int priority;
+        int priority; // package visible for access by UncertainEvent
 
 
         private Type(int priority) {
