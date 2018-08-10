@@ -9,6 +9,8 @@ import java.awt.geom.Area;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -235,6 +237,27 @@ public class GrowingGlyphs extends JFrame {
                 }
             }
         } while (view.previousIfPossible());
+    }
+
+    /**
+     * Dump clustering result to file.
+     *
+     * @param events Ignored.
+     */
+    private void dump(ActionEvent...events) {
+        if (!daemon.isClustered()) {
+            JOptionPane.showMessageDialog(this, "There is no clustering to dump "
+                    + "yet.", "You need to cluster first", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (getFC().showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try (PrintWriter out = new PrintWriter(getFC().getSelectedFile())) {
+                out.println(daemon.getClustering().toString());
+            } catch (FileNotFoundException e) {
+                JOptionPane.showMessageDialog(this, "Could not write to file.",
+                        "File not found", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private JFileChooser getFC() {
@@ -610,6 +633,7 @@ public class GrowingGlyphs extends JFrame {
             }
             optionsMenu.add(growFunctionMenu);
             optionsMenu.add(new MenuItem("Cluster", frame::run));
+            optionsMenu.add(new MenuItem("Dump clustering to file", frame::dump));
             add(optionsMenu);
 
             JMenu genMenu = new JMenu("Generate");
