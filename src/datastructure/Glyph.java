@@ -78,6 +78,12 @@ public class Glyph {
      */
     private Queue<UncertainGlyphMerge> uncertainMergeEvents;
     /**
+     * The uncertain merge events can be adopted by another big glyph. This in
+     * fact means that the glyph has merged and grown. This pointer will point
+     * to that glyph, so that the "bigger version" of this glyph can be found.
+     */
+    private Glyph adoptedBy;
+    /**
      * Events involving this glyph. Only one event is actually in the event
      * queue, others are added only when that one is popped from the queue.
      */
@@ -129,6 +135,7 @@ public class Glyph {
         this.big = false;
         this.cells = new ArrayList<>();
         this.uncertainMergeEvents = null;
+        this.adoptedBy = null;
         this.mergeEvents = new PriorityQueue<>(I.MAX_MERGES_TO_RECORD.get());
         this.outOfCellEvents = new PriorityQueue<>();
     }
@@ -169,6 +176,40 @@ public class Glyph {
         if (!cells.contains(cell)) {
             cells.add(cell);
         }
+    }
+
+    /**
+     * Given some {@linkplain #isBig() big} glyph, adopt the uncertain merge
+     * events of that glyph onto this one. This will clear the queue of uncertain
+     * merge events on {@code bigGlyph}.
+     *
+     * @param bigGlyph Glyph of which to adopt the uncertain merge events.
+     */
+    public void adoptUncertainMergeEvents(Glyph bigGlyph) {
+        if (!isBig() || !bigGlyph.isBig()) {
+            throw new RuntimeException("both this glyph and bigGlyph must be big");
+        }
+        if (uncertainMergeEvents.size() > 0) {
+            throw new RuntimeException("can only adopt when it has no events yet");
+        }
+
+        Queue<UncertainGlyphMerge> old = uncertainMergeEvents;
+        uncertainMergeEvents = bigGlyph.uncertainMergeEvents;
+        bigGlyph.uncertainMergeEvents = old;
+        bigGlyph.adoptedBy = this;
+    }
+
+    /**
+     * Returns this glyph, or if it is big and its uncertain merge events have
+     * been {@linkplain #adoptUncertainMergeEvents(Glyph) adopted}, the glyph
+     * that adopted them, or the glyph that adopted them from that glyph, et
+     * cetera, until a glyph is found that did not have its events adopted yet.
+     */
+    public Glyph getAdoptivePrimalParent() {
+        if (adoptedBy == null) {
+            return this;
+        }
+        return adoptedBy.getAdoptivePrimalParent();
     }
 
     /**
@@ -278,27 +319,36 @@ public class Glyph {
 
     /**
      * Marks this glyph as alive: participating in the clustering process.
-     *
-     * @param glyphSize Statistic covering number of entities represented by
-     *            other glyphs, used to determine if this glyph {@link #isBig()}.
      */
-    public void participate(Stat glyphSize) {
+    public void participate() {
         if (this.alive == 1) {
             throw new RuntimeException("having a participating glyph participate");
         }
         if (this.alive == 2) {
             throw new RuntimeException("cannot bring a perished glyph back to life");
         }
-
-        // change state to being alive, check if glyph is big
         this.alive = 1;
-        this.big = (this.n > glyphSize.getAverage() * D.BIG_GLYPH_FACTOR.get());
-        Stats.count("glyph was big when it participated", this.big);
+    }
 
-        // if the glyph is big, initialize uncertain merge event tracking
-        if (this.big) {
-            this.uncertainMergeEvents = new PriorityQueue<>();
+    /**
+     * Returns the first merge event that will occur with this big glyph, or
+     * {@code null} if there is none remaining.
+     */
+    public UncertainGlyphMerge peekUncertain() {
+        while (!uncertainMergeEvents.isEmpty()) {
+            UncertainGlyphMerge merge = uncertainMergeEvents.poll();
+            Glyph with = merge.getOther(this);
+            if (!with.isAlive()) {
+                continue; // try the next event
+            }
+            boolean changed = merge.recomputeLowerBound();
+            uncertainMergeEvents.add(merge);
+            if (changed && uncertainMergeEvents.peek() != merge) {
+                continue; // retry until we find the actual head
+            }
+            return merge;
         }
+        return null;
     }
 
     /**
@@ -362,6 +412,15 @@ public class Glyph {
      *
      * @param event Event involving this glyph.
      */
+    public void record(UncertainGlyphMerge event) {
+        uncertainMergeEvents.add(event);
+    }
+
+    /**
+     * Acknowledge that the given event will happen.
+     *
+     * @param event Event involving this glyph.
+     */
     public void record(OutOfCell event) {
         outOfCellEvents.add(event);
     }
@@ -373,6 +432,22 @@ public class Glyph {
      */
     public void removeCell(QuadTree cell) {
         cells.remove(cell);
+    }
+
+    /**
+     * Update whether this glyph is big using the given statistic.
+     *
+     * @param glyphSize Statistic covering number of entities represented by
+     *            other glyphs, used to determine if this glyph {@link #isBig()}.
+     */
+    public void setBig(Stat glyphSize) {
+        this.big = (this.n > glyphSize.getAverage() * D.BIG_GLYPH_FACTOR.get());
+        Stats.count("glyph was big when it participated", this.big);
+
+        // if the glyph is big, initialize uncertain merge event tracking
+        if (this.big) {
+            this.uncertainMergeEvents = new PriorityQueue<>();
+        }
     }
 
     @Override
@@ -396,9 +471,10 @@ public class Glyph {
             if (!with.isAlive()) {
                 continue; // try the next event
             }
-            if (merge.recomputeLowerBound()) {
+            if (merge.recomputeLowerBound() && merge.getLowerBound() >
+                    uncertainMergeEvents.peek().getLowerBound()) {
                 uncertainMergeEvents.add(merge);
-                continue; // retry until we find an event that does not change
+                continue; // retry until we find the actual head of the queue
             }
             q.add(merge.getGlyphMerge());
             if (B.TRACK.get()) {
@@ -431,7 +507,7 @@ public class Glyph {
         while (!mergeEvents.isEmpty()) {
             GlyphMerge merge = mergeEvents.poll();
             Glyph with = merge.getOther(this);
-            if (!with.isAlive()/* || with.isBig()*/) { // TODO!
+            if (!with.isAlive() || with.isBig()) {
                 continue; // try the next event
             }
             q.add(merge);

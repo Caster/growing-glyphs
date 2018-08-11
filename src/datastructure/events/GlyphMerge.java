@@ -30,4 +30,11 @@ public class GlyphMerge extends Event {
         return Type.MERGE;
     }
 
+    /**
+     * Returns a new {@link UncertainGlyphMerge} instance built on this event.
+     */
+    public UncertainGlyphMerge uncertain() {
+        return new UncertainGlyphMerge(this);
+    }
+
 }

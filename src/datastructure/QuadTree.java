@@ -470,6 +470,15 @@ public class QuadTree implements Iterable<QuadTree> {
     }
 
     /**
+     * Returns an iterator over all alive glyphs in this QuadTree.
+     */
+    public Iterator<Glyph> iteratorGlyphsAlive() {
+        return getLeaves().stream()
+            .flatMap((cell) -> cell.getGlyphsAlive().stream())
+            .iterator();
+    }
+
+    /**
      * Remove the given glyph from this cell, if it is associated with it.
      * This method does <i>not</i> remove the cell from the glyph.
      *

@@ -23,6 +23,7 @@ import datastructure.events.Event.Type;
 import datastructure.events.GlyphMerge;
 import datastructure.events.OutOfCell;
 import datastructure.events.OutOfCell.Side;
+import datastructure.events.UncertainGlyphMerge;
 import datastructure.growfunction.GrowFunction;
 import datastructure.queues.MultiQueue;
 import utils.Constants.B;
@@ -153,22 +154,8 @@ public class QuadTreeClusterer extends Clusterer {
             LOGGER.log(Level.FINE, "created {0} events initially, for {1} glyphs",
                     new Object[] {q.size(), state.numAlive});
         // merge glyphs until no pairs to merge remain
-        queue: while (!q.isEmpty() && state.numAlive > 1) {
-            Event e = q.peek();
-            // we ignore out of cell events for non-leaf cells
-            if (e.getType() == Type.OUT_OF_CELL &&
-                    !((OutOfCell) e).getCell().isLeaf()) {
-                q.discard();
-                continue queue;
-            }
-            // we ignore this event if not all glyphs from it are alive anymore
-            for (Glyph glyph : e.getGlyphs()) {
-                if (!glyph.isAlive()) {
-                    q.discard();
-                    continue queue;
-                }
-            }
-            e = q.poll();
+        Event e;
+        queue: while ((e = getNextEvent(q, state)) != null) {
             // log on a slightly higher urgency level when one of the glyphs is tracked
             if (LOGGER != null) {
                 if (LOGGER.getLevel().intValue() > Level.FINER.intValue()) {
@@ -201,7 +188,7 @@ public class QuadTreeClusterer extends Clusterer {
                             Timers.start("[merge event processing] total");
                             Timers.start("[merge event processing] big");
                         }
-                        handleBigMerge(g, (GlyphMerge) e, state, q, track);
+                        handleBigGlyphMerge(g, (GlyphMerge) e, state, q, track);
                         if (B.TIMERS_ENABLED.get()) {
                             Timers.stop("[merge event processing] total");
                             Timers.stop("[merge event processing] big");
@@ -343,13 +330,63 @@ public class QuadTreeClusterer extends Clusterer {
         return foundOverlap;
     }
 
-    private void handleBigMerge(GrowFunction g, GlyphMerge m,
+    /**
+     * Returns the first event that will happen. Normally, this is the head of
+     * the given {@link MultiQueue} (modulo discarded events). However, the queues
+     * of {@linkplain GlobalState#bigGlyphs big glyphs} are also checked.
+     *
+     * @return The next event to occur, or {@code null} if there are no more
+     *         events to handle or only a single alive glyph left.
+     */
+    private Event getNextEvent(MultiQueue q, GlobalState s) {
+        if (s.numAlive <= 1) {
+            return null;
+        }
+
+        // check the queue
+        Event event = null;
+        while (!q.isEmpty()) {
+            event = q.peek();
+            // we ignore out of cell events for non-leaf cells
+            if (event.getType() == Type.OUT_OF_CELL &&
+                    !((OutOfCell) event).getCell().isLeaf()) {
+                q.discard();
+                continue;
+            }
+            // we ignore this event if not all glyphs from it are alive anymore
+            for (Glyph glyph : event.getGlyphs()) {
+                if (!glyph.isAlive()) {
+                    q.discard();
+                    continue;
+                }
+            }
+            event = q.poll();
+        }
+
+        // check the big glyphs
+        for (Glyph big : s.bigGlyphs) {
+            UncertainGlyphMerge bEvt = big.peekUncertain();
+            if (event == null || (bEvt != null && bEvt.getLowerBound() <
+                    event.getAt())) {
+                event = bEvt.getGlyphMerge();
+            }
+        }
+
+        return event;
+    }
+
+    private void handleBigGlyphMerge(GrowFunction g, GlyphMerge m,
             GlobalState s, MultiQueue q, boolean track) {
+        // process the merge and all merges that it causes
         Glyph merged = processNestedMerges(g, m, s, q, track);
 
-        // record merge events and out of cell events
-        recordEventsForGlyph(merged, m.getAt(), true, g, q);
-        // TODO: pass \c false above, adopt uncertainMerges queue from big glyph(s) that merged, pop uncertain merge event into queue
+        // big glyphs are not in the QuadTree, but we should update our list
+        for (Glyph dead : m.getGlyphs()) {
+            if (dead.isBig()) {
+                s.bigGlyphs.remove(dead);
+            }
+        }
+        s.bigGlyphs.add(merged);
 
         // update bookkeeping
         recordGlyphAndStats(merged, s, q, track);
@@ -357,10 +394,23 @@ public class QuadTreeClusterer extends Clusterer {
 
     private void handleGlyphMerge(GrowFunction g, GlyphMerge m,
             GlobalState s, MultiQueue q, boolean track) {
+        // process the merge and all merges that it causes
         Glyph merged = processNestedMerges(g, m, s, q, track);
 
-        // record merge events and out of cell events
-        recordEventsForGlyph(merged, m.getAt(), true, g, q);
+        // update queues of big glyphs
+        for (Glyph big : s.bigGlyphs) {
+            big.record(new GlyphMerge(big, merged, g).uncertain());
+        }
+
+        // if the glyph became big now, it has not been inserted into the QuadTree
+        // we need to initialize its queue in that case
+        if (merged.isBig()) {
+            initializeBigGlyphEvents(merged, g, s);
+            s.bigGlyphs.add(merged);
+        } else {
+            // record merge events and out of cell events
+            recordEventsForGlyph(merged, m.getAt(), g, q);
+        }
 
         // update bookkeeping
         recordGlyphAndStats(merged, s, q, track);
@@ -504,6 +554,23 @@ public class QuadTreeClusterer extends Clusterer {
     }
 
     /**
+     * Given a big glyph, create uncertain merge events with all other glyphs in
+     * the QuadTree, and other big glyphs if there are any.
+     */
+    private void initializeBigGlyphEvents(Glyph glyph, GrowFunction g,
+            GlobalState s) {
+        // other big glyphs
+        for (Glyph big : s.bigGlyphs) {
+            glyph.record(new GlyphMerge(glyph, big, g).uncertain());
+        }
+
+        // non-big glyphs
+        for (Glyph small : Utils.iterable(tree.iteratorGlyphsAlive())) {
+            glyph.record(new GlyphMerge(glyph, small, g).uncertain());
+        }
+    }
+
+    /**
      * Given a merge event, see if performing it would cause more merges, and
      * process those repeatedly until no overlap remains. This function also
      * has glyphs that tracked any merged glyphs update who they track, and
@@ -641,10 +708,13 @@ public class QuadTreeClusterer extends Clusterer {
             Timers.start("[merge event processing] merged glyph insert");
         }
         // add new glyph to QuadTree cell(s)
-        tree.insert(merged, mergedAt, g);
-        if (LOGGER != null) {
-            LOGGER.log(Level.FINER, "inserted merged glyph into {0} cells",
-                    merged.getCells().size());
+        merged.setBig(s.glyphSize);
+        if (!merged.isBig()) {
+            tree.insert(merged, mergedAt, g);
+            if (LOGGER != null) {
+                LOGGER.log(Level.FINER, "inserted merged glyph into {0} cells",
+                        merged.getCells().size());
+            }
         }
         if (B.TIMERS_ENABLED.get()) {
             Timers.stop("[merge event processing] merged glyph insert");
@@ -659,7 +729,7 @@ public class QuadTreeClusterer extends Clusterer {
 
     private void recordGlyphAndStats(Glyph merged, GlobalState s, MultiQueue q,
             boolean track) {
-        merged.participate(s.glyphSize); s.numAlive++; s.glyphSize.record(merged.getN());
+        merged.participate(); s.numAlive++; s.glyphSize.record(merged.getN());
         if (merged.isBig()) {
             Stats.record("merged cells big glyphs", merged.getCells().size());
             Stats.record("glyphs around big glyphs",
@@ -703,27 +773,23 @@ public class QuadTreeClusterer extends Clusterer {
     /**
      * Given a freshly created glyph originating from a merge, loop over the
      * QuadTree cells of that glyph and record out of cell events for all.
-     * Optionally {@code includeGlyphMerges} as well in the same loop, using
-     * the global {@link #rec}.
+     * In the same loop, find merges as well, using the global {@link #rec}.
      */
     private void recordEventsForGlyph(Glyph merged, double at,
-            boolean includeGlyphMerges, GrowFunction g, MultiQueue q) {
+            GrowFunction g, MultiQueue q) {
         if (B.TIMERS_ENABLED.get())
             Timers.start("[merge event processing] merge event recording");
         // create events with remaining glyphs
         // (we always have to loop over cells here, `merged` has just
         //  been created and thus hasn't recorded merge events yet)
-        if (includeGlyphMerges)
-            rec.from(merged);
+        rec.from(merged);
         Stats.record("merged cells", merged.getCells().size());
         for (QuadTree cell : merged.getCells()) {
-            if (includeGlyphMerges) {
-                if (B.TIMERS_ENABLED.get())
-                    Timers.start("first merge recording 3");
-                rec.record(cell.getGlyphs());
-                if (B.TIMERS_ENABLED.get())
-                    Timers.stop("first merge recording 3");
-            }
+            if (B.TIMERS_ENABLED.get())
+                Timers.start("first merge recording 3");
+            rec.record(cell.getGlyphs());
+            if (B.TIMERS_ENABLED.get())
+                Timers.stop("first merge recording 3");
             // create out of cell events
             for (Side side : Side.values()) {
                 // only create an event when at least one neighbor on
@@ -755,8 +821,7 @@ public class QuadTreeClusterer extends Clusterer {
             }
         }
         merged.popOutOfCellInto(q, LOGGER);
-        if (includeGlyphMerges)
-            rec.addEventsTo(q, LOGGER);
+        rec.addEventsTo(q, LOGGER);
     }
 
     /**
@@ -799,6 +864,8 @@ public class QuadTreeClusterer extends Clusterer {
         private int numAlive = 0;
         // statistic for sizes of currently alive glyphs
         private Stat glyphSize = new Stat();
+        // list of alive big glyphs; these are not in the QuadTree and thus tracked separately
+        private List<Glyph> bigGlyphs = new ArrayList<>(2);
 
         private GlobalState(Map<Glyph, HierarchicalClustering> map) {
             this.map = map;

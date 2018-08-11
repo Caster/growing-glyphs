@@ -3,6 +3,7 @@ package utils;
 import java.awt.geom.Rectangle2D;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Locale.Category;
@@ -112,6 +113,28 @@ public class Utils {
      */
     public static boolean intervalsOverlap(double[] a, double[] b) {
         return (a[1] >= b[0] && a[0] <= b[1]);
+    }
+
+    /**
+     * GIven an iterator, return a fresh iterable instance wrapping the iterator.
+     * The returned iterable can only be used once, after that it will throw an
+     * {@link IllegalStateException}.
+     *
+     * @param iterator Iterator to be wrapped.
+     */
+    public static <T> Iterable<T> iterable(final Iterator<T> iterator) {
+        return new Iterable<T>() {
+            private int callCount = 0;
+
+            @Override
+            public Iterator<T> iterator() {
+                if (++callCount == 1) {
+                    return iterator;
+                }
+                // can only be iterated once
+                throw new IllegalStateException();
+            }
+        };
     }
 
     /**
