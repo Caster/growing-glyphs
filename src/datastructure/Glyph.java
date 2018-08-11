@@ -419,8 +419,6 @@ public class Glyph {
 
     /**
      * Implementation of {@link #popMergeInto(Queue, Logger)} for non-big glyphs.
-     * These glyphs will NOT track merge events with big glyphs! The big glyphs
-     * are held responsible for keeping track of who they merge with.
      *
      * @see #popMergeIntoBig(Queue, Logger)
      */
@@ -431,7 +429,7 @@ public class Glyph {
         while (!mergeEvents.isEmpty()) {
             GlyphMerge merge = mergeEvents.poll();
             Glyph with = merge.getOther(this);
-            if (!with.isAlive()/* || with.isBig()*/) { // TODO!
+            if (!with.isAlive()) {
                 continue; // try the next event
             }
             q.add(merge);
