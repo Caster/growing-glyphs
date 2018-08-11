@@ -345,8 +345,13 @@ public class QuadTreeClusterer extends Clusterer {
 
     private void handleBigMerge(GrowFunction g, GlyphMerge m,
             GlobalState s, MultiQueue q, boolean track) {
-        handleGlyphMerge(g, m, s, q, track);
-        // TODO!
+        Glyph merged = processNestedMerges(g, m, s, q, track);
+
+        // record merge events and out of cell events
+        recordEventsForGlyph(merged, m.getAt(), true, g, q);
+
+        // update bookkeeping
+        recordGlyphAndStats(merged, s, q, track);
     }
 
     private void handleGlyphMerge(GrowFunction g, GlyphMerge m,
@@ -357,45 +362,7 @@ public class QuadTreeClusterer extends Clusterer {
         recordEventsForGlyph(merged, m.getAt(), true, g, q);
 
         // update bookkeeping
-        merged.participate(s.glyphSize); s.numAlive++; s.glyphSize.record(merged.getN());
-        if (merged.isBig()) {
-            Stats.record("merged cells big glyphs", merged.getCells().size());
-            Stats.record("glyphs around big glyphs",
-                    merged.getCells().stream().mapToInt((cell) ->
-                        cell.getGlyphsAlive().size()).sum());
-            s.numBig++;
-            Stats.record("number of big glyphs", s.numBig);
-        }
-
-        if (B.TIMERS_ENABLED.get()) {
-            Timers.stop("[merge event processing] merge event recording");
-        }
-        if (B.TIMERS_ENABLED.get()) {
-            Timers.stop("[merge event processing] total");
-            if (track) {
-                Timers.stop("[merge event processing] total (track)");
-            }
-        }
-        if (D.TIME_MERGE_EVENT_AGGLOMERATIVE.get() > 0 &&
-                B.LOGGING_ENABLED.get()) {
-            Stats.count("merge event handling");
-            double elapsed = Timers.in(Timers.elapsing("clustering"),
-                    Units.SECONDS);
-            if (elapsed - s.lastDumpedMerges >=
-                    D.TIME_MERGE_EVENT_AGGLOMERATIVE.get()) {
-                s.lastDumpedMerges = elapsed;
-                LOGGER.log(Level.FINE, "processed {0} merge events after "
-                        + "{1} seconds", new Object[] {
-                        Stats.get("[count] merge event handling").getN(),
-                        elapsed});
-                LOGGER.log(Level.FINER, "inserted {0} events",
-                        q.getInsertions());
-                LOGGER.log(Level.FINER, "discarded {0} events",
-                        q.getDiscarded());
-                LOGGER.log(Level.FINER, "deleted {0} events",
-                        q.getDeletions());
-            }
-        }
+        recordGlyphAndStats(merged, s, q, track);
     }
 
     private void handleOutOfCell(GrowFunction g, OutOfCell o,
@@ -689,7 +656,56 @@ public class QuadTreeClusterer extends Clusterer {
         return merged;
     }
 
-    private void recordEventsForGlyph(Glyph glyph, double at,
+    private void recordGlyphAndStats(Glyph merged, GlobalState s, MultiQueue q,
+            boolean track) {
+        merged.participate(s.glyphSize); s.numAlive++; s.glyphSize.record(merged.getN());
+        if (merged.isBig()) {
+            Stats.record("merged cells big glyphs", merged.getCells().size());
+            Stats.record("glyphs around big glyphs",
+                    merged.getCells().stream().mapToInt((cell) ->
+                        cell.getGlyphsAlive().size()).sum());
+            s.numBig++;
+            Stats.record("number of big glyphs", s.numBig);
+        }
+
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.stop("[merge event processing] merge event recording");
+        }
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.stop("[merge event processing] total");
+            if (track) {
+                Timers.stop("[merge event processing] total (track)");
+            }
+        }
+        if (D.TIME_MERGE_EVENT_AGGLOMERATIVE.get() > 0 &&
+                B.LOGGING_ENABLED.get()) {
+            Stats.count("merge event handling");
+            double elapsed = Timers.in(Timers.elapsing("clustering"),
+                    Units.SECONDS);
+            if (elapsed - s.lastDumpedMerges >=
+                    D.TIME_MERGE_EVENT_AGGLOMERATIVE.get()) {
+                s.lastDumpedMerges = elapsed;
+                LOGGER.log(Level.FINE, "processed {0} merge events after "
+                        + "{1} seconds", new Object[] {
+                        Stats.get("[count] merge event handling").getN(),
+                        elapsed});
+                LOGGER.log(Level.FINER, "inserted {0} events",
+                        q.getInsertions());
+                LOGGER.log(Level.FINER, "discarded {0} events",
+                        q.getDiscarded());
+                LOGGER.log(Level.FINER, "deleted {0} events",
+                        q.getDeletions());
+            }
+        }
+    }
+
+    /**
+     * Given a freshly created glyph originating from a merge, loop over the
+     * QuadTree cells of that glyph and record out of cell events for all.
+     * Optionally {@code includeGlyphMerges} as well in the same loop, using
+     * the global {@link #rec}.
+     */
+    private void recordEventsForGlyph(Glyph merged, double at,
             boolean includeGlyphMerges, GrowFunction g, MultiQueue q) {
         if (B.TIMERS_ENABLED.get())
             Timers.start("[merge event processing] merge event recording");
@@ -697,9 +713,9 @@ public class QuadTreeClusterer extends Clusterer {
         // (we always have to loop over cells here, `merged` has just
         //  been created and thus hasn't recorded merge events yet)
         if (includeGlyphMerges)
-            rec.from(glyph);
-        Stats.record("merged cells", glyph.getCells().size());
-        for (QuadTree cell : glyph.getCells()) {
+            rec.from(merged);
+        Stats.record("merged cells", merged.getCells().size());
+        for (QuadTree cell : merged.getCells()) {
             if (includeGlyphMerges) {
                 if (B.TIMERS_ENABLED.get())
                     Timers.start("first merge recording 3");
@@ -718,7 +734,7 @@ public class QuadTreeClusterer extends Clusterer {
                 if (B.TIMERS_ENABLED.get())
                     Timers.stop("neighbor finding");
                 for (QuadTree neighbor : neighbors) {
-                    if (!neighbor.getGlyphs().contains(glyph)) {
+                    if (!neighbor.getGlyphs().contains(merged)) {
                         create = true;
                         break;
                     }
@@ -728,16 +744,16 @@ public class QuadTreeClusterer extends Clusterer {
                 }
                 // now, actually create an OUT_OF_CELL event, but only
                 // if the event is still about to happen
-                OutOfCell ooe = new OutOfCell(glyph, g, cell, side);
+                OutOfCell ooe = new OutOfCell(merged, g, cell, side);
                 if (ooe.getAt() > at) {
-                    glyph.record(ooe);
+                    merged.record(ooe);
                     if (LOGGER != null)
                         LOGGER.log(Level.FINEST, "→ out of {0} of {2} at {1}",
                                 new Object[] {side, ooe.getAt(), cell});
                 }
             }
         }
-        glyph.popOutOfCellInto(q, LOGGER);
+        merged.popOutOfCellInto(q, LOGGER);
         if (includeGlyphMerges)
             rec.addEventsTo(q, LOGGER);
     }
