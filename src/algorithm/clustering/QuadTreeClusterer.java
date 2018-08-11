@@ -349,6 +349,7 @@ public class QuadTreeClusterer extends Clusterer {
 
         // record merge events and out of cell events
         recordEventsForGlyph(merged, m.getAt(), true, g, q);
+        // TODO: pass \c false above, adopt uncertainMerges queue from big glyph(s) that merged, pop uncertain merge event into queue
 
         // update bookkeeping
         recordGlyphAndStats(merged, s, q, track);

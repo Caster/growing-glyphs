@@ -2,6 +2,7 @@ package datastructure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -94,10 +95,11 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
 
     @Override
     public String toString() {
-        return toString("");
+        return toString("", true, true, -1);
     }
 
-    public String toString(String indent) {
+    public String toString(String indent, boolean showCreatedFrom,
+            boolean showCreatedFromRecursively, int limit) {
         String moreIndent = indent + "  ";
 
         StringBuilder sb = new StringBuilder(indent);
@@ -111,8 +113,28 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             sb.append("\n");
         } else {
             sb.append(String.format(" from (%d)\n", createdFrom.size()));
-            for (HierarchicalClustering hc : createdFrom) {
-                sb.append(hc.toString(moreIndent));
+            if (showCreatedFrom) {
+                Collections.sort(createdFrom, new Comparator<HierarchicalClustering>() {
+                    @Override
+                    public int compare(HierarchicalClustering hc1, HierarchicalClustering hc2) {
+                        int d = (int) Math.signum(hc2.getAt() - hc1.getAt());
+                        if (d == 0) {
+                            return hc2.getGlyph().getN() - hc1.getGlyph().getN();
+                        }
+                        return d;
+                    }
+                });
+                int i = 0;
+                for (HierarchicalClustering hc : createdFrom) {
+                    sb.append(hc.toString(moreIndent, showCreatedFromRecursively,
+                            showCreatedFromRecursively, limit));
+                    if (++i == limit)
+                        break;
+                }
+                if (i < createdFrom.size()) {
+                    sb.append(moreIndent);
+                    sb.append("... (" + (createdFrom.size() - i) + " more)\n");
+                }
             }
         }
         sb.append(indent);
@@ -228,18 +250,9 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
         public GlyphShape[] getGlyphs(GrowFunction g) {
             GlyphShape[] result = new GlyphShape[curr.size()];
             int i = 0;
-            double maxAt = Double.NEGATIVE_INFINITY;
-            if (halfStep) {
-                maxAt = next.peek().at;
-            } else {
-                for (HierarchicalClustering node : curr) {
-                    if (node.at > maxAt) {
-                        maxAt = node.at;
-                    }
-                }
-            }
+            double at = getAt();
             for (HierarchicalClustering node : curr) {
-                result[i++] = new GlyphShape(node.glyph, maxAt, g);
+                result[i++] = new GlyphShape(node.glyph, at, g);
             }
             return result;
         }
@@ -249,9 +262,12 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
          * cluster will be viewed.
          */
         public void end() {
+            boolean oldLogging = logging;
+            logging = false;
             while (!next.isEmpty()) {
                 next();
             }
+            logging = oldLogging;
         }
 
         /**
@@ -353,10 +369,13 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
          * will be disjoint.
          */
         public void start() {
+            boolean oldLogging = logging;
+            logging = false;
             while (!prev.isEmpty()) {
                 previous();
             }
             previous(); // undo half step, possibly
+            logging = oldLogging;
         }
 
         /**
@@ -388,24 +407,36 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
             LOGGER.log(Level.FINE, "current state");
             LOGGER.log(Level.FINER, "{0}half step", (halfStep ? "" : "no "));
             LOGGER.log(Level.FINER, "current size: {0}", curr.size());
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                for (HierarchicalClustering node : curr) {
+                    LOGGER.log(Level.FINEST, "curr node {0} at {1}",
+                            new Object[] {node.getGlyph(), node.getAt()});
+                }
+            }
+
             if (prev.size() == 0) {
                 LOGGER.log(Level.FINER, "no prev");
             } else {
                 LOGGER.log(Level.FINER, "prev ({0}):\n\n{1}",
                         new Object[] {prev.size(), prev.peek()});
-                for (HierarchicalClustering node : prev) {
-                    LOGGER.log(Level.FINER, "prev node {0} at {1}",
-                            new Object[] {node.getGlyph(), node.getAt()});
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    for (HierarchicalClustering node : prev) {
+                        LOGGER.log(Level.FINEST, "prev node {0} at {1}",
+                                new Object[] {node.getGlyph(), node.getAt()});
+                    }
                 }
             }
+
             if (next.size() == 0) {
                 LOGGER.log(Level.FINER, "no next");
             } else {
                 LOGGER.log(Level.FINER, "next ({0}):\n\n{1}",
                         new Object[] {next.size(), next.peek()});
-                for (HierarchicalClustering node : next) {
-                    LOGGER.log(Level.FINER, "next node {0} at {1}",
-                            new Object[] {node.getGlyph(), node.getAt()});
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    for (HierarchicalClustering node : next) {
+                        LOGGER.log(Level.FINEST, "next node {0} at {1}",
+                                new Object[] {node.getGlyph(), node.getAt()});
+                    }
                 }
             }
         }
