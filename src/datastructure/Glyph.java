@@ -431,7 +431,7 @@ public class Glyph {
         while (!mergeEvents.isEmpty()) {
             GlyphMerge merge = mergeEvents.poll();
             Glyph with = merge.getOther(this);
-            if (!with.isAlive() || with.isBig()) {
+            if (!with.isAlive()/* || with.isBig()*/) { // TODO!
                 continue; // try the next event
             }
             q.add(merge);
