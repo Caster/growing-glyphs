@@ -352,53 +352,9 @@ public class QuadTreeClusterer extends Clusterer {
     private void handleGlyphMerge(GrowFunction g, GlyphMerge m,
             GlobalState s, MultiQueue q, boolean track) {
         Glyph merged = processNestedMerges(g, m, s, q, track);
-        double mergedAt = m.getAt();
 
-        if (B.TIMERS_ENABLED.get())
-            Timers.start("[merge event processing] merge event recording");
-        // create events with remaining glyphs
-        // (we always have to loop over cells here, `merged` has just
-        //  been created and thus hasn't recorded merge events yet)
-        rec.from(merged);
-        Stats.record("merged cells", merged.getCells().size());
-        for (QuadTree cell : merged.getCells()) {
-            if (B.TIMERS_ENABLED.get())
-                Timers.start("first merge recording 3");
-            rec.record(cell.getGlyphs());
-            if (B.TIMERS_ENABLED.get())
-                Timers.stop("first merge recording 3");
-            // create out of cell events
-            for (Side side : Side.values()) {
-                // only create an event when at least one neighbor on
-                // this side does not contain the merged glyph yet
-                boolean create = false;
-                if (B.TIMERS_ENABLED.get())
-                    Timers.start("neighbor finding");
-                List<QuadTree> neighbors = cell.getNeighbors(side);
-                if (B.TIMERS_ENABLED.get())
-                    Timers.stop("neighbor finding");
-                for (QuadTree neighbor : neighbors) {
-                    if (!neighbor.getGlyphs().contains(merged)) {
-                        create = true;
-                        break;
-                    }
-                }
-                if (!create) {
-                    continue;
-                }
-                // now, actually create an OUT_OF_CELL event, but only
-                // if the event is still about to happen
-                OutOfCell ooe = new OutOfCell(merged, g, cell, side);
-                if (ooe.getAt() > mergedAt) {
-                    merged.record(ooe);
-                    if (LOGGER != null)
-                        LOGGER.log(Level.FINEST, "→ out of {0} of {2} at {1}",
-                                new Object[] {side, ooe.getAt(), cell});
-                }
-            }
-        }
-        merged.popOutOfCellInto(q, LOGGER);
-        rec.addEventsTo(q, LOGGER);
+        // record merge events and out of cell events
+        recordEventsForGlyph(merged, m.getAt(), true, g, q);
 
         // update bookkeeping
         merged.participate(s.glyphSize); s.numAlive++; s.glyphSize.record(merged.getN());
@@ -731,6 +687,59 @@ public class QuadTreeClusterer extends Clusterer {
         result = mergedHC;
 
         return merged;
+    }
+
+    private void recordEventsForGlyph(Glyph glyph, double at,
+            boolean includeGlyphMerges, GrowFunction g, MultiQueue q) {
+        if (B.TIMERS_ENABLED.get())
+            Timers.start("[merge event processing] merge event recording");
+        // create events with remaining glyphs
+        // (we always have to loop over cells here, `merged` has just
+        //  been created and thus hasn't recorded merge events yet)
+        if (includeGlyphMerges)
+            rec.from(glyph);
+        Stats.record("merged cells", glyph.getCells().size());
+        for (QuadTree cell : glyph.getCells()) {
+            if (includeGlyphMerges) {
+                if (B.TIMERS_ENABLED.get())
+                    Timers.start("first merge recording 3");
+                rec.record(cell.getGlyphs());
+                if (B.TIMERS_ENABLED.get())
+                    Timers.stop("first merge recording 3");
+            }
+            // create out of cell events
+            for (Side side : Side.values()) {
+                // only create an event when at least one neighbor on
+                // this side does not contain the merged glyph yet
+                boolean create = false;
+                if (B.TIMERS_ENABLED.get())
+                    Timers.start("neighbor finding");
+                List<QuadTree> neighbors = cell.getNeighbors(side);
+                if (B.TIMERS_ENABLED.get())
+                    Timers.stop("neighbor finding");
+                for (QuadTree neighbor : neighbors) {
+                    if (!neighbor.getGlyphs().contains(glyph)) {
+                        create = true;
+                        break;
+                    }
+                }
+                if (!create) {
+                    continue;
+                }
+                // now, actually create an OUT_OF_CELL event, but only
+                // if the event is still about to happen
+                OutOfCell ooe = new OutOfCell(glyph, g, cell, side);
+                if (ooe.getAt() > at) {
+                    glyph.record(ooe);
+                    if (LOGGER != null)
+                        LOGGER.log(Level.FINEST, "→ out of {0} of {2} at {1}",
+                                new Object[] {side, ooe.getAt(), cell});
+                }
+            }
+        }
+        glyph.popOutOfCellInto(q, LOGGER);
+        if (includeGlyphMerges)
+            rec.addEventsTo(q, LOGGER);
     }
 
     /**
