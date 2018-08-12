@@ -362,6 +362,7 @@ public class QuadTreeClusterer extends Clusterer {
                 }
             }
             event = queueEvent = q.peek();
+            break;
         }
 
         // check the big glyphs
@@ -753,9 +754,6 @@ public class QuadTreeClusterer extends Clusterer {
         }
 
         if (B.TIMERS_ENABLED.get()) {
-            Timers.stop("[merge event processing] merge event recording");
-        }
-        if (B.TIMERS_ENABLED.get()) {
             Timers.stop("[merge event processing] total");
             if (track) {
                 Timers.stop("[merge event processing] total (track)");
@@ -835,6 +833,8 @@ public class QuadTreeClusterer extends Clusterer {
         }
         merged.popOutOfCellInto(q, LOGGER);
         rec.addEventsTo(q, LOGGER);
+        if (B.TIMERS_ENABLED.get())
+            Timers.stop("[merge event processing] merge event recording");
     }
 
     /**
