@@ -28,15 +28,8 @@ public abstract class GrowSpeedBase implements GrowSpeed {
         // default implementation does nothing
     }
 
-
-    /**
-     * Given a glyph, return the weight of that glyph. This will normally be the
-     * number of entities represented by the glyph, but it may be multiplied by
-     * a compression factor if thresholds have been added and apply.
-     *
-     * @param glyph Glyph to read weight of.
-     */
-    protected double weight(Glyph glyph) {
+    @Override
+    public double weight(Glyph glyph) {
         return gf.thresholds.getN(glyph);
     }
 

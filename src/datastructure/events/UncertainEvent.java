@@ -2,7 +2,6 @@ package datastructure.events;
 
 import datastructure.Glyph;
 import datastructure.events.Event.Type;
-import utils.Utils;
 
 public abstract class UncertainEvent implements Comparable<UncertainEvent> {
 
@@ -56,16 +55,6 @@ public abstract class UncertainEvent implements Comparable<UncertainEvent> {
      */
     public abstract Type getType();
 
-    /**
-     * Update the lower bound on the event time, returns whether the lower bound
-     * changed because of this.
-     */
-    public boolean recomputeLowerBound() {
-        double oldLB = lb;
-        recomputeLowerBoundInternal();
-        return Utils.Double.neq(oldLB, lb);
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("uncertain ");
@@ -88,11 +77,5 @@ public abstract class UncertainEvent implements Comparable<UncertainEvent> {
         sb.append("]");
         return sb.toString();
     }
-
-
-    /**
-     * Called by {@link #recomputeLowerBound()} to do the actual work.
-     */
-    protected abstract void recomputeLowerBoundInternal();
 
 }

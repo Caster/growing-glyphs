@@ -15,7 +15,7 @@ public class LinearAreaGrowSpeed extends LinearGrowSpeed {
     }
 
     @Override
-    protected double weight(Glyph glyph) {
+    public double weight(Glyph glyph) {
         return gf.thresholds.getCompression(glyph) * Math.sqrt(glyph.getN());
     }
 

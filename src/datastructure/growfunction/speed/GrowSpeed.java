@@ -58,4 +58,13 @@ public interface GrowSpeed {
      */
     public double radius(Glyph g, double at);
 
+    /**
+     * Given a glyph, return the weight of that glyph. This will normally be the
+     * number of entities represented by the glyph, but it may be multiplied by
+     * a compression factor if thresholds have been added and apply.
+     *
+     * @param glyph Glyph to read weight of.
+     */
+    public double weight(Glyph glyph);
+
 }

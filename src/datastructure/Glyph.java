@@ -17,6 +17,7 @@ import datastructure.events.UncertainGlyphMerge;
 import datastructure.growfunction.CompressionThreshold;
 import datastructure.growfunction.CompressionThreshold.Threshold;
 import datastructure.growfunction.GrowFunction;
+import datastructure.queues.UncertainQueue;
 import utils.Constants;
 import utils.Constants.B;
 import utils.Constants.D;
@@ -76,7 +77,7 @@ public class Glyph {
      * Uncertain events involving this glyph: only initialized and used in case
      * this is a big glyph. See ... for details.
      */
-    private Queue<UncertainGlyphMerge> uncertainMergeEvents;
+    private UncertainQueue uncertainMergeEvents;
     /**
      * The uncertain merge events can be adopted by another big glyph. This in
      * fact means that the glyph has merged and grown. This pointer will point
@@ -184,8 +185,9 @@ public class Glyph {
      * merge events on {@code bigGlyph}.
      *
      * @param bigGlyph Glyph of which to adopt the uncertain merge events.
+     * @param event The merge event that caused the need for adoption.
      */
-    public void adoptUncertainMergeEvents(Glyph bigGlyph) {
+    public void adoptUncertainMergeEvents(Glyph bigGlyph, GlyphMerge event) {
         if (!isBig() || !bigGlyph.isBig()) {
             throw new RuntimeException("both this glyph and bigGlyph must be big");
         }
@@ -193,8 +195,10 @@ public class Glyph {
             throw new RuntimeException("can only adopt when it has no events yet");
         }
 
-        Queue<UncertainGlyphMerge> old = uncertainMergeEvents;
+        UncertainQueue old = uncertainMergeEvents;
         uncertainMergeEvents = bigGlyph.uncertainMergeEvents;
+        uncertainMergeEvents.setBigGlyph(this);
+        uncertainMergeEvents.updateAlpha(event);
         bigGlyph.uncertainMergeEvents = old;
         bigGlyph.adoptedBy = this;
     }
@@ -335,20 +339,7 @@ public class Glyph {
      * {@code null} if there is none remaining.
      */
     public UncertainGlyphMerge peekUncertain() {
-        while (!uncertainMergeEvents.isEmpty()) {
-            UncertainGlyphMerge merge = uncertainMergeEvents.poll();
-            Glyph with = merge.getOther(this);
-            if (!with.isAlive()) {
-                continue; // try the next event
-            }
-            boolean changed = merge.recomputeLowerBound();
-            uncertainMergeEvents.add(merge);
-            if (changed && uncertainMergeEvents.peek() != merge) {
-                continue; // retry until we find the actual head
-            }
-            return merge;
-        }
-        return null;
+        return uncertainMergeEvents.peek();
     }
 
     /**
@@ -364,9 +355,6 @@ public class Glyph {
      * the internal queue it is stored in.
      */
     public UncertainGlyphMerge pollUncertain() {
-        if (peekUncertain() == null) {
-            return null;
-        }
         return uncertainMergeEvents.poll();
     }
 
@@ -380,10 +368,34 @@ public class Glyph {
      */
     public boolean popMergeInto(Queue<Event> q, Logger l) {
         if (this.big) {
-            return popMergeIntoBig(q, l);
-        } else {
-            return popMergeIntoNormal(q, l);
+            throw new RuntimeException("big glyphs don't pop merge events "
+                    + "into the shared queue");
         }
+
+        // try to pop a merge event into the queue as long as the previously
+        // recorded merge is with a glyph that is still alive... give up as
+        // soon as no recorded events remain
+        while (!mergeEvents.isEmpty()) {
+            GlyphMerge merge = mergeEvents.poll();
+            Glyph with = merge.getOther(this);
+            if (!with.isAlive() || with.isBig()) {
+                continue; // try the next event
+            }
+            q.add(merge);
+            if (B.TRACK.get()) {
+                if (!with.trackedBy.contains(this)) {
+                    with.trackedBy.add(this);
+                }
+            }
+            if (l != null) {
+                l.log(Level.FINEST, "→ merge at {0} with {1}",
+                        new Object[] {merge.getAt(), with});
+            }
+            // we found an event and added it to the queue, return
+            return true;
+        }
+        // no recorded events remain, we cannot add an event
+        return false;
     }
 
     /**
@@ -395,6 +407,11 @@ public class Glyph {
      * @return Whether an event was popped into the queue.
      */
     public boolean popOutOfCellInto(Queue<Event> q, Logger l) {
+        if (this.big) {
+            throw new RuntimeException("big glyphs don't pop out of cell events "
+                    + "into the shared queue");
+        }
+
         if (!outOfCellEvents.isEmpty()) {
             OutOfCell o = outOfCellEvents.poll();
             if (l != null) {
@@ -450,92 +467,23 @@ public class Glyph {
      *
      * @param glyphSize Statistic covering number of entities represented by
      *            other glyphs, used to determine if this glyph {@link #isBig()}.
+     * @param g GrowFunction that is used to {@linkplain UncertainGlyphMerge#
+     *            computeAt(GrowFunction) compute} when events happen if this
+     *            glyph turns out to be a big one.
      */
-    public void setBig(Stat glyphSize) {
+    public void setBig(Stat glyphSize, GrowFunction g) {
         this.big = (this.n > glyphSize.getAverage() * D.BIG_GLYPH_FACTOR.get());
         Stats.count("glyph was big when it participated", this.big);
 
         // if the glyph is big, initialize uncertain merge event tracking
         if (this.big) {
-            this.uncertainMergeEvents = new PriorityQueue<>();
+            this.uncertainMergeEvents = new UncertainQueue(this, g);
         }
     }
 
     @Override
     public String toString() {
         return String.format("glyph [x = %.2f, y = %.2f, n = %d]", x, y, n);
-    }
-
-
-    /**
-     * Implementation of {@link #popMergeInto(Queue, Logger)} for big glyphs.
-     *
-     * @see #popMergeIntoNormal(Queue, Logger)
-     */
-    private boolean popMergeIntoBig(Queue<Event> q, Logger l) {
-        // try to pop a merge event into the queue as long as the previously
-        // recorded merge is with a glyph that is still alive... give up as
-        // soon as no recorded events remain
-        while (!uncertainMergeEvents.isEmpty()) {
-            UncertainGlyphMerge merge = uncertainMergeEvents.poll();
-            Glyph with = merge.getOther(this);
-            if (!with.isAlive()) {
-                continue; // try the next event
-            }
-            if (merge.recomputeLowerBound() && merge.getLowerBound() >
-                    uncertainMergeEvents.peek().getLowerBound()) {
-                uncertainMergeEvents.add(merge);
-                continue; // retry until we find the actual head of the queue
-            }
-            q.add(merge.getGlyphMerge());
-            if (B.TRACK.get()) {
-                if (!with.trackedBy.contains(this)) {
-                    with.trackedBy.add(this);
-                }
-            }
-            if (l != null) {
-                l.log(Level.FINEST, "→ merge at {0} with {1}",
-                        new Object[] {merge.getLowerBound(), with});
-            }
-            // we found an event and added it to the queue, return
-            return true;
-        }
-        // no recorded events remain, we cannot add an event
-        return false;
-    }
-
-    /**
-     * Implementation of {@link #popMergeInto(Queue, Logger)} for non-big glyphs.
-     * These glyphs will NOT track merge events with big glyphs! The big glyphs
-     * are held responsible for keeping track of who they merge with.
-     *
-     * @see #popMergeIntoBig(Queue, Logger)
-     */
-    private boolean popMergeIntoNormal(Queue<Event> q, Logger l) {
-        // try to pop a merge event into the queue as long as the previously
-        // recorded merge is with a glyph that is still alive... give up as
-        // soon as no recorded events remain
-        while (!mergeEvents.isEmpty()) {
-            GlyphMerge merge = mergeEvents.poll();
-            Glyph with = merge.getOther(this);
-            if (!with.isAlive() || with.isBig()) {
-                continue; // try the next event
-            }
-            q.add(merge);
-            if (B.TRACK.get()) {
-                if (!with.trackedBy.contains(this)) {
-                    with.trackedBy.add(this);
-                }
-            }
-            if (l != null) {
-                l.log(Level.FINEST, "→ merge at {0} with {1}",
-                        new Object[] {merge.getAt(), with});
-            }
-            // we found an event and added it to the queue, return
-            return true;
-        }
-        // no recorded events remain, we cannot add an event
-        return false;
     }
 
 }

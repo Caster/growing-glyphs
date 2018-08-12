@@ -394,6 +394,13 @@ public class QuadTreeClusterer extends Clusterer {
         // process the merge and all merges that it causes
         Glyph merged = processNestedMerges(g, m, s, q, track);
 
+        // update merge events
+        for (Glyph glyph : m.getGlyphs()) {
+            if (glyph.isBig()) {
+                merged.adoptUncertainMergeEvents(glyph, m);
+            }
+        }
+
         // big glyphs are not in the QuadTree, but we should update our list
         for (Glyph dead : m.getGlyphs()) {
             if (dead.isBig()) {
@@ -722,7 +729,7 @@ public class QuadTreeClusterer extends Clusterer {
             Timers.start("[merge event processing] merged glyph insert");
         }
         // add new glyph to QuadTree cell(s)
-        merged.setBig(s.glyphSize);
+        merged.setBig(s.glyphSize, g);
         if (!merged.isBig()) {
             tree.insert(merged, mergedAt, g);
             if (LOGGER != null) {

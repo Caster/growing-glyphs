@@ -312,6 +312,11 @@ public class GrowFunction implements GrowShape, GrowSpeed {
         return this.sizesAt(at, glyphs.toArray(new Glyph[0]));
     }
 
+    @Override
+    public double weight(Glyph glyph) {
+        return speed.weight(glyph);
+    }
+
 
     /**
      * Given a compression level, returns how wide the border for that level is.
