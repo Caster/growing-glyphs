@@ -155,7 +155,7 @@ public class QuadTreeClusterer extends Clusterer {
                     new Object[] {q.size(), state.numAlive});
         // merge glyphs until no pairs to merge remain
         Event e;
-        queue: while ((e = getNextEvent(q, state)) != null) {
+        while ((e = getNextEvent(q, state)) != null) {
             // log on a slightly higher urgency level when one of the glyphs is tracked
             if (LOGGER != null) {
                 if (LOGGER.getLevel().intValue() > Level.FINER.intValue()) {
@@ -182,22 +182,26 @@ public class QuadTreeClusterer extends Clusterer {
                     track = track || glyph.track;
                 }
                 // check if one of the glyphs is big; if so, handle separately
+                Glyph big = null;
                 for (Glyph glyph : e.getGlyphs()) {
                     if (glyph.isBig()) {
-                        if (B.TIMERS_ENABLED.get()) {
-                            Timers.start("[merge event processing] total");
-                            Timers.start("[merge event processing] big");
+                        if (big == null) {
+                            big = glyph;
+                        } else {
+                            // if there is more than one big glyph involved,
+                            // handle it normally
+                            big = null;
+                            break;
                         }
-                        handleBigGlyphMerge(g, (GlyphMerge) e, state, q, track);
-                        if (B.TIMERS_ENABLED.get()) {
-                            Timers.stop("[merge event processing] total");
-                            Timers.stop("[merge event processing] big");
-                        }
-                        continue queue;
                     }
                 }
 
-                handleGlyphMerge(g, (GlyphMerge) e, state, q, track);
+                // handle the merge either normally, or as a big glyph merge
+                if (big == null) {
+                    handleGlyphMerge(g, (GlyphMerge) e, state, q, track);
+                } else {
+                    handleBigGlyphMerge(g, (GlyphMerge) e, state, q, track);
+                }
                 break;
             case OUT_OF_CELL:
                 if (B.TIMERS_ENABLED.get())
@@ -393,6 +397,10 @@ public class QuadTreeClusterer extends Clusterer {
 
     private void handleBigGlyphMerge(GrowFunction g, GlyphMerge m,
             GlobalState s, MultiQueue q, boolean track) {
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.start("[merge event processing] big");
+        }
+
         // process the merge and all merges that it causes
         Glyph merged = processNestedMerges(g, m, s, q, track);
 
@@ -425,6 +433,10 @@ public class QuadTreeClusterer extends Clusterer {
 
         // update bookkeeping
         recordGlyphAndStats(merged, s, q, track);
+
+        if (B.TIMERS_ENABLED.get()) {
+            Timers.stop("[merge event processing] big");
+        }
     }
 
     private void handleGlyphMerge(GrowFunction g, GlyphMerge m,
