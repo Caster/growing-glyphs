@@ -345,7 +345,8 @@ public class QuadTreeClusterer extends Clusterer {
 
         // check the queue
         Event event = null;
-        while (!q.isEmpty()) {
+        Event queueEvent = null;
+        findQueueEvent: while (!q.isEmpty()) {
             event = q.peek();
             // we ignore out of cell events for non-leaf cells
             if (event.getType() == Type.OUT_OF_CELL &&
@@ -357,18 +358,30 @@ public class QuadTreeClusterer extends Clusterer {
             for (Glyph glyph : event.getGlyphs()) {
                 if (!glyph.isAlive()) {
                     q.discard();
-                    continue;
+                    continue findQueueEvent;
                 }
             }
-            event = q.poll();
+            event = queueEvent = q.peek();
         }
 
         // check the big glyphs
+        Glyph glyphEvent = null;
         for (Glyph big : s.bigGlyphs) {
             UncertainGlyphMerge bEvt = big.peekUncertain();
             if (event == null || (bEvt != null && bEvt.getLowerBound() <
                     event.getAt())) {
                 event = bEvt.getGlyphMerge();
+                glyphEvent = big;
+            }
+        }
+
+        // if we are going with the queue event, remove it from the queue
+        // otherwise remove it from the queue of the glyph it came from
+        if (event != null) {
+            if (event == queueEvent) {
+                q.poll();
+            } else {
+                glyphEvent.pollUncertain();
             }
         }
 

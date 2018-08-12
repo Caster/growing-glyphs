@@ -360,6 +360,17 @@ public class Glyph {
     }
 
     /**
+     * Same as {@link #peekUncertain()}, but actually removes that event from
+     * the internal queue it is stored in.
+     */
+    public UncertainGlyphMerge pollUncertain() {
+        if (peekUncertain() == null) {
+            return null;
+        }
+        return uncertainMergeEvents.poll();
+    }
+
+    /**
      * Add the next event, if any, to the given queue. This will add the first
      * {@link #record(GlyphMerge) recorded} event to the given queue.
      *
