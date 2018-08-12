@@ -197,7 +197,6 @@ public class Glyph {
 
         UncertainQueue old = uncertainMergeEvents;
         uncertainMergeEvents = bigGlyph.uncertainMergeEvents;
-        uncertainMergeEvents.setBigGlyph(this);
         uncertainMergeEvents.updateAlpha(event);
         bigGlyph.uncertainMergeEvents = old;
         bigGlyph.adoptedBy = this;
@@ -472,12 +471,16 @@ public class Glyph {
      *            glyph turns out to be a big one.
      */
     public void setBig(Stat glyphSize, GrowFunction g) {
+        if (!B.BIG_GLYPHS.get()) {
+            return;
+        }
+
         this.big = (this.n > glyphSize.getAverage() * D.BIG_GLYPH_FACTOR.get());
         Stats.count("glyph was big when it participated", this.big);
 
         // if the glyph is big, initialize uncertain merge event tracking
         if (this.big) {
-            this.uncertainMergeEvents = new UncertainQueue(this, g);
+            this.uncertainMergeEvents = new UncertainQueue(g);
         }
     }
 

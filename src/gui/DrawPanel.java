@@ -242,11 +242,11 @@ public class DrawPanel extends JPanel implements
                 g2.setColor(Color.BLACK);
             }
             for (GlyphShape glyph : glyphs) {
-                Rectangle2D bbox = null;
+                Rectangle2D bbox = glyph.shapeWithBorder.getBounds2D();
                 Area border = null;
 
                 // ensure that something is drawn, if only a single pixel
-                if (!borders && (bbox = glyph.shapeWithBorder.getBounds2D()).getWidth() * zoom < 2) {
+                if (!borders && bbox.getWidth() * zoom < 2) {
                     g2.setColor(GLYPH_FILL);
                     bbox.setRect(bbox.getX() - 0.5 / zoom, bbox.getY() - 0.5 / zoom, 1 / zoom, 1 / zoom);
                     g2.fill(bbox);

@@ -368,7 +368,9 @@ public class QuadTreeClusterer extends Clusterer {
         // check the big glyphs
         Glyph glyphEvent = null;
         for (Glyph big : s.bigGlyphs) {
+            LOGGER.log(Level.FINER, "searching for uncertain merge on {0}", big);
             UncertainGlyphMerge bEvt = big.peekUncertain();
+            LOGGER.log(Level.FINER, "found {0}", bEvt);
             if (event == null || (bEvt != null && bEvt.getLowerBound() <
                     event.getAt())) {
                 event = bEvt.getGlyphMerge();
@@ -394,20 +396,32 @@ public class QuadTreeClusterer extends Clusterer {
         // process the merge and all merges that it causes
         Glyph merged = processNestedMerges(g, m, s, q, track);
 
-        // update merge events
-        for (Glyph glyph : m.getGlyphs()) {
-            if (glyph.isBig()) {
-                merged.adoptUncertainMergeEvents(glyph, m);
-            }
-        }
-
         // big glyphs are not in the QuadTree, but we should update our list
         for (Glyph dead : m.getGlyphs()) {
             if (dead.isBig()) {
                 s.bigGlyphs.remove(dead);
             }
         }
-        s.bigGlyphs.add(merged);
+
+        // is the merged glyph not big anymore?
+        if (!merged.isBig()) {
+            // update queues of big glyphs
+            for (Glyph big : s.bigGlyphs) {
+                big.record(new GlyphMerge(big, merged, g).uncertain());
+            }
+
+            // record merge events and out of cell events
+            recordEventsForGlyph(merged, m.getAt(), g, q);
+        } else {
+            // update merge events
+            for (Glyph glyph : m.getGlyphs()) {
+                if (glyph.isBig()) {
+                    merged.adoptUncertainMergeEvents(glyph, m);
+                }
+            }
+            // keep track of the new big glyph
+            s.bigGlyphs.add(merged);
+        }
 
         // update bookkeeping
         recordGlyphAndStats(merged, s, q, track);

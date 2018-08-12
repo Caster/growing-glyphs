@@ -31,6 +31,10 @@ public final class Constants {
     public static enum B {
 
         /**
+         * Whether the big glyph optimization should be used.
+         */
+        BIG_GLYPHS(true),
+        /**
          * Whether the {@link QuadTreeClusterer} checks the total number of works
          * represented by all alive glyphs after every step of the algorithm.
          * This will only actually enable checking if

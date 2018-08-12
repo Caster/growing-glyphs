@@ -11,25 +11,17 @@ import utils.Utils;
 public class UncertainQueue extends PriorityQueue<UncertainGlyphMerge> {
 
     private double α;
-    private Glyph bigGlyph;
     private final GrowFunction g;
 
 
     /**
      * Constructs a new queue to track merge events with the given glyph.
      *
-     * @param bigGlyph The {@linkplain Glyph#isBig() big} glyph of which merge
-     *            events will be tracked by this queue.
      * @param g GrowFunction that is used to {@linkplain UncertainGlyphMerge#
      *            computeAt(GrowFunction) compute} when events happen.
      */
-    public UncertainQueue(Glyph bigGlyph, GrowFunction g) {
-        if (!bigGlyph.isBig()) {
-            throw new IllegalArgumentException("only big glyphs have queues");
-        }
-
+    public UncertainQueue(GrowFunction g) {
         this.α = 1;
-        this.bigGlyph = bigGlyph;
         this.g = g;
     }
 
@@ -37,8 +29,9 @@ public class UncertainQueue extends PriorityQueue<UncertainGlyphMerge> {
     public UncertainGlyphMerge peek() {
         while (!isEmpty()) {
             UncertainGlyphMerge merge = super.peek();
-            Glyph with = merge.getOther(bigGlyph);
+            Glyph with = merge.getSmallGlyph();
             if (!with.isAlive()) {
+                super.poll();
                 continue; // try the next event
             }
 
@@ -50,7 +43,6 @@ public class UncertainQueue extends PriorityQueue<UncertainGlyphMerge> {
             }
 
             // if not, update its key and reinsert
-            super.poll();
             merge.setLowerBound(t / α);
             super.add(merge);
         }
@@ -65,21 +57,6 @@ public class UncertainQueue extends PriorityQueue<UncertainGlyphMerge> {
         }
         // return it if there is one
         return super.poll();
-    }
-
-    /**
-     * Change the glyph of which events are tracked. Useful when a merge occurs
-     * and the glyph object changes, even though the conceptual glyph doesn't.
-     *
-     * @param bigGlyph The {@linkplain Glyph#isBig() big} glyph of which merge
-     *            events will be tracked by this queue.
-     */
-    public void setBigGlyph(Glyph bigGlyph) {
-        if (!bigGlyph.isBig()) {
-            throw new IllegalArgumentException("passed glyph isn't big");
-        }
-
-        this.bigGlyph = bigGlyph;
     }
 
     /**

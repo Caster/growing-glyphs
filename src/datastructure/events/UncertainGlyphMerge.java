@@ -41,6 +41,7 @@ public class UncertainGlyphMerge extends UncertainEvent {
                 glyphs[i] = glyphs[i].getAdoptivePrimalParent();
                 if (glyphs[i] != prev) {
                     changed = true;
+                    from.glyphs[i] = glyphs[i];
                 }
             }
         }
@@ -58,8 +59,11 @@ public class UncertainGlyphMerge extends UncertainEvent {
         return from;
     }
 
-    public Glyph getOther(Glyph glyph) {
-        return from.getOther(glyph);
+    public Glyph getSmallGlyph() {
+        if (glyphs[0].isBig()) {
+            return glyphs[1];
+        }
+        return glyphs[0];
     }
 
     @Override
