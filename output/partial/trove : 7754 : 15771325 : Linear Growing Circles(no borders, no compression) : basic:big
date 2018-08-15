@@ -16,6 +16,8 @@ FINE    |  QuadTree insert          33.23% of the time
 FINE    |  QuadTree insert          occurred 39415 times
 FINE    |  QuadTree join cells      occurred 767 times
 FINE    |  QuadTree leaves          was      1,439.43 on average and always between 1 and 2,257, over 2,134 measurements
+FINE    |  QuadTree remove          occurred 15148 times
+FINE    |  QuadTree remove          73.06% of the time
 FINE    |  QuadTree split cell      occurred 19 times
 FINE    |  glyph was big when it participated 48.55% of the time
 FINE    |  glyphs around big glyphs was          0.00 and did not change over 924 measurements
@@ -32,7 +34,7 @@ FINE    |  queue size               was     11,391.52 on average and always betw
 FINE    |  total # works            was 15,771,325.00 and did not change over 2 measurements
 FINE    |  
 FINE    |  TIMERS
-FINE    |  clustering                                            took  0.42 seconds (wall clock time)
+FINE    |  clustering                                            took  0.41 seconds (wall clock time)
 FINE    |  first merge recording 1                               took  0.00 seconds (wall clock time, 7,754 timings)
 FINE    |  first merge recording 2                               took  0.00 seconds (wall clock time, 1,067 timings)
 FINE    |  first merge recording 3                               took  0.00 seconds (wall clock time, 3,191 timings)
@@ -44,7 +46,7 @@ FINE    |  queue operations                                      took  0.02 seco
 FINE    |  record all pairs                                      took  0.01 seconds (wall clock time, 559 timings)
 FINE    |  
 FINE    |  [QuadTree]
-FINE    |  getLeaves                                             took  0.10 seconds (wall clock time, 5,141 timings)
+FINE    |  getLeaves                                             took  0.09 seconds (wall clock time, 5,141 timings)
 FINE    |  insert                                                took  0.00 seconds (wall clock time, 3,589 timings)
 FINE    |  join                                                  took  0.01 seconds (wall clock time, 15,894 timings)
 FINE    |  split                                                 took  0.00 seconds (wall clock time, 15 timings)

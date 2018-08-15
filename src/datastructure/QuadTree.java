@@ -498,8 +498,11 @@ public class QuadTree implements Iterable<QuadTree> {
      *         need to be updated and out of cell events may be outdated.
      */
     public boolean removeGlyph(Glyph glyph, double at) {
+        Stats.count("QuadTree remove");
         if (glyphs != null) {
-            glyphs.remove(glyph);
+            Stats.count("QuadTree remove", glyphs.remove(glyph));
+        } else {
+            Stats.count("QuadTree remove", false);
         }
         if (parent != null) {
             return parent.joinMaybe(at);

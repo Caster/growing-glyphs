@@ -16,6 +16,8 @@ FINE    |  QuadTree insert          33.63% of the time
 FINE    |  QuadTree insert          occurred 38605 times
 FINE    |  QuadTree join cells      occurred 760 times
 FINE    |  QuadTree leaves          was      1,369.09 on average and always between 1 and 2,257, over 2,146 measurements
+FINE    |  QuadTree remove          occurred 15286 times
+FINE    |  QuadTree remove          73.27% of the time
 FINE    |  QuadTree split cell      occurred 12 times
 FINE    |  glyph was big when it participated 50.31% of the time
 FINE    |  glyphs around big glyphs was          0.00 and did not change over 977 measurements
@@ -55,5 +57,5 @@ FINE    |  merge event recording                                 took  0.01 seco
 FINE    |  merge events in joined cells                          took  0.01 seconds (wall clock time, 1,942 timings)
 FINE    |  merged glyph insert                                   took  0.01 seconds (wall clock time, 1,942 timings)
 FINE    |  nested merges                                         took  0.08 seconds (wall clock time, 1,942 timings)
-FINE    |  total                                                 took  0.14 seconds (wall clock time, 1,942 timings)
+FINE    |  total                                                 took  0.15 seconds (wall clock time, 1,942 timings)
 FINE    |  tracker updating                                      took  0.00 seconds (wall clock time, 1,942 timings)
