@@ -33,7 +33,7 @@ public final class Constants {
         /**
          * Whether the big glyph optimization should be used.
          */
-        BIG_GLYPHS(false),
+        BIG_GLYPHS(true),
         /**
          * Whether the {@link QuadTreeClusterer} checks the total number of works
          * represented by all alive glyphs after every step of the algorithm.
@@ -296,7 +296,7 @@ public final class Constants {
          *
          * @see GrowFunction#getAll()
          */
-        GROW_FUNCTION("Linear Area Growing Squares");
+        GROW_FUNCTION("Logarithmic Growing Circles");
 
 
         /**

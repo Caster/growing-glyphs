@@ -68,7 +68,15 @@ public class Batch {
         this.home = home;
         this.inputs = Arrays.asList(
                 "csv/glottovis.tsv",
-                "points/trove"
+                "points/trove",
+                "points/big-glyph-10k",
+                "points/big-glyph-50k",
+                "points/big-glyph-100k",
+                "points/big-glyph-200k",
+                "points/uniform-10k",
+                "points/uniform-50k",
+                "points/uniform-100k",
+                "points/uniform-200k"
             );
         this.outputDir = new File(home, "output/" + System.currentTimeMillis());
 

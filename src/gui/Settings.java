@@ -31,7 +31,7 @@ public class Settings extends HashMap<Setting, Object> {
         CLEAR_BEFORE_GENERATE(null, "Clear points before generation", Boolean.TRUE),
         COLORFUL_BORDERS(SettingSection.DRAW, "Indicate compression level with "
                 + "colors", Boolean.FALSE),
-        COMPRESSION(SettingSection.MISC, "Compress glyphs", Boolean.TRUE,
+        COMPRESSION(SettingSection.MISC, "Compress glyphs", Boolean.FALSE,
                 "This will load hardcoded compression factors for some data "
                 + "sets. Won't do compression for unknown data sets."),
         LABELED_BORDERS(SettingSection.DRAW, "Indicate compression level with "
