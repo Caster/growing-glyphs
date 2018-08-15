@@ -124,7 +124,7 @@ public class Glyph {
         }
         this.threshold = new MutableOptional<>();
         this.track = false;
-        if (B.TRACK.get()) {
+        if (B.TRACK.get() && !B.ROBUST.get()) {
             this.trackedBy = new ArrayList<>();
         } else {
             this.trackedBy = null;
@@ -381,7 +381,7 @@ public class Glyph {
                 continue; // try the next event
             }
             q.add(merge);
-            if (B.TRACK.get()) {
+            if (B.TRACK.get() && !B.ROBUST.get()) {
                 if (!with.trackedBy.contains(this)) {
                     with.trackedBy.add(this);
                 }
@@ -411,12 +411,19 @@ public class Glyph {
                     + "into the shared queue");
         }
 
-        if (!outOfCellEvents.isEmpty()) {
+        boolean added = false;
+        while (!outOfCellEvents.isEmpty()) {
             OutOfCell o = outOfCellEvents.poll();
             if (l != null) {
                 l.log(Level.FINEST, "popping {0} into the queue", o);
             }
             q.add(o);
+            added = true;
+            if (!B.ROBUST.get()) {
+                return true;
+            }
+        }
+        if (B.ROBUST.get() && added) {
             return true;
         }
         if (l != null) {

@@ -165,15 +165,22 @@ public class FirstMergeRecorder {
      */
     public void addEventsTo(Queue<Event> q, Logger l) {
         GlyphMerge[] merges;
-        while ((merges = merge.pop()) != null) {
-            for (GlyphMerge merge : merges) {
-                if (LOGGER != null) {
-                    LOGGER.log(Level.FINE, "recorded {0}", merge);
-                }
-                from.record(merge);
+        if (B.ROBUST.get()) {
+            for (Glyph glyph : merge.getGlyphs()) {
+                q.add(new GlyphMerge(from, glyph, g));
             }
+            merge.getGlyphs().clear();
+        } else {
+            while ((merges = merge.pop()) != null) {
+                for (GlyphMerge merge : merges) {
+                    if (LOGGER != null) {
+                        LOGGER.log(Level.FINE, "recorded {0}", merge);
+                    }
+                    from.record(merge);
+                }
+            }
+            from.popMergeInto(q, l);
         }
-        from.popMergeInto(q, l);
         firstReusedRecord = null; // we can reuse all records again
     }
 
@@ -244,7 +251,6 @@ public class FirstMergeRecorder {
             merge.getGlyphs().addAll(glyphs.parallel()
                 .filter((glyph) -> glyph.isAlive() && glyph != from)
                 .collect(Collectors.toSet()));
-
         } else {
             merge.combine(glyphs
                 .filter((glyph) -> glyph.isAlive() && glyph != from)

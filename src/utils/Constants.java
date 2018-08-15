@@ -33,7 +33,7 @@ public final class Constants {
         /**
          * Whether the big glyph optimization should be used.
          */
-        BIG_GLYPHS(true),
+        BIG_GLYPHS(false),
         /**
          * Whether the {@link QuadTreeClusterer} checks the total number of works
          * represented by all alive glyphs after every step of the algorithm.
@@ -59,11 +59,14 @@ public final class Constants {
          * Whether merge events are to be created for all pairs of glyphs, or only
          * the first one. Setting this to {@code true} implies a performance hit.
          *
+         * This constant will also determine whether all out of cell events are
+         * put into the global event queue ({@code true}), or not.
+         *
          * Please note that {@link QuadTree#MAX_GLYPHS_PER_CELL} cannot be set to
          * high values when setting this to {@code true}, or you need to allocate
          * more memory to the clustering process for large data sets.
          */
-        ROBUST(false),
+        ROBUST(true),
 
         /**
          * Whether some statistics should be collected that may be time-intensive
@@ -92,6 +95,16 @@ public final class Constants {
          */
         public boolean get() {
             return value;
+        }
+
+        /**
+         * Change the value of the constant. Should not be needed normally!
+         *
+         * @param value New value for the constant.
+         */
+        public void set(boolean value) {
+            // TODO: only allow calling this method from Batch?
+            this.value = value;
         }
 
 

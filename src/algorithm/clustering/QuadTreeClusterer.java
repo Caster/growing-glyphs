@@ -71,7 +71,8 @@ public class QuadTreeClusterer extends Clusterer {
         if (LOGGER != null) {
             LOGGER.log(Level.FINER, "ENTRY into AgglomerativeClustering#cluster()");
             LOGGER.log(Level.FINE, "clustering using {0} strategy", Utils.join(" + ",
-                    (B.ROBUST.get() ? "ROBUST" : ""), (B.TRACK.get() ? "TRACK" : ""),
+                    (B.ROBUST.get() ? "ROBUST" : ""),
+                    (B.TRACK.get() && !B.ROBUST.get() ? "TRACK" : ""),
                     (!B.ROBUST.get() && !B.TRACK.get() ? "FIRST MERGE ONLY" : ""),
                     E.QUEUE_BUCKETING.get().toString()));
             LOGGER.log(Level.FINE, "using the {0} grow function", g.getName());

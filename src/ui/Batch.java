@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import algorithm.clustering.NaiveClusterer;
+import algorithm.clustering.QuadTreeClusterer;
 import datastructure.growfunction.GrowFunction;
 import datastructure.growfunction.shape.CirclesGrowShape;
 import datastructure.growfunction.shape.GrowShape;
@@ -20,6 +22,7 @@ import datastructure.growfunction.speed.LinearGrowSpeed;
 import datastructure.growfunction.speed.LogarithmicGrowSpeed;
 import gui.Settings.Setting;
 import logging.ConfigurableConsoleHandler;
+import utils.Constants.B;
 import utils.Utils;
 
 /**
@@ -58,7 +61,7 @@ public class Batch {
 
     public Batch(File home) {
         this.algorithms = Arrays.asList(
-                "basic"
+                "basic:all events", "basic", "basic:big"
             );
         this.daemon = new GrowingGlyphsDaemon(512, 512, null);
         this.growFunctions = new ArrayList<>(6);
@@ -108,6 +111,8 @@ public class Batch {
                             daemon.reopen();
                         }
 
+                        prepare(algorithm);
+
                         File output = new File(outputDir, name);
                         ConfigurableConsoleHandler.redirectTo(new PrintStream(output));
                         daemon.cluster();
@@ -133,6 +138,32 @@ public class Batch {
         for (Class<? extends GrowSpeed> speed : speeds) {
             for (Class<? extends GrowShape> shape : shapes) {
                 growFunctions.add(new GrowFunction(shape, speed));
+            }
+        }
+    }
+
+    private void prepare(String algorithm) {
+        String[] elements = algorithm.split(":");
+        switch (elements[0]) {
+        case "basic":
+            daemon.setClusterer(new QuadTreeClusterer(daemon.getTree()));
+            break;
+        case "naive":
+            daemon.setClusterer(new NaiveClusterer(daemon.getTree()));
+            break;
+        };
+
+        B.BIG_GLYPHS.set(false);
+        B.ROBUST.set(false);
+
+        for (int i = 1; i < elements.length; ++i) {
+            switch (elements[i]) {
+            case "all events":
+                B.ROBUST.set(true);
+                break;
+            case "big":
+                B.BIG_GLYPHS.set(true);
+                break;
             }
         }
     }
