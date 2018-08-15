@@ -58,7 +58,7 @@ public class Batch {
 
     public Batch(File home) {
         this.algorithms = Arrays.asList(
-                "naive"
+                "basic"
             );
         this.daemon = new GrowingGlyphsDaemon(512, 512, null);
         this.growFunctions = new ArrayList<>(6);

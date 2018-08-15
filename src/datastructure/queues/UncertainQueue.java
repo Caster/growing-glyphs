@@ -50,6 +50,7 @@ public class UncertainQueue extends PriorityQueue<UncertainGlyphMerge> {
             }
 
             // if not, update its key and reinsert
+            super.poll();
             merge.setLowerBound(t / α);
             super.add(merge);
         }
@@ -72,8 +73,10 @@ public class UncertainQueue extends PriorityQueue<UncertainGlyphMerge> {
      * @param event Event that caused need for updating α.
      */
     public void updateAlpha(GlyphMerge event) {
-        double bigRadius = g.radius(event.getGlyphs()[0], event.getAt());
-        double smallRadius = g.radius(event.getGlyphs()[1], event.getAt());
+        double bigRadius = g.radius(event.getGlyphs()[0], event.getAt()) +
+                g.border(event.getGlyphs()[0], event.getAt());
+        double smallRadius = g.radius(event.getGlyphs()[1], event.getAt()) +
+                g.border(event.getGlyphs()[1], event.getAt());
         if (bigRadius < smallRadius) {
             double tmp = smallRadius;
             smallRadius = bigRadius;
