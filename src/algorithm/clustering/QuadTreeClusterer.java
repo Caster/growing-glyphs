@@ -58,7 +58,7 @@ public class QuadTreeClusterer extends Clusterer {
 
     @Override
     public Clusterer cluster(GrowFunction g,
-            boolean includeOutOfCell, boolean step) {
+            boolean includeOutOfCell, boolean step) throws InterruptedException {
         // for debugging only: checking the number of glyphs/entities
         boolean checkTotal = (B.CHECK_NUMBER_REPRESENTED.get() && LOGGER != null);
         int totalGlyphs = 0, totalEntities = 0;
@@ -155,6 +155,10 @@ public class QuadTreeClusterer extends Clusterer {
         // merge glyphs until no pairs to merge remain
         Event e;
         while ((e = getNextEvent(q, state)) != null) {
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+
             // log on a slightly higher urgency level when one of the glyphs is tracked
             if (LOGGER != null) {
                 if (LOGGER.getLevel().intValue() > Level.FINER.intValue()) {

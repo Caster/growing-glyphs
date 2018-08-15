@@ -387,7 +387,11 @@ public final class Constants {
         Stat runTime = new Stat();
         for (int i = 0; i < 10; ++i) {
             daemon.openFile(toOpen);
-            daemon.cluster();
+            try {
+                daemon.cluster();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             runTime.record(Timers.in(Timers.elapsed("clustering"), Units.SECONDS));
             System.out.print(".");
         }

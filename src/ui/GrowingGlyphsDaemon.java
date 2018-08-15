@@ -61,8 +61,10 @@ public class GrowingGlyphsDaemon {
      * Execute clustering algorithm disabling all debugging options. This is a
      * convenience method providing defaults for
      * {@link #cluster(boolean, boolean, boolean)}.
+     *
+     * @throws InterruptedException When the thread was interrupted while clustering.
      */
-    public void cluster() {
+    public void cluster() throws InterruptedException {
         cluster(false, false);
     }
 
@@ -77,8 +79,9 @@ public class GrowingGlyphsDaemon {
      *            their cell should be included in the output.
      * @param step Whether the algorithm should pause after every event, only
      *            to continue when the user inputs a line (or just pressed enter).
+     * @throws InterruptedException When the thread was interrupted while clustering.
      */
-    public void cluster(boolean includeOutOfCell, boolean step) {
+    public void cluster(boolean includeOutOfCell, boolean step) throws InterruptedException {
         if (clustered) {
             return;
         }

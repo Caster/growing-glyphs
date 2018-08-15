@@ -346,8 +346,13 @@ public class GrowingGlyphs extends JFrame {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                daemon.cluster(SETTINGS.getBoolean(Setting.DEBUG),
-                        SETTINGS.getBoolean(Setting.STEP));
+                try {
+                    daemon.cluster(SETTINGS.getBoolean(Setting.DEBUG),
+                            SETTINGS.getBoolean(Setting.STEP));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return;
+                }
                 if (daemon.getClustering() != null) {
                     setDrawingOptions(DrawingOption.MAP);
 
@@ -459,7 +464,11 @@ public class GrowingGlyphs extends JFrame {
             if (toOpen != null) {
                 d.openFile(toOpen);
             }
-            d.cluster();
+            try {
+                d.cluster();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         } else {
             GrowingGlyphs gg = new GrowingGlyphs(w, h, g);
             if (toOpen != null) {

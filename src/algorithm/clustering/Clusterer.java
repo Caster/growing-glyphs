@@ -93,9 +93,10 @@ public abstract class Clusterer {
      *            a cell should be included in the resulting clustering.
      * @param step Whether processing should be paused after every event.
      * @return A reference to the clustering instance, for chaining.
+     * @throws InterruptedException When the thread was interrupted while clustering.
      */
     public abstract Clusterer cluster(GrowFunction g,
-            boolean includeOutOfCell, boolean step);
+            boolean includeOutOfCell, boolean step) throws InterruptedException;
 
     /**
      * Returns the latest result of executing the clustering algorithm. Initially

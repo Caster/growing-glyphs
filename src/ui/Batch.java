@@ -9,6 +9,12 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import algorithm.clustering.NaiveClusterer;
 import algorithm.clustering.QuadTreeClusterer;
@@ -23,10 +29,10 @@ import datastructure.growfunction.speed.LogarithmicGrowSpeed;
 import gui.Settings.Setting;
 import logging.ConfigurableConsoleHandler;
 import utils.Constants.B;
+import utils.Utils;
 import utils.Utils.Stats;
 import utils.Utils.Timers;
 import utils.Utils.Timers.Units;
-import utils.Utils;
 
 /**
  * Executes experiments and stores the results in a directory.
@@ -99,6 +105,7 @@ public class Batch {
             int total = inputs.size() * growFunctions.size() * algorithms.size();
             int curr = 0;
 
+            ExecutorService executor = Executors.newSingleThreadExecutor();
             for (String input : inputs) {
                 for (GrowFunction g : growFunctions) {
                     boolean isArea = (g.getSpeed() instanceof LinearAreaGrowSpeed);
@@ -106,42 +113,21 @@ public class Batch {
                     SETTINGS.set(Setting.COMPRESSION, isArea);
 
                     for (String algorithm : algorithms) {
-                        Stats.reset();
-                        Timers.reset();
-                        GrowingGlyphsDaemon daemon = new GrowingGlyphsDaemon(512, 512, null);
+                        Future<Void> future = executor.submit(new Task(
+                                algorithm, ++curr, total, input, g, dummy));
 
-                        // set correct clusterer
-                        prepare(algorithm, daemon);
-
-                        // open input
-                        ConfigurableConsoleHandler.redirectTo(dummy);
-                        int numEntities = daemon.openFile(new File(home, "input/" + input));
-                        int numLocations = Utils.size(daemon.getTree().iteratorGlyphsAlive());
-
-                        // set growfunction to use
-                        daemon.setGrowFunction(g);
-
-                        // show progress
-                        String name = name(input, numLocations, numEntities, g, algorithm);
-                        ConfigurableConsoleHandler.undoRedirect();
-                        System.out.println(String.format("[%3d / %3d] %s", ++curr, total, name));
-
-                        if (B.BIG_GLYPHS.get() && g.getSpeed().getClass() != LinearGrowSpeed.class) {
-                            System.out.println("            → skipped");
-                            continue;
+                        try {
+                            future.get(5, TimeUnit.MINUTES);
+                        } catch (TimeoutException te) {
+                            future.cancel(true);
+                            System.out.println("            → timed out");
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-
-                        // do actual clustering, write output to file
-                        File output = new File(outputDir, name);
-                        ConfigurableConsoleHandler.redirectTo(new PrintStream(output));
-                        daemon.cluster();
-                        ConfigurableConsoleHandler.undoRedirect();
-
-                        System.out.println(String.format("            → %.2f seconds",
-                                Timers.in(Timers.elapsed("clustering"), Units.SECONDS)));
                     }
                 }
             }
+            executor.shutdownNow();
         }
     }
 
@@ -217,6 +203,65 @@ public class Batch {
         sb.append("compression) : ");
         sb.append(algorithm);
         return sb.toString();
+    }
+
+
+    private class Task implements Callable<Void> {
+        private final String algorithm;
+        private final int curr;
+        private final int total;
+        private final String input;
+        private final GrowFunction g;
+        private final PrintStream dummy;
+
+        private Task(String algorithm, int curr, int total, String input,
+                GrowFunction g, PrintStream dummy) {
+            this.algorithm = algorithm;
+            this.curr = curr;
+            this.total = total;
+            this.input = input;
+            this.g = g;
+            this.dummy = dummy;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            Stats.reset();
+            Timers.reset();
+            GrowingGlyphsDaemon daemon = new GrowingGlyphsDaemon(512, 512, null);
+
+            // set correct clusterer
+            prepare(algorithm, daemon);
+
+            // open input
+            ConfigurableConsoleHandler.redirectTo(dummy);
+            int numEntities = daemon.openFile(new File(home, "input/" + input));
+            int numLocations = Utils.size(daemon.getTree().iteratorGlyphsAlive());
+
+            // set growfunction to use
+            daemon.setGrowFunction(g);
+
+            // show progress
+            String name = name(input, numLocations, numEntities, g, algorithm);
+            ConfigurableConsoleHandler.undoRedirect();
+            System.out.println(String.format("[%3d / %3d] %s", curr, total, name));
+
+            if (B.BIG_GLYPHS.get() && g.getSpeed().getClass() != LinearGrowSpeed.class) {
+                System.out.println("            → skipped");
+                return null;
+            }
+
+            // do actual clustering, write output to file
+            File output = new File(outputDir, name);
+            ConfigurableConsoleHandler.redirectTo(new PrintStream(output));
+            daemon.cluster();
+            ConfigurableConsoleHandler.undoRedirect();
+
+            System.out.println(String.format("            → %.2f seconds",
+                    Timers.in(Timers.elapsed("clustering"), Units.SECONDS)));
+
+            return null;
+        }
     }
 
 }
