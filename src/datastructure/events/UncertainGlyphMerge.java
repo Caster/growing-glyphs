@@ -52,9 +52,13 @@ public class UncertainGlyphMerge extends UncertainEvent {
         return at;
     }
 
+    public double getAt() {
+        return at;
+    }
+
     public GlyphMerge getGlyphMerge() {
-        if (Utils.Double.neq(from.at, lb)) {
-            from = new GlyphMerge(from.glyphs[0], from.glyphs[1], lb);
+        if (Utils.Double.neq(from.at, at)) {
+            from = new GlyphMerge(from.glyphs[0], from.glyphs[1], at);
         }
         return from;
     }
@@ -78,6 +82,31 @@ public class UncertainGlyphMerge extends UncertainEvent {
      */
     public void setLowerBound(double lowerBound) {
         this.lb = lowerBound;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("uncertain ");
+        sb.append(getType().toString());
+        sb.append(" at ");
+        sb.append(at);
+        sb.append(", lower bound ");
+        sb.append(lb);
+        sb.append(" involving [");
+        boolean first = true;
+        for (Glyph glyph : glyphs) {
+            if (!first) {
+                sb.append(", ");
+            }
+            if (glyph == null) {
+                sb.append("null");
+            } else {
+                sb.append(glyph.toString());
+            }
+            first = false;
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
 }

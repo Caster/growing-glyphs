@@ -26,6 +26,13 @@ public class UncertainQueue extends PriorityQueue<UncertainGlyphMerge> {
     }
 
     @Override
+    public boolean add(UncertainGlyphMerge merge) {
+        double t = merge.computeAt(g);
+        merge.setLowerBound(t / α);
+        return super.add(merge);
+    }
+
+    @Override
     public UncertainGlyphMerge peek() {
         while (!isEmpty()) {
             UncertainGlyphMerge merge = super.peek();
@@ -65,21 +72,15 @@ public class UncertainQueue extends PriorityQueue<UncertainGlyphMerge> {
      * @param event Event that caused need for updating α.
      */
     public void updateAlpha(GlyphMerge event) {
-        double bigWeight = Double.POSITIVE_INFINITY;
-        double smallWeight = Double.POSITIVE_INFINITY;
-        for (Glyph glyph : event.getGlyphs()) {
-            if (glyph.isBig()) {
-                bigWeight = g.weight(glyph);
-            } else {
-                smallWeight = g.weight(glyph);
-            }
+        double bigRadius = g.radius(event.getGlyphs()[0], event.getAt());
+        double smallRadius = g.radius(event.getGlyphs()[1], event.getAt());
+        if (bigRadius < smallRadius) {
+            double tmp = smallRadius;
+            smallRadius = bigRadius;
+            bigRadius = tmp;
         }
 
-        if (Double.isInfinite(bigWeight) || Double.isInfinite(smallWeight)) {
-            throw new RuntimeException("merge event without small and big glyph");
-        }
-
-        α = (bigWeight - smallWeight) / (bigWeight + smallWeight) * α;
+        α = (bigRadius - smallRadius) / (bigRadius + smallRadius) * α;
     }
 
 }

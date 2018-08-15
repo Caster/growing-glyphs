@@ -42,6 +42,7 @@ import algorithm.glyphgenerator.BigGlyph;
 import algorithm.glyphgenerator.GlyphGenerator;
 import algorithm.glyphgenerator.Perlin;
 import algorithm.glyphgenerator.PopulationSim;
+import algorithm.glyphgenerator.SomeBigGlyphs;
 import algorithm.glyphgenerator.UniformRandom;
 import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
@@ -64,7 +65,8 @@ import utils.Utils.Timers.Units;
 public class GrowingGlyphs extends JFrame {
 
     public static final GlyphGenerator[] GENERATORS = new GlyphGenerator[] {
-            new UniformRandom(), new BigGlyph(), new Perlin(), new PopulationSim()
+            new UniformRandom(), new BigGlyph(), new SomeBigGlyphs(4),
+            new Perlin(), new PopulationSim()
         };
     public static final Settings SETTINGS = new Settings();
     public static final int NUM_POINTS_INITIALLY = 6;

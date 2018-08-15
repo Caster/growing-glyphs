@@ -262,6 +262,10 @@ public class DrawPanel extends JPanel implements
                         g2.setColor(GLYPH_BORDER_COLORS[glyph.compressionLevel - 1]);
                     }
                     g2.fill(border);
+                    if (borders && glyph.big) {
+                        g2.setColor(GLYPH_TRACK_FILL);
+                        g2.fill(glyph.shape);
+                    }
                 }
 
                 // draw a label in some cases
@@ -273,7 +277,7 @@ public class DrawPanel extends JPanel implements
                     df.setDecimalFormatSymbols(symbols);
 
                     // undo different fill color if needed
-                    if (colored || !borders) {
+                    if (colored || !borders || glyph.big) {
                         g2.setColor(Color.BLACK);
                     }
                     // set font size depending on glyph width

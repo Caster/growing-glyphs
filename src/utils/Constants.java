@@ -110,7 +110,7 @@ public final class Constants {
          * Factor of average number of entities a glyph should represent before
          * it is considered to be a {@linkplain Glyph#isBig() big glyph}.
          */
-        BIG_GLYPH_FACTOR(20),
+        BIG_GLYPH_FACTOR(100),
 
         /**
          * Default maximum radius that the grow function is {@link
