@@ -66,7 +66,7 @@ public final class Constants {
          * high values when setting this to {@code true}, or you need to allocate
          * more memory to the clustering process for large data sets.
          */
-        ROBUST(true),
+        ROBUST(false),
 
         /**
          * Whether some statistics should be collected that may be time-intensive

@@ -23,6 +23,8 @@ import datastructure.growfunction.speed.LogarithmicGrowSpeed;
 import gui.Settings.Setting;
 import logging.ConfigurableConsoleHandler;
 import utils.Constants.B;
+import utils.Utils.Stats;
+import utils.Utils.Timers;
 import utils.Utils;
 
 /**
@@ -52,7 +54,6 @@ public class Batch {
 
 
     private final List<String> algorithms;
-    private final GrowingGlyphsDaemon daemon;
     private final List<GrowFunction> growFunctions;
     private final File home;
     private final List<String> inputs;
@@ -63,7 +64,6 @@ public class Batch {
         this.algorithms = Arrays.asList(
                 "basic:all events", "basic", "basic:big"
             );
-        this.daemon = new GrowingGlyphsDaemon(512, 512, null);
         this.growFunctions = new ArrayList<>(6);
         this.home = home;
         this.inputs = Arrays.asList(
@@ -91,28 +91,33 @@ public class Batch {
             int curr = 0;
 
             for (String input : inputs) {
-                ConfigurableConsoleHandler.redirectTo(dummy);
-                int numEntities = daemon.openFile(new File(home, "input/" + input));
-                int numLocations = Utils.size(daemon.getTree().iteratorGlyphsAlive());
-
                 for (GrowFunction g : growFunctions) {
                     boolean isArea = (g.getSpeed() instanceof LinearAreaGrowSpeed);
                     SETTINGS.set(Setting.BORDERS, isArea);
                     SETTINGS.set(Setting.COMPRESSION, isArea);
-                    daemon.setGrowFunction(g);
 
                     for (String algorithm : algorithms) {
+                        Stats.reset();
+                        Timers.reset();
+                        GrowingGlyphsDaemon daemon = new GrowingGlyphsDaemon(512, 512, null);
+
+                        // set correct clusterer
+                        prepare(algorithm, daemon);
+
+                        // open input
+                        ConfigurableConsoleHandler.redirectTo(dummy);
+                        int numEntities = daemon.openFile(new File(home, "input/" + input));
+                        int numLocations = Utils.size(daemon.getTree().iteratorGlyphsAlive());
+
+                        // set growfunction to use
+                        daemon.setGrowFunction(g);
+
+                        // show progress
                         String name = name(input, numLocations, numEntities, g, algorithm);
                         ConfigurableConsoleHandler.undoRedirect();
                         System.out.println(String.format("[%2d / %2d] %s", ++curr, total, name));
 
-                        if (daemon.isClustered()) {
-                            ConfigurableConsoleHandler.redirectTo(dummy);
-                            daemon.reopen();
-                        }
-
-                        prepare(algorithm);
-
+                        // do actual clustering, write output to file
                         File output = new File(outputDir, name);
                         ConfigurableConsoleHandler.redirectTo(new PrintStream(output));
                         daemon.cluster();
@@ -142,7 +147,7 @@ public class Batch {
         }
     }
 
-    private void prepare(String algorithm) {
+    private void prepare(String algorithm, GrowingGlyphsDaemon daemon) {
         String[] elements = algorithm.split(":");
         switch (elements[0]) {
         case "basic":
