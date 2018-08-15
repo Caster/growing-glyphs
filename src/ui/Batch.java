@@ -25,6 +25,7 @@ import logging.ConfigurableConsoleHandler;
 import utils.Constants.B;
 import utils.Utils.Stats;
 import utils.Utils.Timers;
+import utils.Utils.Timers.Units;
 import utils.Utils;
 
 /**
@@ -123,13 +124,21 @@ public class Batch {
                         // show progress
                         String name = name(input, numLocations, numEntities, g, algorithm);
                         ConfigurableConsoleHandler.undoRedirect();
-                        System.out.println(String.format("[%2d / %2d] %s", ++curr, total, name));
+                        System.out.println(String.format("[%3d / %3d] %s", ++curr, total, name));
+
+                        if (B.BIG_GLYPHS.get() && g.getSpeed().getClass() != LinearGrowSpeed.class) {
+                            System.out.println("            → skipped");
+                            continue;
+                        }
 
                         // do actual clustering, write output to file
                         File output = new File(outputDir, name);
                         ConfigurableConsoleHandler.redirectTo(new PrintStream(output));
                         daemon.cluster();
                         ConfigurableConsoleHandler.undoRedirect();
+
+                        System.out.println(String.format("            → %.2f seconds",
+                                Timers.in(Timers.elapsed("clustering"), Units.SECONDS)));
                     }
                 }
             }
