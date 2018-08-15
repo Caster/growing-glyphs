@@ -694,7 +694,7 @@ public class QuadTreeClusterer extends Clusterer {
                 // mark merged glyphs as dead
                 for (Glyph glyph : m.getGlyphs()) {
                     // we skip the `merged` glyph, see `#findOverlap`
-                    if (glyph == null) {
+                    if (glyph == null || !glyph.isAlive()) {
                         continue;
                     }
                     glyph.perish(); s.numAlive--; s.glyphSize.unrecord(glyph.getN());
