@@ -6,3 +6,4 @@ input/points/uniform-80k filter=lfs diff=lfs merge=lfs -text
 /input/points/big-glyph-80k filter=lfs diff=lfs merge=lfs -text
 /input/points/trove-pop-sim-80k filter=lfs diff=lfs merge=lfs -text
 /input/points/uniform-80k filter=lfs diff=lfs merge=lfs -text
+input/csv/glottovis.tsv filter=lfs diff=lfs merge=lfs -text
