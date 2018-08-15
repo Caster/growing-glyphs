@@ -66,6 +66,12 @@ public final class Constants {
         ROBUST(false),
 
         /**
+         * Whether some statistics should be collected that may be time-intensive
+         * to collect. Disable this before measuing running time, just in case.
+         */
+        STATS_ENABLED(true),
+
+        /**
          * Whether timers should be used to track wall clock computation time.
          */
         TIMERS_ENABLED(true),

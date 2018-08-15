@@ -686,6 +686,9 @@ public class QuadTreeClusterer extends Clusterer {
                     mergedHC.setGlyph(merged);
                     if (m.getGlyphs()[1].isBig()) {
                         s.mergedBigGlyph = true;
+                        Stats.count("merge nested big");
+                    } else {
+                        Stats.count("merge nested small");
                     }
                 }
 
@@ -892,6 +895,12 @@ public class QuadTreeClusterer extends Clusterer {
      * @param step Whether execution should be paused.
      */
     private void step(boolean step) {
+        if (B.STATS_ENABLED.get()) {
+            Stats.record("QuadTree cells", Utils.size(tree.iterator()));
+            Stats.record("QuadTree leaves", tree.getLeaves().size());
+            Stats.record("QuadTree height", tree.getTreeHeight());
+        }
+
         if (step) {
             try {
                 System.in.read();

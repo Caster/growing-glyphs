@@ -198,6 +198,20 @@ public class Utils {
     }
 
     /**
+     * Given an iterator, return the number of items in it.
+     *
+     * @param iterator Iterator that will be iterated to determine the number of
+     *            items it iterates over (when passed to this function).
+     */
+    public static int size(Iterator<?> iterator) {
+        int count = 0;
+        for (; iterator.hasNext(); iterator.next()) {
+            count++;
+        }
+        return count;
+    }
+
+    /**
      * Swap two objects from two lists.
      *
      * @param listA First list.
@@ -344,7 +358,9 @@ public class Utils {
                     .max(Comparator.comparingInt(String::length)).get().length();
             String f = "%1$-" + padTo + "s";
             stats.entrySet().stream()
-                .sorted((a, b) -> a.getKey().compareTo(b.getKey()))
+                .sorted((a, b) -> {
+                    return noTag(a.getKey()).compareTo(noTag(b.getKey()));
+                })
                 .forEach((e) -> {
                     Matcher tagMatcher = TAG_REGEX.matcher(e.getKey());
                     if (tagMatcher.find()) {
@@ -376,6 +392,18 @@ public class Utils {
 
         public static void reset() {
             stats.clear();
+        }
+
+
+        /**
+         * Given a stat name, return the name without tag.
+         */
+        private static String noTag(String name) {
+            Matcher tagMatcher = TAG_REGEX.matcher(name);
+            if (tagMatcher.find()) {
+                return tagMatcher.replaceAll("").trim();
+            }
+            return name;
         }
 
     }

@@ -17,6 +17,7 @@ import utils.Constants.B;
 import utils.Constants.D;
 import utils.Constants.I;
 import utils.Utils;
+import utils.Utils.Stats;
 import utils.Utils.Timers;
 
 /**
@@ -377,14 +378,17 @@ public class QuadTree implements Iterable<QuadTree> {
      * @see #getLeaves(Glyph, double, GrowFunction)
      */
     public int insert(Glyph glyph, double at, GrowFunction g) {
+        Stats.count("QuadTree insert");
         double intersect = g.intersectAt(glyph, cell);
         // if we intersect at some point, but later than current time
         // (this means that a glyph is in a cell already when its border is in
         //  the cell! see GrowFunction#intersectAt(Glyph, Rectangle2D)
         if (intersect > at + Utils.EPS) {
+            Stats.count("QuadTree insert", false);
             return 0;
         }
         // otherwise, we will insert!
+        Stats.count("QuadTree insert", true);
         Timers.start("[QuadTree] insert");
         int inserted = 0; // keep track of number of cells we insert into
         if (isLeaf()) {
@@ -412,10 +416,13 @@ public class QuadTree implements Iterable<QuadTree> {
      * @return Whether center has been inserted.
      */
     public boolean insertCenterOf(Glyph glyph) {
+        Stats.count("QuadTree insertCenterOf");
         if (glyph.getX() < cell.getMinX() || glyph.getX() > cell.getMaxX() ||
                 glyph.getY() < cell.getMinY() || glyph.getY() > cell.getMaxY()) {
+            Stats.count("QuadTree insertCenterOf", false);
             return false;
         }
+        Stats.count("QuadTree insertCenterOf", true);
         // can we insert here?
         Timers.start("[QuadTree] insert");
         if (isLeaf() && glyphs.size() < I.MAX_GLYPHS_PER_CELL.get()) {
@@ -693,6 +700,7 @@ public class QuadTree implements Iterable<QuadTree> {
         }
 
         // do a join, become a leaf, adopt glyphs and neighbors of children
+        Stats.count("QuadTree join cells");
         glyphs = new ArrayList<>(I.MAX_GLYPHS_PER_CELL.get());
         for (int quadrant = 0; quadrant < children.length; ++quadrant) {
             QuadTree child = children[quadrant];
@@ -770,6 +778,7 @@ public class QuadTree implements Iterable<QuadTree> {
         }
 
         // do the split
+        Stats.count("QuadTree split cell");
         this.children = new QuadTree[4];
         double x = getX();
         double y = getY();
