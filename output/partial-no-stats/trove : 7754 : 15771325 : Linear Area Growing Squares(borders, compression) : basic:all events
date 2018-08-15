@@ -1,0 +1,49 @@
+FINE    |  clustering using the QuadTree Clusterer algorithm
+FINE    |  clustering using ROBUST + NO BUCKETING strategy
+FINE    |  using the Linear Area Growing Squares grow function
+FINE    |  QuadTree has 2,993 nodes and height 15, having at most 10 glyphs per cell and cell size at least 1.0E-4
+FINE    |  created 49,830 events initially, for 7,754 glyphs
+FINE    |  created 273,948 events, handled 26,308 and discarded 217,528; 30,112 events were never considered
+FINE    |  → 103,801 out of cell events (18,755 handled, 66,834 discarded)
+FINE    |  → 170,147 merge events (7,553 handled, 150,694 discarded)
+FINE    |  events were stored in 1 queue(s)
+FINE    |  QuadTree has 1 nodes and height 0 now
+FINE    |  
+FINE    |  STATS
+FINE    |  QuadTree insert     32.66% of the time
+FINE    |  QuadTree insert     occurred 284643 times
+FINE    |  QuadTree join cells occurred 1422 times
+FINE    |  QuadTree remove     occurred 34994 times
+FINE    |  QuadTree remove     79.53% of the time
+FINE    |  QuadTree split cell occurred 674 times
+FINE    |  glyphs per cell     was          3.16 on average and always between 0 and 10, over 4,916 measurements
+FINE    |  merge nested small  occurred 200 times
+FINE    |  merge small/small   occurred 7553 times
+FINE    |  merged cells        was          1.18 on average and always between 1 and 9, over 7,553 measurements
+FINE    |  queue size          was     74,933.91 on average and always between 30,106 and 93,543, over 243,836 measurements
+FINE    |  total # works       was 15,771,325.00 and did not change over 2 measurements
+FINE    |  
+FINE    |  TIMERS
+FINE    |  clustering                                            took  1.00 seconds (wall clock time)
+FINE    |  first merge recording 1                               took  0.04 seconds (wall clock time, 7,754 timings)
+FINE    |  first merge recording 3                               took  0.10 seconds (wall clock time, 8,897 timings)
+FINE    |  first merge recording 4                               took  0.13 seconds (wall clock time, 14,589 timings)
+FINE    |  first merge recording 5                               took  0.10 seconds (wall clock time, 12,292 timings)
+FINE    |  neighbor finding                                      took  0.00 seconds (wall clock time, 35,588 timings)
+FINE    |  out of cell event processing                          took  0.22 seconds (wall clock time, 18,755 timings)
+FINE    |  queue operations                                      took  0.23 seconds (wall clock time, 517,784 timings)
+FINE    |  record all pairs                                      took  0.11 seconds (wall clock time, 1,347 timings)
+FINE    |  
+FINE    |  [QuadTree]
+FINE    |  getLeaves                                             took  0.02 seconds (wall clock time, 22,719 timings)
+FINE    |  insert                                                took  0.03 seconds (wall clock time, 29,186 timings)
+FINE    |  join                                                  took  0.04 seconds (wall clock time, 36,395 timings)
+FINE    |  split                                                 took  0.01 seconds (wall clock time, 649 timings)
+FINE    |  
+FINE    |  [merge event processing]
+FINE    |  merge event recording                                 took  0.13 seconds (wall clock time, 7,553 timings)
+FINE    |  merge events in joined cells                          took  0.12 seconds (wall clock time, 7,553 timings)
+FINE    |  merged glyph insert                                   took  0.04 seconds (wall clock time, 7,553 timings)
+FINE    |  nested merges                                         took  0.15 seconds (wall clock time, 7,553 timings)
+FINE    |  total                                                 took  0.44 seconds (wall clock time, 7,553 timings)
+FINE    |  tracker updating                                      took  0.00 seconds (wall clock time, 7,553 timings)

@@ -14,9 +14,10 @@ out of cell events handled\tout of cell events discarded\t\
 merge events handled\tmerge events discarded"
 
 for dataset in $1/*; do
-  echo -ne "$(basename "$dataset")\t"
+  basename="$(basename "$dataset")"
+  echo -ne "$basename\t"
 
-  echo -ne "$(awk '$3 == "clustering" && $4 == "took" {print $5}' "$dataset")\t"
+  echo -ne "$(awk '$3 == "clustering" && $4 == "took" {print $5}' "$1-no-stats/$basename")\t"
 
   echo -ne "$(awk '$3 == "QuadTree" && $4 == "cells" {print $12}' "$dataset")\t"
   echo -ne "$(awk '$3 == "QuadTree" && $4 == "cells" {print $6}' "$dataset")\t"
