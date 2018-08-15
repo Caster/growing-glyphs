@@ -211,6 +211,14 @@ public class GrowFunction implements GrowShape, GrowSpeed {
         return this.name;
     }
 
+    public GrowShape getShape() {
+        return shape;
+    }
+
+    public GrowSpeed getSpeed() {
+        return speed;
+    }
+
     /**
      * Initialize a grow function to fit the specific data set that is to be
      * clustered. The default implementation of this function does nothing, but

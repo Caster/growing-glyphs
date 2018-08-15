@@ -1,5 +1,8 @@
 package logging;
 
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Filter;
 import java.util.logging.Formatter;
@@ -16,10 +19,31 @@ import java.util.logging.StreamHandler;
  */
 public class ConfigurableConsoleHandler extends StreamHandler {
 
+    public static final List<ConfigurableConsoleHandler> INSTANCES = new ArrayList<>();
+
+
+    public static void redirectTo(PrintStream to) {
+        for (ConfigurableConsoleHandler instance : INSTANCES) {
+            instance.redirectToInternal(to);
+        }
+        redirectingTo = to;
+    }
+
+    public static void undoRedirect() {
+        for (ConfigurableConsoleHandler instance : INSTANCES) {
+            instance.undoRedirectInternal();
+        }
+        redirectingTo = null;
+    }
+
+
     private static final NonCloseablePrintStream NON_CLOSEABLE_OUT =
             new NonCloseablePrintStream(System.out);
     private static final NonCloseablePrintStream NON_CLOSEABLE_ERR =
             new NonCloseablePrintStream(System.err);
+
+
+    private static PrintStream redirectingTo = null;
 
 
     private NonCloseablePrintStream defaultPrintStream;
@@ -28,6 +52,10 @@ public class ConfigurableConsoleHandler extends StreamHandler {
 
     public ConfigurableConsoleHandler() {
         configure();
+        INSTANCES.add(this);
+        if (redirectingTo != null) {
+            redirectTo(redirectingTo);
+        }
     }
 
     @Override
@@ -131,6 +159,14 @@ public class ConfigurableConsoleHandler extends StreamHandler {
         } else {
             indent = indent.replaceAll("\\.", " ");
         }
+    }
+
+    private void redirectToInternal(PrintStream to) {
+        setOutputStream(to);
+    }
+
+    private void undoRedirectInternal() {
+        setOutputStream(defaultPrintStream);
     }
 
 }

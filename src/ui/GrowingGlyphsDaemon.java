@@ -120,7 +120,7 @@ public class GrowingGlyphsDaemon {
      *
      * @param file File to open.
      */
-    public void openFile(File file) {
+    public int openFile(File file) {
         tree.clear();
         if (file.getName().endsWith(".csv") || file.getName().endsWith(".tsv")) {
             dataSet = file.getName().substring(0, file.getName().length() - 4);
@@ -131,6 +131,7 @@ public class GrowingGlyphsDaemon {
         }
         lastOpened = file;
         reset();
+        return n;
     }
 
     public void reopen() {

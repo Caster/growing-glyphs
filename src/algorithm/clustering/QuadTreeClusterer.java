@@ -12,7 +12,6 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import algorithm.FirstMergeRecorder;
 import datastructure.Glyph;
@@ -104,8 +103,7 @@ public class QuadTreeClusterer extends Clusterer {
         // construct a queue, put everything in there - 10x number of glyphs
         // appears to be a good estimate for needed capacity without bucketing
         MultiQueue q = new MultiQueue(E.QUEUE_BUCKETING.get(),
-                10 * tree.getLeaves().parallelStream().collect(
-                        Collectors.summingInt((cell) -> cell.getGlyphs().size())));
+                10 * Utils.size(tree.iteratorGlyphsAlive()));
         // also create a result for each glyph, and a map to find them
         Map<Glyph, HierarchicalClustering> map = new HashMap<>();
         // then create a single object that is used to find first merges
@@ -917,7 +915,7 @@ public class QuadTreeClusterer extends Clusterer {
      * {@link QuadTreeClusterer#handleGlyphMerge(GrowFunction, GlyphMerge,
      * PriorityQueue) handleGlyphMerge}.
      */
-    private class GlobalState {
+    private static class GlobalState {
 
         // we have a queue for nested merges, and a temporary array that is reused,
         // and two sets that are reused somewhere deep in the algorithm
