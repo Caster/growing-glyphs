@@ -1,0 +1,59 @@
+FINE    |  clustering using the QuadTree Clusterer algorithm
+FINE    |  clustering using TRACK + NO BUCKETING strategy
+FINE    |  using the Linear Growing Circles grow function
+FINE    |  QuadTree has 2,569 nodes and height 11, having at most 10 glyphs per cell and cell size at least 1.0E-4
+FINE    |  created 12,571 events initially, for 7,103 glyphs
+FINE    |  created 14,665 events, handled 555 and discarded 13,980; 130 events were never considered
+FINE    |  → 7,657 out of cell events (489 handled, 7,106 discarded)
+FINE    |  → 7,008 merge events (66 handled, 6,874 discarded)
+FINE    |  events were stored in 1 queue(s)
+FINE    |  QuadTree has 1 nodes and height 0 now
+FINE    |  
+FINE    |  STATS
+FINE    |  QuadTree cells           was      1,807.98 on average and always between 1 and 2,613, over 788 measurements
+FINE    |  QuadTree height          was         10.59 on average and always between 0 and 12, over 788 measurements
+FINE    |  QuadTree insert          40.68% of the time
+FINE    |  QuadTree insert          occurred 4194 times
+FINE    |  QuadTree join cells      occurred 667 times
+FINE    |  QuadTree leaves          was      1,356.23 on average and always between 1 and 1,960, over 788 measurements
+FINE    |  QuadTree split cell      occurred 25 times
+FINE    |  glyph was big when it participated 78.60% of the time
+FINE    |  glyphs around big glyphs was          0.00 and did not change over 235 measurements
+FINE    |  glyphs per cell          was          3.65 on average and always between 0 and 10, over 2,027 measurements
+FINE    |  merge nested big         occurred once
+FINE    |  merge nested small       occurred 6802 times
+FINE    |  merge small/big          occurred 233 times
+FINE    |  merge small/small        occurred 66 times
+FINE    |  merged cells             was          1.50 on average and always between 1 and 4, over 64 measurements
+FINE    |  merged cells big glyphs  was          0.00 and did not change over 235 measurements
+FINE    |  number of big glyphs     was          1.06 on average and always between 1 and 2, over 235 measurements
+FINE    |  orphan cells             was          1.55 on average and always between 1 and 8, over 460 measurements
+FINE    |  queue size               was      7,277.58 on average and always between 130 and 13,533, over 14,535 measurements
+FINE    |  total # works            was      7,182.00 and did not change over 2 measurements
+FINE    |  
+FINE    |  TIMERS
+FINE    |  clustering                                            took  0.27 seconds (wall clock time)
+FINE    |  first merge recording 1                               took  0.01 seconds (wall clock time, 7,103 timings)
+FINE    |  first merge recording 2                               took  0.00 seconds (wall clock time, 187 timings)
+FINE    |  first merge recording 3                               took  0.00 seconds (wall clock time, 96 timings)
+FINE    |  first merge recording 4                               took  0.00 seconds (wall clock time, 477 timings)
+FINE    |  first merge recording 5                               took  0.00 seconds (wall clock time, 671 timings)
+FINE    |  neighbor finding                                      took  0.00 seconds (wall clock time, 384 timings)
+FINE    |  out of cell event processing                          took  0.01 seconds (wall clock time, 489 timings)
+FINE    |  queue operations                                      took  0.01 seconds (wall clock time, 29,200 timings)
+FINE    |  record all pairs                                      took  0.00 seconds (wall clock time, 109 timings)
+FINE    |  
+FINE    |  [QuadTree]
+FINE    |  getLeaves                                             took  0.04 seconds (wall clock time, 1,983 timings)
+FINE    |  insert                                                took  0.00 seconds (wall clock time, 862 timings)
+FINE    |  join                                                  took  0.01 seconds (wall clock time, 11,761 timings)
+FINE    |  split                                                 took  0.00 seconds (wall clock time, 25 timings)
+FINE    |  
+FINE    |  [merge event processing]
+FINE    |  big                                                   took  0.04 seconds (wall clock time, 233 timings)
+FINE    |  merge event recording                                 took  0.00 seconds (wall clock time, 64 timings)
+FINE    |  merge events in joined cells                          took  0.00 seconds (wall clock time, 299 timings)
+FINE    |  merged glyph insert                                   took  0.00 seconds (wall clock time, 299 timings)
+FINE    |  nested merges                                         took  0.08 seconds (wall clock time, 299 timings)
+FINE    |  total                                                 took  0.10 seconds (wall clock time, 299 timings)
+FINE    |  tracker updating                                      took  0.00 seconds (wall clock time, 299 timings)
