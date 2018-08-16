@@ -119,6 +119,9 @@ public class Batch {
     }
 
     public void run() throws IOException {
+        log(String.format("statistics will %sbe collected",
+                (B.STATS_ENABLED.get() ? "" : "NOT ")));
+
         try (PrintStream dummy = new PrintStream(new OutputStream() {
                 @Override
                 public void write(int b) throws IOException { /* ignored */ }})) {
@@ -273,8 +276,14 @@ public class Batch {
             ConfigurableConsoleHandler.undoRedirect();
             log(String.format("[%3d / %3d] %s", curr, total, name));
 
+            // we don't do (because they would time out or overflow memory):
+            //  - naive on >10k locations;
+            //  - basic:all events on >10k locations.
+            // we don't do big glyphs on non-linear grow speed - it won't work
             if ((B.BIG_GLYPHS.get() && g.getSpeed().getClass() != LinearGrowSpeed.class) ||
-                    (daemon.getClusterer().getClass() == NaiveClusterer.class && numLocations >= 1e4)) {
+                    (daemon.getClusterer().getClass() == NaiveClusterer.class && numLocations > 1e4) ||
+                    (daemon.getClusterer().getClass() == QuadTreeClusterer.class &&
+                        numLocations > 1e4 && B.ROBUST.get())) {
                 log("            → skipped");
                 return null;
             }

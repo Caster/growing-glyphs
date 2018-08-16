@@ -76,7 +76,7 @@ public final class Constants {
          * Whether some statistics should be collected that may be time-intensive
          * to collect. Disable this before measuing running time, just in case.
          */
-        STATS_ENABLED(true),
+        STATS_ENABLED(false),
 
         /**
          * Whether timers should be used to track wall clock computation time.
