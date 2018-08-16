@@ -139,17 +139,21 @@ public class GrowingGlyphs extends JFrame {
         // let the generator do its work
         gen.init(n, daemon.getTree().getRectangle());
         if (gen instanceof GlyphGenerator.Stateful) {
-            ((GlyphGenerator.Stateful) gen).init(daemon.getTree());
+            if (((GlyphGenerator.Stateful) gen).init(daemon.getTree())) {
+                n += ((GlyphGenerator.Stateful) gen).getNumPlaced();
+                daemon.getTree().clear();
+            }
         }
+        final int toGenerate = n;
         if (B.ASYNC_GLYPH_GENERATORS.get()) {
             SwingWorker<Void, Glyph> worker = new SwingWorker<Void, Glyph>() {
                 @Override
                 protected Void doInBackground() throws Exception {
-                    for (int i = 0; !isCancelled() && i < n; ++i) {
+                    for (int i = 0; !isCancelled() && i < toGenerate; ++i) {
                         Glyph glyph = gen.next();
                         daemon.getTree().insertCenterOf(glyph);
                         publish(glyph);
-                        setProgress(100 * i / n);
+                        setProgress(100 * i / toGenerate);
                     }
                     return null;
                 }
@@ -161,7 +165,7 @@ public class GrowingGlyphs extends JFrame {
 
                 @Override
                 protected void done() {
-                    glyphGenDone(clear, n);
+                    glyphGenDone(clear, toGenerate);
                 }
             };
             worker.addPropertyChangeListener(new PropertyChangeListener() {
@@ -170,7 +174,8 @@ public class GrowingGlyphs extends JFrame {
                     if (evt.getPropertyName().equals("progress")) {
                         Integer percent = (Integer) evt.getNewValue();
                         statusProgress.setValue(percent);
-                        statusProgress.setString(percent * n / 100 + " / " + n);
+                        statusProgress.setString(
+                            percent * toGenerate / 100 + " / " + toGenerate);
                     }
                 }
             });

@@ -17,12 +17,19 @@ public abstract class GlyphGenerator {
     public interface Stateful {
 
         /**
+         * Returns the number of glyphs that have been placed so far.
+         */
+        public int getNumPlaced();
+
+        /**
          * Can be called after calling {@link #init(int, Rectangle2D)}; will consider
          * all glyphs in the given tree to be already placed points.
          *
          * @param tree Tree that contains glyphs.
+         * @return Whether the tree should be cleared now. This is used if the glyph
+         *         generator replaces the placed glyphs.
          */
-        public void init(QuadTree tree);
+        public boolean init(QuadTree tree);
 
     }
 
@@ -59,13 +66,9 @@ public abstract class GlyphGenerator {
 
 
     /**
-     * Increment the counter for number of generated glyphs, check if that
-     * number is at most {@code n}. If not, throw a {@link RuntimeException}.
+     * Increment the counter for number of generated glyphs.
      */
     protected final void count() {
-        if (i >= n) {
-            throw new RuntimeException();
-        }
         i++;
     }
 

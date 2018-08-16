@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import algorithm.clustering.QuadTreeClusterer;
+import algorithm.glyphgenerator.BlowUp;
 import datastructure.events.Event;
 import datastructure.events.GlyphMerge;
 import datastructure.events.OutOfCell;
@@ -489,6 +490,16 @@ public class Glyph {
         if (this.big) {
             this.uncertainMergeEvents = new UncertainQueue(g);
         }
+    }
+
+    /**
+     * Change number of entities represented by this glyph. Should not normally
+     * be used, only used by {@link BlowUp} at the moment.
+     *
+     * @param n New number of entities.
+     */
+    public void setN(int n) {
+        this.n = n;
     }
 
     @Override

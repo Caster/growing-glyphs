@@ -37,7 +37,7 @@ public final class Constants {
         /**
          * Whether the big glyph optimization should be used.
          */
-        BIG_GLYPHS(true),
+        BIG_GLYPHS(false),
         /**
          * Whether the {@link QuadTreeClusterer} checks the total number of works
          * represented by all alive glyphs after every step of the algorithm.
@@ -145,7 +145,7 @@ public final class Constants {
         /**
          * Minimum width/height of a {@link QuadTree cell}.
          */
-        MIN_CELL_SIZE(0.0001),
+        MIN_CELL_SIZE(1e-8),
 
         /**
          * Minimum zoom factor in the GUI.

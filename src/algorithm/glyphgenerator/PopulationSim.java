@@ -51,6 +51,11 @@ public class PopulationSim extends GlyphGenerator implements GlyphGenerator.Stat
     }
 
     @Override
+    public int getNumPlaced() {
+        return placed.size();
+    }
+
+    @Override
     public void init(int n, Rectangle2D rect) {
         super.init(n, rect);
 
@@ -67,12 +72,13 @@ public class PopulationSim extends GlyphGenerator implements GlyphGenerator.Stat
     }
 
     @Override
-    public void init(QuadTree tree) {
+    public boolean init(QuadTree tree) {
         placed.addAll(tree.getLeaves().stream()
                 .flatMap((c) -> c.getGlyphsAlive().stream())
                 .map((g) -> new Point2D.Double(g.getX(), g.getY()))
                 .collect(Collectors.toList()));
         this.tree = tree;
+        return false;
     }
 
     @Override
