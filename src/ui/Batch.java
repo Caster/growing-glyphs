@@ -3,6 +3,7 @@ package ui;
 import static gui.GrowingGlyphs.SETTINGS;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -64,12 +65,14 @@ public class Batch {
     private final List<GrowFunction> growFunctions;
     private final File home;
     private final List<String> inputs;
+    private final PrintStream logStream;
     private final File outputDir;
+    private final File outputFile;
 
 
     public Batch(File home) {
         this.algorithms = Arrays.asList(
-                "basic:all events", "basic", "basic:big"
+                "naive", "basic:all events", "basic", "basic:big"
             );
         this.growFunctions = new ArrayList<>(6);
         this.home = home;
@@ -93,6 +96,14 @@ public class Batch {
             }
         } else if (!outputDir.isDirectory()) {
             throw new RuntimeException("output directory exists, but is not a directory");
+        }
+
+        this.outputFile = new File(outputDir, "log.txt");
+        try {
+            this.logStream = new PrintStream(outputFile);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         initGrowFunctions();
@@ -120,7 +131,7 @@ public class Batch {
                             future.get(5, TimeUnit.MINUTES);
                         } catch (TimeoutException te) {
                             future.cancel(true);
-                            System.out.println("            → timed out");
+                            log("            → timed out");
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -128,6 +139,8 @@ public class Batch {
                 }
             }
             executor.shutdownNow();
+        } finally {
+            logStream.close();
         }
     }
 
@@ -148,6 +161,11 @@ public class Batch {
                 growFunctions.add(new GrowFunction(shape, speed));
             }
         }
+    }
+
+    private void log(String string) {
+        System.out.println(string);
+        logStream.println(string);
     }
 
     private void prepare(String algorithm, GrowingGlyphsDaemon daemon) {
@@ -244,11 +262,11 @@ public class Batch {
             // show progress
             String name = name(input, numLocations, numEntities, g, algorithm);
             ConfigurableConsoleHandler.undoRedirect();
-            System.out.println(String.format("[%3d / %3d] %s", curr, total, name));
+            log(String.format("[%3d / %3d] %s", curr, total, name));
 
             if ((B.BIG_GLYPHS.get() && g.getSpeed().getClass() != LinearGrowSpeed.class) ||
                     (daemon.getClusterer().getClass() == NaiveClusterer.class && numLocations >= 1e4)) {
-                System.out.println("            → skipped");
+                log("            → skipped");
                 return null;
             }
 
@@ -258,7 +276,7 @@ public class Batch {
             daemon.cluster();
             ConfigurableConsoleHandler.undoRedirect();
 
-            System.out.println(String.format("            → %.2f seconds",
+            log(String.format("            → %.2f seconds",
                     Timers.in(Timers.elapsed("clustering"), Units.SECONDS)));
 
             return null;
