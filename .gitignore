@@ -1,2 +1,3 @@
 output/
 perf/
+plots/*.pdf

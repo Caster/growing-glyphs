@@ -47,3 +47,5 @@ statistics will NOT be collected
             → 2.53 seconds
 [ 24 /  24] trove-50k : 50000 : 15771817 : Logarithmic Growing Squares(no borders, no compression) : basic
             → 2.46 seconds
+
+Manually removed big-glyph-50k later.

@@ -5,7 +5,37 @@ if [[ $# -ne 1 ]]; then
   exit 1
 fi
 
-echo -e "dataset\trunning time (s)\tQuadTree cells min\tQuadTree cells avg\tQuadTree cells max\tQuadTree cells n\t\
+
+function toPaperName() {
+  if [[ "$1" =~ ^big-glyph ]]; then
+    echo "LargeGlyph"
+  elif [[ "$1" =~ ^uniform ]]; then
+    echo "Uniform"
+  elif [[ "$1" =~ ^glottovis ]]; then
+    echo "Glottolog"
+  elif [[ "$1" =~ ^trove ]]; then
+    echo "Trove"
+  fi
+}
+
+function toVariant() {
+  if [[ "$1" =~ Linear[[:blank:]]Growing ]]; then
+    echo -n "LIN "
+  elif [[ "$1" =~ Linear[[:blank:]]Area ]]; then
+    echo -n "AREA "
+  elif [[ "$1" =~ Logarithmic ]]; then
+    echo -n "LOG "
+  fi
+
+  if [[ "$1" =~ Squares ]]; then
+    echo "☐"
+  elif [[ "$1" =~ Circles ]]; then
+    echo "◯"
+  fi
+}
+
+
+echo -e "dataset\tshort name\tvariant\trunning time (s)\tQuadTree cells min\tQuadTree cells avg\tQuadTree cells max\tQuadTree cells n\t\
 QuadTree leaves min\tQuadTree leaves avg\tQuadTree leaves max\tQuadTree leaves n\t\
 QuadTree height min\tQuadTree height avg\tQuadTree height max\tQuadTree height n\t\
 QuadTree joins\tQuadTree splits\tQuadTree inserts\tQuadTree inserts actual\t\
@@ -20,6 +50,10 @@ for dataset in $1/*; do
   fi
 
   echo -ne "$basename\t"
+
+  echo -ne "$(toPaperName "$basename")\t"
+
+  echo -ne "$(toVariant "$basename")\t"
 
   echo -ne "$(awk '$3 == "clustering" && $4 == "took" {print $5}' "$1-no-stats/$basename")\t"
 

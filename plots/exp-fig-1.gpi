@@ -1,0 +1,99 @@
+reset
+
+if (ARGC < 2 || substr(ARG2, 1, 5) ne "term-") {
+    # 240x160pt, but must specify size in inches
+    set terminal pdf enhanced font "times,10" size 3.32, 2.21
+} else {
+    if (substr(ARG2, 1, 5) eq "term-") {
+        set terminal ARG2[6:] enhanced font "times,10" size 1328, 886
+    }
+}
+
+# data is tab separated
+set datafile separator "\t"
+
+# data file can be given as a parameter, but we have a default value
+if (ARGC > 0) {
+  DATAFILE = ARG1
+} else {
+  DATAFILE = "../output/exp-fig-1-100k.tsv"
+}
+
+# find min/max values from data
+stats DATAFILE using 4 nooutput name "runtimes"
+
+# create reusable line styles
+# for tics and grid lines
+set style line 41 \
+  lc rgb "#cccccc" \
+  lt 1 \
+  lw 1
+# for invisible stuff
+set style line 42 \
+  lc rgb "white" \
+  lt 1 \
+  lw 2 \
+  ps 0.3 \
+  pt 7
+# line style for plots
+set style line 43 lc rgb "#de2d26" lt 1 lw 1 ps 0.3 pt 7
+
+# define reusable colors
+set linetype 1 lc rgb "#de2d26" # dark red
+set linetype 2 lc rgb "#31a354" # dark green
+set linetype 3 lc rgb "#3182bd" # dark blue
+set linetype 4 lc rgb "#fcae91" # light red
+set linetype 5 lc rgb "#bae4b3" # light green
+set linetype 6 lc rgb "#bdd7e7" # light blue
+
+
+# for legend; error bars; ...
+set style arrow 1 heads size screen 0.008,90 ls 43
+set style arrow 2 heads size screen 0.008,90 ls 44
+
+# fill up boxes with solid color
+set style fill solid
+
+# only have X- and Y-axis, plot on top of border
+set border 3 back
+
+# set axis labels
+#set xlabel "{/:Bold placement methods}"  offset 0,-1
+#set ylabel "{/:Bold average distortion}"
+set lmargin 4 # was 9 with label
+set rmargin 1
+set bmargin 4.75
+
+# configure tics along axes and set gridlines
+set xtics 1 border nomirror out scale 0 rotate by 90 right offset 0,0.1
+set ytics add 1 border nomirror in scale 0 norotate
+set grid ytics back ls 41
+
+# set range so that there is a nice padding and make sure Y axis starts at 1
+set xrange  [0:runtimes_records + 3]
+set yrange  [0:ceil(runtimes_max)]
+
+# set box widths
+BARWIDTH = 0.5
+PADDING = 0.1
+set boxwidth BARWIDTH absolute
+
+
+# no legend
+unset key
+
+set label "Glottolog" at first 3.5, screen 0.04 center front
+set label "Trove" at first 10.5, screen 0.04 center front
+set label "Uniform" at first 17.5, screen 0.04 center front
+
+
+# do actual plotting
+rgb(r,g,b) = 65536 * int(r) + 256 * int(g) + int(b)
+plot \
+  DATAFILE \
+    using ($0 + ($0 > 6 ? ($0 > 12 ? ($0 > 18 ? 3 : 2) : 1) : 0)):4:($0 > 6 ? ($0 > 12 ? 3 : 2) : 1)\
+      :xtic(3) \
+    with boxes \
+    ls 43 \
+    lc variable \
+    title "runtimes"
