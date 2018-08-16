@@ -15,6 +15,10 @@ merge events handled\tmerge events discarded"
 
 for dataset in $1/*; do
   basename="$(basename "$dataset")"
+  if [[ "$basename" == "log.txt" ]]; then
+    continue;
+  fi
+
   echo -ne "$basename\t"
 
   echo -ne "$(awk '$3 == "clustering" && $4 == "took" {print $5}' "$1-no-stats/$basename")\t"
