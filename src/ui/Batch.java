@@ -246,7 +246,8 @@ public class Batch {
             ConfigurableConsoleHandler.undoRedirect();
             System.out.println(String.format("[%3d / %3d] %s", curr, total, name));
 
-            if (B.BIG_GLYPHS.get() && g.getSpeed().getClass() != LinearGrowSpeed.class) {
+            if ((B.BIG_GLYPHS.get() && g.getSpeed().getClass() != LinearGrowSpeed.class) ||
+                    (daemon.getClusterer().getClass() == NaiveClusterer.class && numLocations >= 1e4)) {
                 System.out.println("            → skipped");
                 return null;
             }

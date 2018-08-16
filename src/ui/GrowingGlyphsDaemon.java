@@ -102,6 +102,10 @@ public class GrowingGlyphsDaemon {
         clustered = true;
     }
 
+    public Clusterer getClusterer() {
+        return clusterer;
+    }
+
     /**
      * Returns the latest result of executing the clustering algorithm. Initially
      * {@code null}.
