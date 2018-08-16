@@ -1,0 +1,49 @@
+statistics will NOT be collected
+[  1 /  24] big-glyph-50k : 50000 : 100049999 : Linear Growing Circles(no borders, no compression) : basic
+            → 54.01 seconds
+[  2 /  24] big-glyph-50k : 50000 : 100049999 : Linear Growing Squares(no borders, no compression) : basic
+            → 53.60 seconds
+[  3 /  24] big-glyph-50k : 50000 : 100049999 : Linear Area Growing Circles(borders, compression) : basic
+            → 3.89 seconds
+[  4 /  24] big-glyph-50k : 50000 : 100049999 : Linear Area Growing Squares(borders, compression) : basic
+            → 2.72 seconds
+[  5 /  24] big-glyph-50k : 50000 : 100049999 : Logarithmic Growing Circles(no borders, no compression) : basic
+            → 2.66 seconds
+[  6 /  24] big-glyph-50k : 50000 : 100049999 : Logarithmic Growing Squares(no borders, no compression) : basic
+            → 2.42 seconds
+[  7 /  24] uniform-50k : 50000 : 275300 : Linear Growing Circles(no borders, no compression) : basic
+            → 4.37 seconds
+[  8 /  24] uniform-50k : 50000 : 275300 : Linear Growing Squares(no borders, no compression) : basic
+            → 4.40 seconds
+[  9 /  24] uniform-50k : 50000 : 275300 : Linear Area Growing Circles(borders, compression) : basic
+            → 3.00 seconds
+[ 10 /  24] uniform-50k : 50000 : 275300 : Linear Area Growing Squares(borders, compression) : basic
+            → 3.32 seconds
+[ 11 /  24] uniform-50k : 50000 : 275300 : Logarithmic Growing Circles(no borders, no compression) : basic
+            → 2.66 seconds
+[ 12 /  24] uniform-50k : 50000 : 275300 : Logarithmic Growing Squares(no borders, no compression) : basic
+            → 2.52 seconds
+[ 13 /  24] glottovis-50k : 50000 : 50003 : Linear Growing Circles(no borders, no compression) : basic
+            → 1.47 seconds
+[ 14 /  24] glottovis-50k : 50000 : 50003 : Linear Growing Squares(no borders, no compression) : basic
+            → 1.32 seconds
+[ 15 /  24] glottovis-50k : 50000 : 50003 : Linear Area Growing Circles(borders, compression) : basic
+            → 3.16 seconds
+[ 16 /  24] glottovis-50k : 50000 : 50003 : Linear Area Growing Squares(borders, compression) : basic
+            → 3.19 seconds
+[ 17 /  24] glottovis-50k : 50000 : 50003 : Logarithmic Growing Circles(no borders, no compression) : basic
+            → 1.83 seconds
+[ 18 /  24] glottovis-50k : 50000 : 50003 : Logarithmic Growing Squares(no borders, no compression) : basic
+            → 1.74 seconds
+[ 19 /  24] trove-50k : 50000 : 15771817 : Linear Growing Circles(no borders, no compression) : basic
+            → 1.03 seconds
+[ 20 /  24] trove-50k : 50000 : 15771817 : Linear Growing Squares(no borders, no compression) : basic
+            → 1.01 seconds
+[ 21 /  24] trove-50k : 50000 : 15771817 : Linear Area Growing Circles(borders, compression) : basic
+            → 4.35 seconds
+[ 22 /  24] trove-50k : 50000 : 15771817 : Linear Area Growing Squares(borders, compression) : basic
+            → 3.79 seconds
+[ 23 /  24] trove-50k : 50000 : 15771817 : Logarithmic Growing Circles(no borders, no compression) : basic
+            → 2.53 seconds
+[ 24 /  24] trove-50k : 50000 : 15771817 : Logarithmic Growing Squares(no borders, no compression) : basic
+            → 2.46 seconds

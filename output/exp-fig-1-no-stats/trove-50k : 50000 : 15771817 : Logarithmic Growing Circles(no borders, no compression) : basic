@@ -1,0 +1,51 @@
+FINE    |  clustering using the QuadTree Clusterer algorithm
+FINE    |  clustering using TRACK + NO BUCKETING strategy
+FINE    |  using the Logarithmic Growing Circles grow function
+FINE    |  QuadTree has 24,909 nodes and height 25, having at most 10 glyphs per cell and cell size at least 1.0E-8
+FINE    |  created 87,642 events initially, for 50,000 glyphs
+FINE    |  created 260,321 events, handled 42,619 and discarded 217,690; 12 events were never considered
+FINE    |  → 94,824 out of cell events (16,511 handled, 78,307 discarded)
+FINE    |  → 165,497 merge events (26,108 handled, 139,383 discarded)
+FINE    |  events were stored in 1 queue(s)
+FINE    |  QuadTree has 1 nodes and height 0 now
+FINE    |  
+FINE    |  STATS
+FINE    |  QuadTree insert     occurred 1305768 times
+FINE    |  QuadTree insert     38.69% of the time
+FINE    |  QuadTree join cells occurred 6837 times
+FINE    |  QuadTree remove     occurred 260218 times
+FINE    |  QuadTree remove     88.00% of the time
+FINE    |  QuadTree split cell occurred 610 times
+FINE    |  glyphs per cell     was          2.71 on average and always between 0 and 10, over 21,096 measurements
+FINE    |  merge nested small  occurred 23894 times
+FINE    |  merge small/small   occurred 26108 times
+FINE    |  merged cells        was          6.56 on average and always between 1 and 146, over 26,108 measurements
+FINE    |  orphan cells        was          1.92 on average and always between 1 and 67, over 54,042 measurements
+FINE    |  queue size          was     76,354.69 on average and always between 12 and 109,204, over 260,309 measurements
+FINE    |  total # works       was 15,772,006.00 on average and always between 15,771,817 and 15,772,195, over 2 measurements
+FINE    |  
+FINE    |  TIMERS
+FINE    |  clustering                                            took  2.53 seconds (wall clock time)
+FINE    |  first merge recording 1                               took  0.05 seconds (wall clock time, 50,000 timings)
+FINE    |  first merge recording 2                               took  0.02 seconds (wall clock time, 12,837 timings)
+FINE    |  first merge recording 3                               took  0.19 seconds (wall clock time, 171,300 timings)
+FINE    |  first merge recording 4                               took  0.02 seconds (wall clock time, 13,418 timings)
+FINE    |  first merge recording 5                               took  0.05 seconds (wall clock time, 41,806 timings)
+FINE    |  neighbor finding                                      took  0.05 seconds (wall clock time, 685,200 timings)
+FINE    |  out of cell event processing                          took  0.10 seconds (wall clock time, 16,511 timings)
+FINE    |  queue operations                                      took  0.26 seconds (wall clock time, 520,630 timings)
+FINE    |  record all pairs                                      took  0.09 seconds (wall clock time, 4,935 timings)
+FINE    |  
+FINE    |  [QuadTree]
+FINE    |  getLeaves                                             took  0.19 seconds (wall clock time, 46,117 timings)
+FINE    |  insert                                                took  0.21 seconds (wall clock time, 190,372 timings)
+FINE    |  join                                                  took  0.19 seconds (wall clock time, 267,030 timings)
+FINE    |  split                                                 took  0.01 seconds (wall clock time, 587 timings)
+FINE    |  
+FINE    |  [merge event processing]
+FINE    |  merge event recording                                 took  0.39 seconds (wall clock time, 26,108 timings)
+FINE    |  merge events in joined cells                          took  0.10 seconds (wall clock time, 26,108 timings)
+FINE    |  merged glyph insert                                   took  0.34 seconds (wall clock time, 26,108 timings)
+FINE    |  nested merges                                         took  0.94 seconds (wall clock time, 26,108 timings)
+FINE    |  total                                                 took  1.84 seconds (wall clock time, 26,108 timings)
+FINE    |  tracker updating                                      took  0.06 seconds (wall clock time, 26,108 timings)
