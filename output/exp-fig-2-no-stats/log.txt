@@ -1,0 +1,26 @@
+statistics will NOT be collected
+[  1 /  12] glottovis : 7103 : 7182 : Linear Growing Squares(no borders, no compression) : basic:all events
+            → 1.07 seconds
+[  2 /  12] glottovis : 7103 : 7182 : Linear Growing Squares(no borders, no compression) : basic
+            → 0.39 seconds
+[  3 /  12] glottovis : 7103 : 7182 : Linear Growing Squares(no borders, no compression) : basic:big
+            → 0.21 seconds
+[  4 /  12] trove : 7754 : 15771325 : Linear Growing Squares(no borders, no compression) : basic:all events
+            → 2.30 seconds
+[  5 /  12] trove : 7754 : 15771325 : Linear Growing Squares(no borders, no compression) : basic
+            → 0.49 seconds
+[  6 /  12] trove : 7754 : 15771325 : Linear Growing Squares(no borders, no compression) : basic:big
+            → 0.24 seconds
+[  7 /  12] big-glyph-10k : 10000 : 100009999 : Linear Growing Squares(no borders, no compression) : basic:all events
+            → 72.98 seconds
+[  8 /  12] big-glyph-10k : 10000 : 100009999 : Linear Growing Squares(no borders, no compression) : basic
+[  9 /  12] big-glyph-10k : 10000 : 100009999 : Linear Growing Squares(no borders, no compression) : basic:big
+            → 1.59 seconds
+[ 10 /  12] uniform-10k : 10000 : 54508 : Linear Growing Squares(no borders, no compression) : basic:all events
+            → 0.30 seconds
+[ 11 /  12] uniform-10k : 10000 : 54508 : Linear Growing Squares(no borders, no compression) : basic
+            → 0.31 seconds
+[ 12 /  12] uniform-10k : 10000 : 54508 : Linear Growing Squares(no borders, no compression) : basic:big
+            → 0.33 seconds
+
+Manually reran #8, added naive algorithm.

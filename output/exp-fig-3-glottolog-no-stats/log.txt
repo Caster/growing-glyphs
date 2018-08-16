@@ -1,0 +1,25 @@
+statistics will NOT be collected
+[  1 /  12] glottovis : 7103 : 7182 : Linear Growing Squares(no borders, no compression) : basic:all events
+            → 1.06 seconds
+[  2 /  12] glottovis : 7103 : 7182 : Linear Growing Squares(no borders, no compression) : basic
+            → 0.33 seconds
+[  3 /  12] glottovis : 7103 : 7182 : Linear Growing Squares(no borders, no compression) : basic:big
+            → 0.23 seconds
+[  4 /  12] glottovis-50k : 50000 : 50003 : Linear Growing Squares(no borders, no compression) : basic:all events
+            → skipped
+[  5 /  12] glottovis-50k : 50000 : 50003 : Linear Growing Squares(no borders, no compression) : basic
+            → 2.02 seconds
+[  6 /  12] glottovis-50k : 50000 : 50003 : Linear Growing Squares(no borders, no compression) : basic:big
+            → 1.58 seconds
+[  7 /  12] glottovis-100k : 100000 : 100000 : Linear Growing Squares(no borders, no compression) : basic:all events
+            → skipped
+[  8 /  12] glottovis-100k : 100000 : 100000 : Linear Growing Squares(no borders, no compression) : basic
+            → 6.17 seconds
+[  9 /  12] glottovis-100k : 100000 : 100000 : Linear Growing Squares(no borders, no compression) : basic:big
+            → 5.82 seconds
+[ 10 /  12] glottovis-200k : 200000 : 200000 : Linear Growing Squares(no borders, no compression) : basic:all events
+            → skipped
+[ 11 /  12] glottovis-200k : 200000 : 200000 : Linear Growing Squares(no borders, no compression) : basic
+            → 44.86 seconds
+[ 12 /  12] glottovis-200k : 200000 : 200000 : Linear Growing Squares(no borders, no compression) : basic:big
+            → 14.24 seconds

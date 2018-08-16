@@ -1,0 +1,12 @@
+INFO    |  reading file took  0.24 seconds (wall clock time)
+INFO    |  reading file took  0.12 seconds (wall clock time)
+FINE    |  clustering using the Naive Clusterer algorithm
+FINE    |  using the Linear Growing Squares grow function
+FINE    |  clustering using TRACK strategy
+FINE    |  initialized 7,754 glyphs
+FINE    |  
+FINE    |  TIMERS
+FINE    |  clustering           took 24.74 seconds (wall clock time)
+FINE    |  
+FINE    |  [QuadTree]
+FINE    |  getLeaves            took  0.00 seconds (wall clock time, 2 timings)
