@@ -114,6 +114,10 @@ public class GrowingGlyphsDaemon {
         return dataSet;
     }
 
+    public File getLastOpened() {
+        return lastOpened;
+    }
+
     public boolean isClustered() {
         return clustered;
     }

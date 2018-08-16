@@ -265,6 +265,9 @@ public class GrowingGlyphs extends JFrame {
     private JFileChooser getFC() {
         if (fc == null) {
             fc = new JFileChooser();
+            if (daemon.getLastOpened() != null) {
+                fc.setCurrentDirectory(daemon.getLastOpened().getParentFile());
+            }
         }
         return fc;
     }

@@ -12,9 +12,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import algorithm.FirstMergeRecorder;
 import datastructure.Glyph;
 import datastructure.HierarchicalClustering;
 import datastructure.QuadTree;
+import datastructure.events.Event;
 import datastructure.events.GlyphMerge;
 import datastructure.growfunction.GrowFunction;
 import utils.Constants.B;
@@ -38,12 +40,15 @@ public class NaiveClusterer extends Clusterer {
         super(tree);
     }
 
-
     @Override
     public Clusterer cluster(GrowFunction g, boolean includeOutOfCell,
             boolean step) {
         if (LOGGER != null) {
             LOGGER.log(Level.FINE, "using the {0} grow function", g.getName());
+            LOGGER.log(Level.FINE, "clustering using {0} strategy", Utils.join(" + ",
+                    (B.ROBUST.get() ? "ROBUST" : ""),
+                    (B.TRACK.get() && !B.ROBUST.get() ? "TRACK" : ""),
+                    (!B.ROBUST.get() && !B.TRACK.get() ? "FIRST MERGE ONLY" : "")));
         }
         if (B.TIMERS_ENABLED.get()) {
             Timers.start("clustering");
@@ -55,7 +60,7 @@ public class NaiveClusterer extends Clusterer {
         // create a result for each glyph, and a map to find them
         Map<Glyph, HierarchicalClustering> map = new HashMap<>(2 * n);
         // we create a queue that records for each pair of glyphs when they merge
-        Queue<GlyphMerge> q = new PriorityQueue<>();
+        Queue<Event> q = new PriorityQueue<>(n * (n - 1) / 2);
         // keep track of how many glyphs we have left
         List<Glyph> glyphsAliveList = new ArrayList<>(n);
         for (QuadTree leaf : tree.getLeaves()) {
@@ -87,12 +92,13 @@ public class NaiveClusterer extends Clusterer {
         HierarchicalClustering[] from = new HierarchicalClustering[2];
         List<HierarchicalClustering> fromList = new ArrayList<>();
         Set<Glyph> glyphsAlive = new HashSet<>(glyphsAliveList);
+        FirstMergeRecorder rec = FirstMergeRecorder.getInstance(g);
         // process merge events until only a single glyph remains
         while (glyphsAlive.size() > 1) {
             // find first merge event involving two alive glyphs
             GlyphMerge next;
             do {
-                next = q.poll();
+                next = (GlyphMerge) q.poll();
             } while (!next.getGlyphs()[0].isAlive() ||
                      !next.getGlyphs()[1].isAlive());
 
@@ -105,8 +111,10 @@ public class NaiveClusterer extends Clusterer {
             fromList.add(from[1]);
             for (int i = 0; i < 2; ++i) {
                 if (from[i].getAt() > next.getAt()) {
-                    fromList.addAll(from[i].getCreatedFrom());
-                    fromList.remove(from[i]);
+                    if (from[i].getCreatedFrom() != null) {
+                        fromList.addAll(from[i].getCreatedFrom());
+                        fromList.remove(from[i]);
+                    }
                     at = Math.max(at, from[i].getAt());
                 }
             }
@@ -115,7 +123,6 @@ public class NaiveClusterer extends Clusterer {
                 mergedHC.alsoCreatedFrom(fromHC);
             }
             map.put(merged, mergedHC);
-            merged.participate();
 
             // the last merge is the root of the resulting clustering
             result = mergedHC;
@@ -125,15 +132,29 @@ public class NaiveClusterer extends Clusterer {
                 glyph.perish();
                 glyphsAlive.remove(glyph);
             }
-            glyphsAlive.add(merged);
+            if (B.TRACK.get()) {
+                for (Glyph glyph : next.getGlyphs()) {
+                    for (Glyph orphan : glyph.trackedBy) {
+                        if (orphan.isAlive()) {
+                            if (!orphan.popMergeInto(q, null)) {
+                                rec.from(orphan);
+                                record(rec, glyphsAlive);
+                                rec.addEventsTo(q);
+                            }
+                        }
+                    }
+                }
+            }
+
 
             // insert new events into the queue
-            for (Glyph glyph : glyphsAlive) {
-                if (glyph == merged)  continue;
+            rec.from(merged);
+            record(rec, glyphsAlive);
+            rec.addEventsTo(q);
 
-                GlyphMerge event = new GlyphMerge(merged, glyph, g);
-                q.add(event);
-            }
+            // merged glyph is alive and kicking
+            glyphsAlive.add(merged);
+            merged.participate();
         }
 
 
@@ -147,6 +168,15 @@ public class NaiveClusterer extends Clusterer {
     @Override
     public String getName() {
         return "Naive Clusterer";
+    }
+
+
+    private void record(FirstMergeRecorder rec, Set<Glyph> glyphsAlive) {
+        if (glyphsAlive.size() > 1000) {
+            rec.record(glyphsAlive.parallelStream());
+        } else {
+            rec.record(glyphsAlive.stream());
+        }
     }
 
 }
