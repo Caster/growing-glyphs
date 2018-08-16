@@ -37,7 +37,7 @@ public final class Constants {
         /**
          * Whether the big glyph optimization should be used.
          */
-        BIG_GLYPHS(false),
+        BIG_GLYPHS(true),
         /**
          * Whether the {@link QuadTreeClusterer} checks the total number of works
          * represented by all alive glyphs after every step of the algorithm.

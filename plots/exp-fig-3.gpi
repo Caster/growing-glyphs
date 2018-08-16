@@ -1,8 +1,8 @@
 reset
 
 if (ARGC < 2 || substr(ARG2, 1, 5) ne "term-") {
-    # 160x160pt, but must specify size in inches
-    set terminal pdf enhanced font "times,10" size 2.21, 2.21
+    # 240x160pt, but must specify size in inches
+    set terminal pdf enhanced font "times,10" size 3.32, 2.21
 } else {
     if (substr(ARG2, 1, 5) eq "term-") {
         set terminal ARG2[6:] enhanced font "times,10" size 1328, 886
@@ -65,7 +65,7 @@ set border 3 back
 #set ylabel "{/:Bold average distortion}"
 set lmargin 4 # was 9 with label
 set rmargin 1
-set bmargin 5.2
+set bmargin 3
 set tmargin 1.2
 
 # configure tics along axes and set gridlines
@@ -75,7 +75,7 @@ set grid ytics back ls 41
 
 # set range so that there is a nice padding and make sure Y axis starts at 1
 set xrange  [0:21]
-set yrange  [0:50] #[0:ceil(runtimes_max)]
+set yrange  [0:85] #[0:ceil(runtimes_max)]
 
 # set box widths
 BARWIDTH = 0.5
@@ -84,13 +84,15 @@ set boxwidth BARWIDTH absolute
 
 
 # no legend
-set key tmargin center
+set key tmargin right width 3
+
+set label "Trove" at first 10, screen 0.04 center front
 
 
 # do actual plotting
 rgb(r,g,b) = 65536 * int(r) + 256 * int(g) + int(b)
 plot \
-  DATAFILE using ($2 / 10000):4:xtic(1) with lines ls 43 lc 1 title "QUAD",\
+  DATAFILE using ($2 / 10000):4:xtic(($2 > 10000 ? sprintf("%dk", $2 / 1000) : sprintf("%d", $2))) with lines ls 43 lc 1 title "QUAD",\
   DATAFILE using ($2 / 10000):4 with points ls 43 lc 1 notitle,\
   DATAFILE using ($2 / 10000):5 with lines ls 43 lc 2 title "QUAD+",\
   DATAFILE using ($2 / 10000):5 with points ls 43 lc 2 notitle,\
