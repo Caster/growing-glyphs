@@ -22,7 +22,7 @@ public class Settings extends HashMap<Setting, Object> {
     }
 
     public enum Setting {
-        BORDERS(SettingSection.ALGORITHM, "Glyph borders", Boolean.FALSE),
+        BORDERS(SettingSection.ALGORITHM, "Glyph borders", Boolean.TRUE),
         DEBUG(SettingSection.ALGORITHM, "Debug", Boolean.FALSE),
         DRAW_CELLS(SettingSection.DRAW, "Draw cells", Boolean.TRUE),
         DRAW_CENTERS(SettingSection.DRAW, "Draw glyph centers", Boolean.TRUE),
@@ -31,7 +31,7 @@ public class Settings extends HashMap<Setting, Object> {
         CLEAR_BEFORE_GENERATE(null, "Clear points before generation", Boolean.TRUE),
         COLORFUL_BORDERS(SettingSection.DRAW, "Indicate compression level with "
                 + "colors", Boolean.FALSE),
-        COMPRESSION(SettingSection.MISC, "Compress glyphs", Boolean.FALSE,
+        COMPRESSION(SettingSection.MISC, "Compress glyphs", Boolean.TRUE,
                 "This will load hardcoded compression factors for some data "
                 + "sets. Won't do compression for unknown data sets."),
         LABELED_BORDERS(SettingSection.DRAW, "Indicate compression level with "

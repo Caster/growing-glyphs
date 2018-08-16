@@ -72,7 +72,7 @@ public final class Constants {
          * Whether some statistics should be collected that may be time-intensive
          * to collect. Disable this before measuing running time, just in case.
          */
-        STATS_ENABLED(false),
+        STATS_ENABLED(true),
 
         /**
          * Whether timers should be used to track wall clock computation time.
@@ -296,7 +296,7 @@ public final class Constants {
          *
          * @see GrowFunction#getAll()
          */
-        GROW_FUNCTION("Logarithmic Growing Circles");
+        GROW_FUNCTION("Linear Growing Squares");
 
 
         /**

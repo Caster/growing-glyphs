@@ -77,6 +77,10 @@ public class HierarchicalClustering implements Comparable<HierarchicalClustering
         return at;
     }
 
+    public List<HierarchicalClustering> getCreatedFrom() {
+        return createdFrom;
+    }
+
     public HierarchicalClustering getMergedInto() {
         return mergedInto;
     }
