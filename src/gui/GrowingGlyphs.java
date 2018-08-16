@@ -141,59 +141,48 @@ public class GrowingGlyphs extends JFrame {
         if (gen instanceof GlyphGenerator.Stateful) {
             ((GlyphGenerator.Stateful) gen).init(daemon.getTree());
         }
-        SwingWorker<Void, Glyph> worker = new SwingWorker<Void, Glyph>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                for (int i = 0; !isCancelled() && i < n; ++i) {
-                    Glyph glyph = gen.next();
-                    daemon.getTree().insertCenterOf(glyph);
-                    publish(glyph);
-                    setProgress(100 * i / n);
-                }
-                return null;
-            }
-
-            @Override
-            protected void process(List<Glyph> glyphs) {
-                drawPanel.repaint();
-            }
-
-            @Override
-            protected void done() {
-                if (status != null) {
-                    if (clear) {
-                        status.setText("Loaded new random set of " + n +
-                                " glyphs.");
-                    } else {
-                        Set<Glyph> seenNowGlyphs = new HashSet<>();
-                        int numGlyphs = 0;
-                        for (QuadTree leaf : daemon.getTree().getLeaves()) {
-                            for (Glyph glyph : leaf.getGlyphsAlive()) {
-                                if (!seenNowGlyphs.contains(glyph)) {
-                                    numGlyphs++;
-                                    seenNowGlyphs.add(glyph);
-                                }
-                            }
-                        }
-                        status.setText("Added " + n + " glyphs, have " +
-                                numGlyphs + " now.");
+        if (B.ASYNC_GLYPH_GENERATORS.get()) {
+            SwingWorker<Void, Glyph> worker = new SwingWorker<Void, Glyph>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    for (int i = 0; !isCancelled() && i < n; ++i) {
+                        Glyph glyph = gen.next();
+                        daemon.getTree().insertCenterOf(glyph);
+                        publish(glyph);
+                        setProgress(100 * i / n);
                     }
-                    statusProgress.setValue(statusProgress.getMaximum());
-                    statusProgress.setString("");
+                    return null;
                 }
-            }
-        };
-        worker.addPropertyChangeListener(new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if (evt.getPropertyName().equals("progress")) {
-                    Integer percent = (Integer) evt.getNewValue();
-                    statusProgress.setValue(percent);
-                    statusProgress.setString(percent * n / 100 + " / " + n);
+
+                @Override
+                protected void process(List<Glyph> glyphs) {
+                    drawPanel.repaint();
                 }
+
+                @Override
+                protected void done() {
+                    glyphGenDone(clear, n);
+                }
+            };
+            worker.addPropertyChangeListener(new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if (evt.getPropertyName().equals("progress")) {
+                        Integer percent = (Integer) evt.getNewValue();
+                        statusProgress.setValue(percent);
+                        statusProgress.setString(percent * n / 100 + " / " + n);
+                    }
+                }
+            });
+            worker.execute();
+        } else {
+            for (int i = 0; i < n; ++i) {
+                Glyph glyph = gen.next();
+                daemon.getTree().insertCenterOf(glyph);
             }
-        });
-        worker.execute();
+            drawPanel.repaint();
+            glyphGenDone(clear, n);
+        }
 
         if (daemon.isClustered()) {
             daemon.reset();
@@ -271,6 +260,30 @@ public class GrowingGlyphs extends JFrame {
             }
         }
         return fc;
+    }
+
+    private void glyphGenDone(boolean clear, int n) {
+        if (status != null) {
+            if (clear) {
+                status.setText("Loaded new random set of " + n +
+                        " glyphs.");
+            } else {
+                Set<Glyph> seenNowGlyphs = new HashSet<>();
+                int numGlyphs = 0;
+                for (QuadTree leaf : daemon.getTree().getLeaves()) {
+                    for (Glyph glyph : leaf.getGlyphsAlive()) {
+                        if (!seenNowGlyphs.contains(glyph)) {
+                            numGlyphs++;
+                            seenNowGlyphs.add(glyph);
+                        }
+                    }
+                }
+                status.setText("Added " + n + " glyphs, have " +
+                        numGlyphs + " now.");
+            }
+            statusProgress.setValue(statusProgress.getMaximum());
+            statusProgress.setString("");
+        }
     }
 
     /**

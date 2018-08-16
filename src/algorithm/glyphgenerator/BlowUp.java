@@ -45,7 +45,7 @@ public class BlowUp extends GlyphGenerator implements GlyphGenerator.Stateful {
                     (p) -> p,
                     (p)-> {
                         // first, attempt using the QuadTree
-                        double s = 1;
+                        double s = 0.25;
                         do {
                             Rectangle2D query = new Rectangle2D.Double(
                                     p.getX() - s, p.getY() - s, 2 * s, 2 * s);
@@ -55,19 +55,16 @@ public class BlowUp extends GlyphGenerator implements GlyphGenerator.Stateful {
                             if (nearbyGlyphs.size() > 0) {
                                 double distSq = Double.MAX_VALUE;
                                 for (Glyph glyph : nearbyGlyphs) {
-                                    distSq = Math.min(distSq, p.distanceSq(glyph.getX(), glyph.getY()));
+                                    double d = p.distanceSq(glyph.getX(), glyph.getY());
+                                    if (d > 0) {
+                                        distSq = Math.min(distSq, d);
+                                    }
                                 }
                                 return distSq;
                             }
                             s *= 2;
-                        } while (s <= 64);
-
-                        // failed? loop over all points
-                        double distSq = Double.MAX_VALUE;
-                        for (Point2D q : placed.keySet()) {
-                            distSq = Math.min(distSq, q.distanceSq(p));
-                        }
-                        return distSq;
+                        } while (s <= rect.getWidth() * 2);
+                        throw new RuntimeException("no nearest neighbor found");
                     }
                 )));
         this.placedArr = placed.keySet().toArray(new Point2D[0]);
@@ -83,7 +80,10 @@ public class BlowUp extends GlyphGenerator implements GlyphGenerator.Stateful {
 
         count();
 
-        Point2D closeTo = placedArr[rand.nextInt(placedArr.length)];
+        Point2D closeTo;
+        do {
+            closeTo = placedArr[rand.nextInt(placedArr.length)];
+        } while (placed.get(closeTo).doubleValue() < 1);
         Point2D p = new Point2D.Double();
         double toBeat = Math.sqrt(placed.get(closeTo).doubleValue());
         p.setLocation(

@@ -3,3 +3,5 @@
 /input/points/big-glyph-*k filter=lfs diff=lfs merge=lfs -text
 /input/points/trove-pop-sim-*k filter=lfs diff=lfs merge=lfs -text
 /input/points/uniform-*k filter=lfs diff=lfs merge=lfs -text
+/input/points/trove-*k filter=lfs diff=lfs merge=lfs -text
+/input/points/glottovis-*k filter=lfs diff=lfs merge=lfs -text

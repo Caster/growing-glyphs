@@ -31,6 +31,10 @@ public final class Constants {
     public static enum B {
 
         /**
+         * Whether glyph generators should run asynchronously.
+         */
+        ASYNC_GLYPH_GENERATORS(false),
+        /**
          * Whether the big glyph optimization should be used.
          */
         BIG_GLYPHS(true),
