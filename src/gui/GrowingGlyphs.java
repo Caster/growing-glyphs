@@ -39,6 +39,7 @@ import javax.swing.event.ChangeListener;
 
 import algorithm.clustering.Clusterer;
 import algorithm.glyphgenerator.BigGlyph;
+import algorithm.glyphgenerator.BlowUp;
 import algorithm.glyphgenerator.GlyphGenerator;
 import algorithm.glyphgenerator.Perlin;
 import algorithm.glyphgenerator.PopulationSim;
@@ -66,7 +67,7 @@ public class GrowingGlyphs extends JFrame {
 
     public static final GlyphGenerator[] GENERATORS = new GlyphGenerator[] {
             new UniformRandom(), new BigGlyph(), new SomeBigGlyphs(4),
-            new Perlin(), new PopulationSim()
+            new Perlin(), new PopulationSim(), new BlowUp()
         };
     public static final Settings SETTINGS = new Settings();
     public static final int NUM_POINTS_INITIALLY = 6;
