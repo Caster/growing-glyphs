@@ -97,6 +97,12 @@ public class GrowingGlyphsDaemon {
         if (LOGGER != null) {
             LOGGER.log(Level.FINE, "clustering using the {0} algorithm",
                     this.clusterer.getName());
+            LOGGER.log(Level.FINE, "{0}collecting stats",
+                    (B.STATS_ENABLED.get() ? "" : "not "));
+            LOGGER.log(Level.FINE, "{0}using QUAD+ optimization",
+                    (B.ROBUST.get() ? "" : "not "));
+            LOGGER.log(Level.FINE, "{0}using big glyph optimization",
+                    (B.BIG_GLYPHS.get() ? "" : "not "));
         }
         clusterer.cluster(g, includeOutOfCell, step);
         clustered = true;

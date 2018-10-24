@@ -72,30 +72,30 @@ public class Batch {
 
     public Batch(File home) {
         this.algorithms = Arrays.asList(
-                /*"naive",*/ "basic:all events", "basic", "basic:big"
+                "naive", "basic:all events", "basic", "basic:big"
             );
         this.growFunctions = new ArrayList<>(6);
         this.home = home;
         this.inputs = Arrays.asList(
                 "csv/glottovis.tsv",
-//                "points/trove",
-//                "points/big-glyph-10k",
-//                "points/uniform-10k",
+                "points/trove",
+                "points/big-glyph-10k",
+                "points/uniform-10k",
 
-//                "points/big-glyph-50k",
-//                "points/uniform-50k",
+                "points/big-glyph-50k",
+                "points/uniform-50k",
                 "points/glottovis-50k",
-//                "points/trove-50k",
+                "points/trove-50k",
 
-//                "points/big-glyph-100k",
-//                "points/uniform-100k",
+                "points/big-glyph-100k",
+                "points/uniform-100k",
                 "points/glottovis-100k",
-//                "points/trove-100k",
+                "points/trove-100k",
 
-//                "points/big-glyph-200k",
-//                "points/uniform-200k",
-                "points/glottovis-200k"//,
-//                "points/trove-200k"
+                "points/big-glyph-200k",
+                "points/uniform-200k",
+                "points/glottovis-200k",
+                "points/trove-200k"
             );
         this.outputDir = new File(home, "output/" + System.currentTimeMillis());
 
@@ -159,13 +159,13 @@ public class Batch {
 
     private void initGrowFunctions() {
         List<Class<? extends GrowShape>> shapes = Arrays.asList(
-//            CirclesGrowShape.class,
+            CirclesGrowShape.class,
             SquaresGrowShape.class
         );
         List<Class<? extends GrowSpeed>> speeds = Arrays.asList(
-            LinearGrowSpeed.class//,
-//            LinearAreaGrowSpeed.class,
-//            LogarithmicGrowSpeed.class
+            LinearGrowSpeed.class,
+            LinearAreaGrowSpeed.class,
+            LogarithmicGrowSpeed.class
         );
 
         for (Class<? extends GrowSpeed> speed : speeds) {
