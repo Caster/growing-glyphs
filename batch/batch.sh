@@ -14,10 +14,20 @@ EXIT=0
 HOME="/home/thom/Code/src/growing-glyphs"
 
 read -r -d '' INPUTS <<-'HERE'
-    points/big-glyph-120k
-    points/big-glyph-140k
-    points/big-glyph-160k
-    points/big-glyph-180k
+    points/glottovis-20k
+    points/glottovis-30k
+    points/glottovis-40k
+    points/glottovis-50k
+    points/glottovis-60k
+    points/glottovis-70k
+    points/glottovis-80k
+    points/glottovis-90k
+    points/glottovis-100k
+    points/glottovis-120k
+    points/glottovis-140k
+    points/glottovis-160k
+    points/glottovis-180k
+    points/glottovis-200k
 HERE
 #     csv/glottovis.tsv
 #     points/big-glyph-5k
@@ -64,6 +74,8 @@ HERE
 #     points/uniform-200k
 
 read -r -d '' ALGORITHMS <<-'HERE'
+    quad
+    plus
     big
 HERE
 #     naive
