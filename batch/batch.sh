@@ -14,29 +14,56 @@ EXIT=0
 HOME="/home/thom/Code/src/growing-glyphs"
 
 read -r -d '' INPUTS <<-'HERE'
-     points/big-glyph-50k
-     points/big-glyph-100k
-     points/big-glyph-200k
+    points/big-glyph-120k
+    points/big-glyph-140k
+    points/big-glyph-160k
+    points/big-glyph-180k
 HERE
 #     csv/glottovis.tsv
-#     points/trove
+#     points/big-glyph-5k
 #     points/big-glyph-10k
-#     points/uniform-10k
+#     points/big-glyph-15k
+#     points/big-glyph-20k
+#     points/big-glyph-25k
+#     points/big-glyph-30k
+#     points/big-glyph-35k
+#     points/big-glyph-40k
+#     points/big-glyph-45k
 #     points/big-glyph-50k
-#     points/uniform-50k
-#     points/glottovis-50k
-#     points/trove-50k
+#     points/big-glyph-60k
+#     points/big-glyph-70k
+#     points/big-glyph-80k
+#     points/big-glyph-90k
 #     points/big-glyph-100k
-#     points/uniform-100k
-#     points/glottovis-100k
-#     points/trove-100k
+#     points/big-glyph-120k
+#     points/big-glyph-140k
+#     points/big-glyph-160k
+#     points/big-glyph-180k
 #     points/big-glyph-200k
-#     points/uniform-200k
+#     points/glottovis-20k
+#     points/glottovis-30k
+#     points/glottovis-40k
+#     points/glottovis-50k
+#     points/glottovis-60k
+#     points/glottovis-70k
+#     points/glottovis-80k
+#     points/glottovis-90k
+#     points/glottovis-100k
+#     points/glottovis-120k
+#     points/glottovis-140k
+#     points/glottovis-160k
+#     points/glottovis-180k
 #     points/glottovis-200k
+#     points/trove
+#     points/trove-50k
+#     points/trove-100k
 #     points/trove-200k
+#     points/uniform-10k
+#     points/uniform-50k
+#     points/uniform-100k
+#     points/uniform-200k
 
 read -r -d '' ALGORITHMS <<-'HERE'
-    plus
     big
 HERE
 #     naive
