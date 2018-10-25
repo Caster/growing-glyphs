@@ -1,12 +1,19 @@
 #!/bin/bash
 
-trap 'exit 130' INT # properly exit on Ctrl+C
+function interrupt {
+    EXIT=1
+    tput el1 # clear line
+    echo -ne "\r" # move to beginning of line
+    echo "Interrupt! Finishing up, then stopping ..."
+}
+
+trap interrupt INT # properly exit on Ctrl+C
 
 
+EXIT=0
 HOME="/home/thom/Code/src/growing-glyphs"
 
 read -r -d '' INPUTS <<-'HERE'
-     points/big-glyph-10k
      points/big-glyph-50k
      points/big-glyph-100k
      points/big-glyph-200k
@@ -29,7 +36,6 @@ HERE
 #     points/trove-200k
 
 read -r -d '' ALGORITHMS <<-'HERE'
-    quad
     plus
     big
 HERE
@@ -67,8 +73,10 @@ for ((i=1;i<=ITERATIONS;i++)); do
     fi
     echo -e "$INPUT\t$GROWFUNCTION\t$ALGORITHM\t$TIME" >> "$HOME/batch/results.tsv"
     rm "$HOME/batch/output.txt"
+    if [[ $EXIT -eq 1 ]]; then
+        exit 130
+    fi
 done
 done
 done
 done
-
