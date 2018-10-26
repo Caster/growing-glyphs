@@ -14,6 +14,7 @@ EXIT=0
 HOME="/home/thom/Code/src/growing-glyphs"
 
 read -r -d '' INPUTS <<-'HERE'
+    csv/glottovis.tsv
     points/glottovis-20k
     points/glottovis-30k
     points/glottovis-40k
