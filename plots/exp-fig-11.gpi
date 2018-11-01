@@ -75,7 +75,7 @@ set grid ytics back ls 41
 
 # set range so that there is a nice padding and make sure Y axis starts at 1
 set xrange  [0:21]
-set yrange  [0:350]
+set yrange  [0:300]
 
 # set box widths
 BARWIDTH = 0.5
