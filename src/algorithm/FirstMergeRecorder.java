@@ -378,7 +378,7 @@ public class FirstMergeRecorder {
                     Utils.swap(result.at, i, that.at, thatInd);
                     Utils.swap(result.glyphs, i, that.glyphs, thatInd);
                     thatInd++;
-                } else if (that.at.get(thatInd) == this.at.get(thisInd)) {
+                } else if (Utils.Double.eq(that.at.get(thatInd), this.at.get(thisInd))) {
                     Utils.swap(result.at, i, that.at, thatInd);
                     Utils.swap(result.glyphs, i, that.glyphs, thatInd);
                     result.glyphs.get(i).addAll(this.glyphs.get(thisInd));
