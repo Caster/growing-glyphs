@@ -100,7 +100,7 @@ public class GrowingGlyphsDaemon {
             LOGGER.log(Level.FINE, "{0}collecting stats",
                     (B.STATS_ENABLED.get() ? "" : "not "));
             LOGGER.log(Level.FINE, "{0}using QUAD+ optimization",
-                    (B.ROBUST.get() ? "" : "not "));
+                    (B.ROBUST.get() ? "not " : ""));
             LOGGER.log(Level.FINE, "{0}using big glyph optimization",
                     (B.BIG_GLYPHS.get() ? "" : "not "));
         }
